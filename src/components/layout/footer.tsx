@@ -49,10 +49,14 @@ export function Footer() {
             </h3>
             <ul className="space-y-2">
               {[
-                { label: "Github", href: "https://github.com", icon: Github },
+                {
+                  label: "Github",
+                  href: "https://github.com/onerandomdevv",
+                  icon: Github,
+                },
                 {
                   label: "Twitter",
-                  href: "https://twitter.com",
+                  href: "https://x.com/onerandomdevv",
                   icon: Twitter,
                 },
               ].map((social) => (

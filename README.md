@@ -6,6 +6,8 @@
 
 Welcome to my personal portfolio. This project is a representation of my technical capabilities, design philosophy, and the diverse range of problems I solve as a developer. Built with a focus on performance, accessibility, and a distinct "Cyberpunk/Electric Lime" aesthetic, it serves as the central hub for my work.
 
+**[🌐 Live Demo](https://onerandomdevv.pxxl.click)**
+
 ## 👨‍💻 About Me
 
 I am **Ameen** (@onerandomdevv), a versatile software engineer with a passion for building robust, scalable systems and intuitive user experiences. My expertise spans the entire development stack, from architecting backend logic to crafting pixel-perfect frontend interfaces.
@@ -104,7 +106,7 @@ I am always open to discussing new projects, creative ideas, or opportunities to
 
 - **GitHub**: [@onerandomdevv](https://github.com/onerandomdevv)
 - **Twitter/X**: [@onerandomdevv](https://twitter.com/onerandomdevv)
-- **Portfolio**: [ameen-portfolio.vercel.app](https://ameen-portfolio.vercel.app) (Coming Soon)
+- **Portfolio**: [onerandomdevv.pxxl.click](https://onerandomdevv.pxxl.click)
 
 ---
 

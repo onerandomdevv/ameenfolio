@@ -56,7 +56,7 @@ export function ContactSection() {
                     {[
                       {
                         Icon: Twitter,
-                        href: "https://twitter.com",
+                        href: "https://x.com/onerandomdevv",
                         color: "hover:text-white",
                       },
                       {
@@ -91,7 +91,7 @@ export function ContactSection() {
                       },
                       {
                         Icon: Github,
-                        href: "https://github.com",
+                        href: "https://github.com/onerandomdevv",
                         color: "hover:text-white",
                       },
                     ].map((social, i) => (

@@ -93,9 +93,9 @@ export function Hero() {
           </Magnetic>
         </motion.div>
 
-        <section className="relative min-h-screen md:min-h-[85vh] lg:min-h-screen w-full flex items-center justify-center p-4 pt-24 md:p-6 lg:p-12 lg:pt-12">
-          {/* Main Contained Hero Card */}
-          <div className="relative w-full h-full min-h-[600px] lg:min-h-full max-w-[1700px] rounded-[2rem] lg:rounded-[3.5rem] overflow-hidden border border-border-subtle shadow-2xl bg-bg-base flex flex-col justify-end">
+        <section className="relative min-h-screen md:min-h-[85vh] lg:min-h-screen w-full flex items-center justify-center p-0 md:p-6 lg:p-12 lg:pt-12">
+          {/* Main Contained Hero Card - Full Bleed on Mobile, Card on Desktop */}
+          <div className="relative w-full h-full min-h-[100dvh] md:min-h-[600px] lg:min-h-full max-w-[1700px] rounded-none md:rounded-[2rem] lg:rounded-[3.5rem] overflow-hidden border-none md:border md:border-border-subtle shadow-none md:shadow-2xl bg-bg-base flex flex-col justify-end">
             {/* Background Slider */}
             <div className="absolute inset-0 z-0">
               <AnimatePresence initial={false}>
@@ -115,41 +115,48 @@ export function Hero() {
                     alt="Background"
                     fill
                     priority
-                    className="object-cover object-center md:object-top lg:object-center opacity-60"
+                    className="object-cover object-center md:object-top lg:object-center opacity-70 md:opacity-60"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-tr from-bg-base via-transparent to-bg-base opacity-80" />
+                  {/* Mobile specific gradient: Heavy bottom fade for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-bg-base via-bg-base/80 to-transparent opacity-90 md:hidden" />
+
+                  {/* Desktop gradient */}
+                  <div className="hidden md:block absolute inset-0 bg-gradient-to-tr from-bg-base via-transparent to-bg-base opacity-80" />
                 </motion.div>
               </AnimatePresence>
             </div>
 
-            <div className="relative z-10 w-full h-full flex flex-col lg:flex-row items-end justify-between p-6 md:p-12 lg:p-20 pt-32 lg:pt-20 gap-8">
+            <div className="relative z-10 w-full h-full flex flex-col lg:flex-row items-end justify-between p-6 pb-24 md:p-12 lg:p-20 pt-32 lg:pt-20 gap-8">
               {/* Left Bottom: Huge Brand Text */}
               <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.8 }}
-                className="pointer-events-none"
+                className="pointer-events-none w-full md:w-auto"
               >
-                <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tighter text-accent-lime leading-[0.8] break-words">
+                <h1 className="text-5xl md:text-5xl lg:text-7xl font-black tracking-tighter text-accent-lime leading-[0.8] break-words">
                   <GlitchText text="AMEEN" />
                 </h1>
               </motion.div>
 
               {/* Right Side: Expertise Card */}
-              <div className="w-full lg:w-[450px] mt-8 lg:mt-0">
+              <div className="w-full lg:w-[450px] mt-4 md:mt-8 lg:mt-0">
                 <motion.div
                   initial={{ x: 100, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
-                  className="bg-bg-glass backdrop-blur-3xl p-6 md:p-8 lg:p-12 rounded-[2rem] lg:rounded-[3.5rem] border border-border-subtle space-y-8 lg:space-y-12 relative"
+                  className="bg-transparent md:bg-bg-glass md:backdrop-blur-3xl p-0 md:p-8 lg:p-12 rounded-none md:rounded-[2rem] lg:rounded-[3.5rem] border-none md:border md:border-border-subtle space-y-8 lg:space-y-12 relative"
                 >
                   <div className="space-y-14">
                     {EXPERTISE_MODULES.map((module, i) => (
-                      <div key={i} className="space-y-3 relative group">
-                        <h3 className="text-xl font-black tracking-tighter text-accent-lime leading-tight">
+                      <div
+                        key={i}
+                        className="space-y-2 lg:space-y-3 relative group"
+                      >
+                        <h3 className="text-lg lg:text-xl font-black tracking-tighter text-accent-lime leading-tight">
                           {module.title}
                         </h3>
-                        <p className="text-[13px] text-white font-light leading-relaxed">
+                        <p className="text-xs lg:text-[13px] text-zinc-300 lg:text-white font-light leading-relaxed">
                           {module.desc}
                         </p>
                         {i < EXPERTISE_MODULES.length - 1 && (
@@ -159,7 +166,7 @@ export function Hero() {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between pt-4">
+                  <div className="flex items-center justify-between pt-2 lg:pt-4 border-t border-white/10 lg:border-none mt-6 lg:mt-0">
                     <a
                       href="/resume.pdf"
                       target="_blank"
@@ -178,7 +185,7 @@ export function Hero() {
               </div>
             </div>
 
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-20 md:hidden">
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-20 md:hidden">
               {HERO_IMAGES.map((_, i) => (
                 <div
                   key={i}
