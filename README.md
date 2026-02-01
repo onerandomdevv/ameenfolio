@@ -108,4 +108,4 @@ I am always open to discussing new projects, creative ideas, or opportunities to
 
 ---
 
-_Designed & Built by **Ameen** © 2026_
+_Designed & Built by **[@onerandomdevv](https://x.com/onerandomdevv)** © 2026_
