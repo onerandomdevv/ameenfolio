@@ -20,6 +20,49 @@ export default defineType({
       description: 'Images for the interactive slider in the About section.',
     }),
     defineField({
+      name: 'resume',
+      title: 'Resume Image',
+      type: 'image',
+      description: 'Upload your resume as an image. MUST be exactly 723x1024px.',
+      validation: (Rule) =>
+        Rule.custom(async (value: any, context: any) => {
+          if (!value?.asset?._ref) {
+            return true;
+          }
+
+          const client = context.getClient({ apiVersion: '2023-01-01' });
+          const assetId = value.asset._ref;
+          
+          try {
+            const asset = await client.fetch(`*[_id == $id][0]`, { id: assetId });
+            
+            if (!asset?.metadata?.dimensions) {
+               return true; // Skipping check if metadata is missing (shouldn't happen for images)
+            }
+
+            const { width, height } = asset.metadata.dimensions;
+            
+            if (width !== 723 || height !== 1024) {
+              return `Image dimensions must be exactly 723x1024px. Uploaded: ${width}x${height}px.`;
+            }
+            
+            return true;
+          } catch (error) {
+            console.error('Validation error:', error);
+            return true; // Fail open if check fails to avoid blocking
+          }
+        }),
+      options: {
+        accept: 'image/png,image/jpeg',
+      },
+    }),
+    defineField({
+      name: 'externalResumeLink',
+      title: 'Resume (External Link)',
+      type: 'url',
+      description: 'Optional: Provide a direct link to your resume (e.g., Google Drive, LinkedIn) instead of uploading a file. This will take priority if both are present.',
+    }),
+    defineField({
       name: 'siteName',
       title: 'Site Name',
       type: 'string',

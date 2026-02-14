@@ -42,11 +42,14 @@ const EXPERTISE_MODULES = [
 export function Hero() {
   const [heroImages, setHeroImages] = useState<string[]>(DEFAULT_HERO_IMAGES);
   const [currentImage, setCurrentImage] = useState(0);
+  const [resumeUrl, setResumeUrl] = useState("/resume");
 
   useEffect(() => {
     async function fetchHeroImages() {
       try {
-        const settings = await client.fetch('*[_type == "settings"][0]');
+        const settings = await client.fetch(
+          '*[_type == "settings"][0]{heroBanners, "resumeUrl": resume.asset->url, externalResumeLink}',
+        );
         if (settings?.heroBanners?.length > 0) {
           const urls = settings.heroBanners.map((img: any) =>
             urlFor(img).url(),
@@ -202,7 +205,7 @@ export function Hero() {
 
                   <div className="flex items-center justify-between pt-2 lg:pt-4 border-t border-white/10 lg:border-none mt-6 lg:mt-0">
                     <a
-                      href="/resume.pdf"
+                      href={resumeUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       aria-label="View Resume"

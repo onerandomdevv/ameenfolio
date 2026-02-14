@@ -13,11 +13,14 @@ export function AboutSection() {
   const [aboutImages, setAboutImages] =
     useState<string[]>(DEFAULT_ABOUT_IMAGES);
   const [currentImage, setCurrentImage] = useState(0);
+  const [resumeUrl, setResumeUrl] = useState("/resume");
 
   useEffect(() => {
     async function fetchAboutImages() {
       try {
-        const settings = await client.fetch('*[_type == "settings"][0]');
+        const settings = await client.fetch(
+          '*[_type == "settings"][0]{aboutImages, "resumeUrl": resume.asset->url}',
+        );
         if (settings?.aboutImages?.length > 0) {
           const urls = settings.aboutImages.map((img: any) =>
             urlFor(img).url(),
@@ -104,7 +107,7 @@ export function AboutSection() {
 
             <div className="pt-4">
               <a
-                href="/resume.pdf"
+                href={resumeUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-text-primary hover:text-accent-lime transition-colors border-b-2 border-border-highlight pb-1"
