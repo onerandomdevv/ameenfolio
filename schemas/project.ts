@@ -68,31 +68,71 @@ export default defineType({
           name: 'languages',
           title: 'Languages',
           type: 'array',
-          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+          of: [
+            {
+              type: 'reference',
+              to: [{ type: 'skill' }],
+              options: {
+                filter: 'category == "Language"',
+              },
+            },
+          ],
         }),
         defineField({
           name: 'frontend',
           title: 'Frontend',
           type: 'array',
-          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+          of: [
+            {
+              type: 'reference',
+              to: [{ type: 'skill' }],
+              options: {
+                filter: 'category == "Frontend"',
+              },
+            },
+          ],
         }),
         defineField({
           name: 'backend',
           title: 'Backend',
           type: 'array',
-          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+          of: [
+            {
+              type: 'reference',
+              to: [{ type: 'skill' }],
+              options: {
+                filter: 'category == "Backend"',
+              },
+            },
+          ],
         }),
         defineField({
           name: 'database',
           title: 'Database',
           type: 'array',
-          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+          of: [
+            {
+              type: 'reference',
+              to: [{ type: 'skill' }],
+              options: {
+                filter: 'category == "Database"',
+              },
+            },
+          ],
         }),
         defineField({
           name: 'tools',
           title: 'Tools',
           type: 'array',
-          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+          of: [
+            {
+              type: 'reference',
+              to: [{ type: 'skill' }],
+              options: {
+                filter: 'category == "Tools"',
+              },
+            },
+          ],
         }),
       ],
     }),
