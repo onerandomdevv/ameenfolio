@@ -61,9 +61,40 @@ export default defineType({
     }),
     defineField({
       name: 'technologies',
-      title: 'Technologies',
-      type: 'array',
-      of: [{ type: 'string' }],
+      title: 'Tech Stack',
+      type: 'object',
+      fields: [
+        defineField({
+          name: 'languages',
+          title: 'Languages',
+          type: 'array',
+          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+        }),
+        defineField({
+          name: 'frontend',
+          title: 'Frontend',
+          type: 'array',
+          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+        }),
+        defineField({
+          name: 'backend',
+          title: 'Backend',
+          type: 'array',
+          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+        }),
+        defineField({
+          name: 'database',
+          title: 'Database',
+          type: 'array',
+          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+        }),
+        defineField({
+          name: 'tools',
+          title: 'Tools',
+          type: 'array',
+          of: [{ type: 'reference', to: [{ type: 'skill' }] }],
+        }),
+      ],
     }),
     defineField({
       name: 'liveUrl',

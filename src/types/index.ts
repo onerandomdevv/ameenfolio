@@ -8,7 +8,13 @@ export interface Project {
   category: "projects" | "building" | "collabs" | "marketplace";
   mainImage: any;
   gallery?: any[];
-  technologies: string[];
+  technologies: {
+    languages: string[];
+    frontend: string[];
+    backend: string[];
+    database: string[];
+    tools: string[];
+  };
   liveUrl?: string;
   githubUrl?: string;
   verified: boolean;

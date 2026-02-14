@@ -28,7 +28,13 @@ const PROJECT_QUERY = `*[_type == "project" && slug.current == $slug][0] {
   category,
   mainImage,
   gallery,
-  technologies,
+  technologies {
+    "languages": languages[]->name,
+    "frontend": frontend[]->name,
+    "backend": backend[]->name,
+    "database": database[]->name,
+    "tools": tools[]->name
+  },
   liveUrl,
   githubUrl,
   verified,
@@ -178,19 +184,38 @@ function ProjectDetailsContent() {
             </div>
 
             {/* Tech Stack */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <h3 className="text-xs font-black uppercase tracking-[0.3em] text-text-muted">
                 Core Technologies
               </h3>
-              <div className="flex flex-wrap gap-3">
-                {project.technologies?.map((tech) => (
-                  <span
-                    key={tech}
-                    className="px-4 py-2 bg-bg-glass border border-border-subtle rounded-xl text-sm font-bold text-white uppercase tracking-widest"
-                  >
-                    {tech}
-                  </span>
-                ))}
+              <div className="space-y-4">
+                {[
+                  { label: "Languages", data: project.technologies?.languages },
+                  { label: "Frontend", data: project.technologies?.frontend },
+                  { label: "Backend", data: project.technologies?.backend },
+                  { label: "Database", data: project.technologies?.database },
+                  { label: "Tools", data: project.technologies?.tools },
+                ].map(
+                  (category) =>
+                    category.data &&
+                    category.data.length > 0 && (
+                      <div key={category.label} className="space-y-2">
+                        <span className="text-[10px] font-bold text-accent-lime uppercase tracking-widest block">
+                          {category.label}
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {category.data.map((tech) => (
+                            <span
+                              key={tech}
+                              className="px-3 py-1.5 bg-bg-glass border border-border-subtle rounded-lg text-xs font-bold text-white uppercase tracking-widest"
+                            >
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ),
+                )}
               </div>
             </div>
 

@@ -32,7 +32,13 @@ const PROJECTS_QUERY = `*[_type == "project"] | order(_createdAt desc) {
   category,
   mainImage,
   verified,
-  technologies,
+  technologies {
+    "languages": languages[]->name,
+    "frontend": frontend[]->name,
+    "backend": backend[]->name,
+    "database": database[]->name,
+    "tools": tools[]->name
+  },
   cta
 }`;
 
@@ -197,14 +203,22 @@ function ProjectsContent() {
 
                       {/* Tech Stack Tags */}
                       <div className="flex flex-wrap gap-2">
-                        {project.technologies?.slice(0, 3).map((tech) => (
-                          <span
-                            key={tech}
-                            className="text-[10px] uppercase tracking-widest text-text-muted border border-border-subtle px-2 py-1 rounded"
-                          >
-                            {tech}
-                          </span>
-                        ))}
+                        {[
+                          ...(project.technologies?.languages || []),
+                          ...(project.technologies?.frontend || []),
+                          ...(project.technologies?.backend || []),
+                          ...(project.technologies?.database || []),
+                          ...(project.technologies?.tools || []),
+                        ]
+                          .slice(0, 3)
+                          .map((tech) => (
+                            <span
+                              key={tech}
+                              className="text-[10px] uppercase tracking-widest text-text-muted border border-border-subtle px-2 py-1 rounded"
+                            >
+                              {tech}
+                            </span>
+                          ))}
                       </div>
                     </div>
 

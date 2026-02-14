@@ -28,7 +28,16 @@ export default defineType({
       name: 'category',
       title: 'Category',
       type: 'string',
-      description: 'e.g., Frontend, Backend, Tools',
+      options: {
+        list: [
+          { title: 'Language', value: 'Language' },
+          { title: 'Frontend', value: 'Frontend' },
+          { title: 'Backend', value: 'Backend' },
+          { title: 'Database', value: 'Database' },
+          { title: 'Tools', value: 'Tools' },
+        ],
+      },
+      validation: (Rule) => Rule.required(),
     }),
   ],
 })
