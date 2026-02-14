@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRightCircle, ArrowRight } from "lucide-react";
+import { ArrowRightCircle, ArrowRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { SectionReveal } from "@/components/ui/section-reveal";
@@ -97,9 +97,14 @@ export function ProjectsSection() {
 
                         {/* Text Content */}
                         <div className="space-y-4">
-                          <h3 className="text-2xl md:text-3xl font-black text-accent-lime tracking-tighter uppercase leading-none transition-colors">
-                            {project.title}
-                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-2xl md:text-3xl font-black text-accent-lime tracking-tighter uppercase leading-none transition-colors">
+                              {project.title}
+                            </h3>
+                            {project.category?.includes("collabs") && (
+                              <Users className="w-6 h-6 text-accent-lime flex-shrink-0" />
+                            )}
+                          </div>
                           <p className="text-white font-light text-base leading-relaxed line-clamp-3 italic transition-colors">
                             {project.description}
                           </p>

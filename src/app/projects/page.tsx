@@ -188,7 +188,7 @@ function ProjectsContent() {
                     <div className="p-8 space-y-6">
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-2xl font-black text-accent-lime tracking-tighter uppercase transition-colors">
                               {project.title}
                             </h3>
