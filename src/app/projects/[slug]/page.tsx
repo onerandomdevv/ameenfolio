@@ -11,6 +11,7 @@ import {
   Mail,
   Globe,
   CheckCircle2,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { client } from "@/lib/sanity";
@@ -125,7 +126,7 @@ function ProjectDetailsContent() {
           href="/projects"
           className="inline-flex items-center gap-2 text-text-muted hover:text-accent-lime transition-colors text-xs font-black uppercase tracking-widest mb-12"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to Database
+          <ArrowLeft className="w-4 h-4" /> Back to Projects
         </Link>
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20">
@@ -165,16 +166,15 @@ function ProjectDetailsContent() {
               {project.githubUrl && (
                 <Link href={project.githubUrl} target="_blank">
                   <Button className="rounded-xl bg-bg-glass text-white border border-border-subtle font-black uppercase tracking-widest hover:bg-white hover:text-black h-12 px-6">
-                    <Github className="w-4 h-4 mr-2" /> Repository
+                    <Github className="w-4 h-4 mr-2" /> Source Code
                   </Button>
                 </Link>
               )}
-              <Button
-                onClick={() => setIsContactOpen(true)}
-                className="rounded-xl bg-white text-black font-black uppercase tracking-widest hover:bg-accent-lime h-12 px-6"
-              >
-                <Mail className="w-4 h-4 mr-2" /> Contact Dev
-              </Button>
+              <Link href="https://t.me/onerandomdevv" target="_blank">
+                <Button className="rounded-xl bg-white text-black font-black uppercase tracking-widest hover:bg-accent-lime h-12 px-6">
+                  <Send className="w-4 h-4 mr-2" /> Contact Dev
+                </Button>
+              </Link>
             </div>
 
             {/* Tech Stack */}

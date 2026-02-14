@@ -210,10 +210,7 @@ function ProjectsContent() {
 
                     <div className="pt-6 border-t border-border-subtle flex items-center justify-between">
                       <Link href={`/projects/${project.slug.current}`}>
-                        <Button
-                          variant="ghost"
-                          className="p-0 h-auto text-xs font-black uppercase tracking-[0.2em] text-white hover:text-accent-lime transition-all flex items-center gap-2 group/btn"
-                        >
+                        <Button className="rounded-xl bg-accent-lime text-black font-black uppercase tracking-widest hover:bg-white transition-all h-10 px-4 flex items-center gap-2 group/btn">
                           View Project
                           <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
                         </Button>

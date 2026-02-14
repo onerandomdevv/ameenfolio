@@ -9,6 +9,10 @@ export const skills: Skill[] = [
 ];
 
 export const socialLinks: SocialLink[] = [
-  { platform: 'GitHub', url: 'https://github.com/example' },
-  { platform: 'LinkedIn', url: 'https://linkedin.com/in/example' }
+  { platform: 'GitHub', url: 'https://github.com/onerandomdevv' },
+  { platform: 'LinkedIn', url: 'https://www.linkedin.com/in/onerandomdevv' },
+  { platform: 'Twitter', url: 'https://x.com/onerandomdevv' },
+  { platform: 'WhatsApp', url: 'https://wa.link/m4mxba' },
+  { platform: 'Telegram', url: 'https://t.me/onerandomdevv' },
+  { platform: 'Email', url: 'mailto:abdulkareemalameen85@gmail.com' }
 ];

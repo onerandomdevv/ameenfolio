@@ -4,13 +4,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Github,
-  Linkedin,
-  Twitter,
-  MessageCircle,
-  FileText,
-} from "lucide-react";
+import { Github, Linkedin, Twitter, Mail, FileText } from "lucide-react";
 import { Magnetic } from "@/components/ui/magnetic";
 import { SectionReveal } from "@/components/ui/section-reveal";
 import { GlitchText } from "@/components/ui/glitch-text";
@@ -95,7 +89,7 @@ export function Hero() {
           </div>
           <Magnetic>
             <a
-              href="https://github.com"
+              href="https://github.com/onerandomdevv"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Github Profile"
@@ -105,7 +99,7 @@ export function Hero() {
           </Magnetic>
           <Magnetic>
             <a
-              href="https://linkedin.com"
+              href="https://www.linkedin.com/in/onerandomdevv"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn Profile"
@@ -115,7 +109,7 @@ export function Hero() {
           </Magnetic>
           <Magnetic>
             <a
-              href="https://twitter.com"
+              href="https://x.com/onerandomdevv"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Twitter Profile"
@@ -124,8 +118,11 @@ export function Hero() {
             </a>
           </Magnetic>
           <Magnetic>
-            <a href="mailto:contact@example.com" aria-label="Send Email">
-              <MessageCircle className="w-5 h-5 text-accent-lime hover:text-white cursor-pointer transition-colors" />
+            <a
+              href="mailto:abdulkareemalameen85@gmail.com"
+              aria-label="Send Email"
+            >
+              <Mail className="w-5 h-5 text-accent-lime hover:text-white cursor-pointer transition-colors" />
             </a>
           </Magnetic>
         </motion.div>

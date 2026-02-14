@@ -61,12 +61,12 @@ export function ContactSection() {
                       },
                       {
                         Icon: MessageCircle,
-                        href: "https://wa.me",
+                        href: "https://wa.link/m4mxba",
                         color: "hover:text-white",
                       },
                       {
                         Icon: Send,
-                        href: "https://t.me",
+                        href: "https://t.me/onerandomdevv",
                         color: "hover:text-white",
                       },
                     ].map((social, i) => (
@@ -86,7 +86,7 @@ export function ContactSection() {
                     {[
                       {
                         Icon: Mail,
-                        href: "mailto:ameen@example.com",
+                        href: "mailto:abdulkareemalameen85@gmail.com",
                         color: "hover:text-white",
                       },
                       {

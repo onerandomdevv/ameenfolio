@@ -96,6 +96,59 @@ export function Navbar() {
                   </Link>
                 </motion.div>
               ))}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 * 4 }}
+                className="flex flex-col items-center gap-6 mt-4"
+              >
+                <a
+                  href="https://wa.link/m4mxba"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold uppercase tracking-widest text-[#25D366] hover:text-white transition-colors"
+                >
+                  WhatsApp
+                </a>
+                <a
+                  href="mailto:abdulkareemalameen85@gmail.com"
+                  className="text-xl font-bold uppercase tracking-widest text-accent-lime hover:text-white transition-colors"
+                >
+                  Email
+                </a>
+                <a
+                  href="https://t.me/onerandomdevv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold uppercase tracking-widest text-[#0088cc] hover:text-white transition-colors"
+                >
+                  Telegram
+                </a>
+                <a
+                  href="https://github.com/onerandomdevv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold uppercase tracking-widest text-white hover:text-accent-lime transition-colors"
+                >
+                  GitHub
+                </a>
+                <a
+                  href="https://x.com/onerandomdevv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold uppercase tracking-widest text-white hover:text-accent-lime transition-colors"
+                >
+                  Twitter
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/onerandomdevv"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xl font-bold uppercase tracking-widest text-blue-500 hover:text-white transition-colors"
+                >
+                  LinkedIn
+                </a>
+              </motion.div>
             </div>
           </motion.div>
         )}
