@@ -1,6 +1,6 @@
 # Ameen's Portfolio
 
-![Portfolio Banner](/public/herobanner/hero-1.jpg)
+![Portfolio Banner](/public/herobanner/hero-1.png)
 
 > **"Crafting digital ecosystems with purpose. Building the future of web interactions, one pixel at a time."**
 
@@ -18,14 +18,6 @@ I am **Ameen** (@onerandomdevv), a versatile software engineer with a passion fo
 - **Full Stack Developer**: I build modern web applications that marry complex backend functionality with seamless, responsive frontend designs.
 - **Prompt Engineer**: I specialize in designing precise prompts and workflows to maximize the reliability and utility of Large Language Models (LLMs).
 
-### My Approach
-
-I believe in **problem-solving through structure**. Whether debugging a complex race condition or designing a new API, I approach every challenge with a focus on:
-
-1.  **Clarity**: Writing code that is self-documenting and easy to maintain.
-2.  **Performance**: Optimizing for speed and efficiency at every layer.
-3.  **User Experience**: Ensuring the end-product is intuitive, accessible, and delightful to use.
-
 ---
 
 ## 🚀 Tech Stack
@@ -37,9 +29,10 @@ This portfolio is built on a modern, high-performance stack designed for speed, 
 | **Framework**  | **Next.js 15** (App Router) | Core application framework for server-side rendering and static generation. |
 | **Language**   | **TypeScript**              | Strict type safety for distinct data boundaries and maintainable code.      |
 | **Styling**    | **Tailwind CSS**            | Utility-first CSS for rapid, responsive, and consistent design.             |
+| **CMS**        | **Sanity.io**               | Headless CMS for managing projects, skills, and site content dynamically.   |
 | **Animation**  | **Framer Motion**           | Complex orchestrations, layout transitions, and scroll-based effects.       |
 | **Icons**      | **Lucide React**            | Consistent, lightweight, and accessible SVG icons.                          |
-| **Deployment** | **Vercel** / **Render**     | Optimized for edge deployment and continuous integration.                   |
+| **Deployment** | **pxxl.app**                | Optimized for high-performance hosting and continuous integration.          |
 
 ---
 
@@ -53,7 +46,15 @@ A custom-built design language featuring a stark black/zinc palette accented by 
 - **Glitch Effects**: Custom `GlitchText` components for dynamic headers.
 - **Ken Burns Hero**: A cinematic hero section with subtle zoom and pan effects.
 
-### 📱 "Pure Perfection" Responsiveness
+### � Dynamic Content Management (Sanity CMS)
+
+The entire portfolio is improved by a headless CMS, allowing for real-time updates without code changes.
+
+- **Project Showcase**: Add, edit, and organize projects with rich text descriptions, image galleries, and tech stack tagging.
+- **Skill Management**: Categorize and display technical skills dynamically.
+- **Resume Integration**: Upload and update the resume PDF directly from the CMS dashboard.
+
+### �📱 "Pure Perfection" Responsiveness
 
 Optimized for every device, from the smallest iPhone SE to the largest 4K monitors.
 
@@ -64,8 +65,9 @@ Optimized for every device, from the smallest iPhone SE to the largest 4K monito
 
 ### ⚡ Performance First
 
-- **0 Layout Shift**: Images and fonts are preloaded and sized to prevent CLS.
+- **Zero Layout Shift**: Images and fonts are preloaded and sized to prevent CLS.
 - **Lazy Loading**: Components and heavy assets load only when needed.
+- **Next.js Image Optimization**: Bypassed for specific CDN assets to ensure reliable loading, while maintaining performance for static assets.
 - **Semantic HTML**: Built with accessibility and SEO best practices from the ground up.
 
 ---
@@ -89,13 +91,21 @@ If you'd like to run this project locally or use it as a reference:
     yarn install
     ```
 
-3.  **Run the development server**:
+3.  **Environment Setup**:
+    Create a `.env.local` file in the root directory with your Sanity credentials:
+
+    ```env
+    NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
+    NEXT_PUBLIC_SANITY_DATASET=your_dataset
+    ```
+
+4.  **Run the development server**:
 
     ```bash
     npm run dev
     ```
 
-4.  **Open your browser**:
+5.  **Open your browser**:
     Navigate to [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
