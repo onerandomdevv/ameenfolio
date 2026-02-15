@@ -310,6 +310,7 @@ function ProjectDetailsContent() {
                         src={slides[currentSlide] as string}
                         alt={`${project.title} slide ${currentSlide}`}
                         fill
+                        unoptimized
                         className="object-cover"
                         onError={(e) =>
                           console.error(
@@ -357,6 +358,7 @@ function ProjectDetailsContent() {
                       src={img as string}
                       alt={`${project.title} thumbnail ${i}`}
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   </button>

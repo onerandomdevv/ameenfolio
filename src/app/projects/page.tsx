@@ -179,6 +179,7 @@ function ProjectsContent() {
                           src={project.mainImage as string}
                           alt={project.title}
                           fill
+                          unoptimized
                           className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
                         />
                       )}
