@@ -15,8 +15,8 @@ export interface Project {
   category: ("projects" | "building" | "collabs" | "marketplace")[];
   teamSize?: number;
   roles?: string[];
-  mainImage: any;
-  gallery?: any[];
+  mainImage: any | string;
+  gallery?: any[] | string[];
   technologies: {
     languages: { name: string; image?: string }[];
     frontend: { name: string; image?: string }[];
