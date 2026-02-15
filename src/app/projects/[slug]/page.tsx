@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { client } from "@/lib/sanity";
-import { urlFor } from "@/lib/sanity-image";
 import { PortableText } from "@portabletext/react";
 import { Project } from "@/types";
 import { motion, AnimatePresence } from "framer-motion";
@@ -30,8 +29,8 @@ const PROJECT_QUERY = `*[_type == "project" && slug.current == $slug][0] {
   category,
   teamSize,
   roles,
-  mainImage,
-  gallery,
+  "mainImage": mainImage.asset->url,
+  "gallery": gallery[].asset->url,
   technologies {
     "languages": languages[]->{name, "image": image.asset->url},
     "frontend": frontend[]->{name, "image": image.asset->url},
@@ -302,7 +301,7 @@ function ProjectDetailsContent() {
                 >
                   {slides[currentSlide] && (
                     <Image
-                      src={urlFor(slides[currentSlide]).url()}
+                      src={slides[currentSlide] as string}
                       alt={`${project.title} slide ${currentSlide}`}
                       fill
                       className="object-cover"
@@ -342,7 +341,7 @@ function ProjectDetailsContent() {
                     }`}
                   >
                     <Image
-                      src={urlFor(img).url()}
+                      src={img as string}
                       alt={`${project.title} thumbnail ${i}`}
                       fill
                       className="object-cover"

@@ -33,7 +33,7 @@ const PROJECTS_QUERY = `*[_type == "project"] | order(_createdAt desc) {
   slug,
   description,
   category,
-  mainImage,
+  "mainImage": mainImage.asset->url,
   verified,
   technologies {
     "languages": languages[]->{name, "image": image.asset->url},
@@ -162,21 +162,21 @@ function ProjectsContent() {
             </div>
 
             {/* Projects Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 min-h-[400px]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 min-h-[400px]">
               {loading ? (
                 <ProjectsGridSkeleton count={6} />
               ) : filteredProjects.length > 0 ? (
                 filteredProjects.map((project) => (
                   <div
                     key={project._id}
-                    className="group relative bg-bg-glass backdrop-blur-md rounded-none overflow-hidden transition-all duration-500 hover:bg-bg-glass/40 shadow-xl"
+                    className="group relative bg-bg-glass backdrop-blur-md rounded-2xl overflow-hidden transition-all duration-500 hover:bg-bg-glass/40 shadow-xl flex flex-col"
                   >
                     {/* Card Image area */}
                     <div className="relative aspect-video w-full overflow-hidden">
                       <div className="absolute inset-0 bg-accent-lime/10 group-hover:bg-transparent transition-colors z-10 mix-blend-overlay" />
                       {project.mainImage && (
                         <Image
-                          src={urlFor(project.mainImage).url()}
+                          src={project.mainImage as string}
                           alt={project.title}
                           fill
                           className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
@@ -185,11 +185,11 @@ function ProjectsContent() {
                     </div>
 
                     {/* Content */}
-                    <div className="p-8 space-y-6">
-                      <div className="space-y-4">
+                    <div className="p-6 lg:p-8 space-y-6 flex-1 flex flex-col">
+                      <div className="space-y-4 flex-1">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <h3 className="text-2xl font-black text-accent-lime tracking-tighter uppercase transition-colors">
+                            <h3 className="text-xl lg:text-2xl font-black text-accent-lime tracking-tighter uppercase transition-colors">
                               {project.title}
                             </h3>
                             {project.category?.includes("collabs") && (
@@ -227,32 +227,35 @@ function ProjectsContent() {
                         </div>
                       </div>
 
-                      <div className="pt-6 border-t border-border-subtle flex items-center justify-between">
-                        <Link href={`/projects/${project.slug.current}`}>
-                          <Button className="rounded-xl bg-accent-lime text-black font-black uppercase tracking-widest hover:bg-white transition-all h-10 px-4 flex items-center gap-2 group/btn">
+                      <div className="pt-6 border-t border-border-subtle flex flex-col gap-3">
+                        <Link
+                          href={`/projects/${project.slug.current}`}
+                          className="w-full"
+                        >
+                          <Button className="w-full rounded-xl bg-accent-lime text-black font-black uppercase tracking-widest hover:bg-white transition-all h-12 px-4 flex items-center justify-center gap-2 group/btn">
                             View Project
-                            <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
+                            <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
                           </Button>
                         </Link>
 
-                        <div className="flex items-center gap-2">
+                        <div className="grid grid-cols-3 gap-2">
                           <div
-                            className="p-2 rounded-lg bg-accent-lime/10 border border-accent-lime/20 text-accent-lime"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
                             title="Source Code"
                           >
-                            <Github className="w-3.5 h-3.5" />
+                            <Github className="w-4 h-4" />
                           </div>
                           <div
-                            className="p-2 rounded-lg bg-accent-lime/10 border border-accent-lime/20 text-accent-lime"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
                             title="Live Preview"
                           >
-                            <Globe className="w-3.5 h-3.5" />
+                            <Globe className="w-4 h-4" />
                           </div>
                           <div
-                            className="p-2 rounded-lg bg-accent-lime/10 border border-accent-lime/20 text-accent-lime"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
                             title="Contact"
                           >
-                            <MessageSquare className="w-3.5 h-3.5" />
+                            <MessageSquare className="w-4 h-4" />
                           </div>
                         </div>
                       </div>

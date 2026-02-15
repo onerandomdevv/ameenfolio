@@ -23,7 +23,7 @@
     "next-sanity": "^12.0.16",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "sanity": "^5.7.0",
+    "sanity": "^5.9.0",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

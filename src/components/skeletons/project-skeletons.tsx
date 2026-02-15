@@ -32,7 +32,14 @@ export function ProjectCardSkeleton() {
         </div>
 
         {/* Button Skeleton */}
-        <div className="h-12 bg-bg-glass/30 rounded-xl w-full animate-pulse" />
+        <div className="space-y-3 pt-6 border-t border-border-subtle/30">
+          <div className="h-12 bg-bg-glass/30 rounded-xl w-full animate-pulse" />
+          <div className="grid grid-cols-3 gap-2">
+            <div className="h-10 bg-bg-glass/30 rounded-lg animate-pulse" />
+            <div className="h-10 bg-bg-glass/30 rounded-lg animate-pulse" />
+            <div className="h-10 bg-bg-glass/30 rounded-lg animate-pulse" />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -71,7 +78,7 @@ export function ProjectDetailSkeleton() {
 
 export function ProjectsGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
       {Array.from({ length: count }).map((_, i) => (
         <ProjectCardSkeleton key={i} />
       ))}
