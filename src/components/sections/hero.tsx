@@ -12,7 +12,7 @@ import { client } from "@/lib/sanity";
 import { urlFor } from "@/lib/sanity-image";
 
 const DEFAULT_HERO_IMAGES = [
-  "/herobanner/hero-1.jpg",
+  "/herobanner/hero-1.png",
   "/herobanner/hero-2.jpg",
   "/herobanner/hero-3.jpg",
   "/herobanner/hero-4.jpg",
