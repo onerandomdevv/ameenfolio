@@ -300,12 +300,25 @@ function ProjectDetailsContent() {
                   className="absolute inset-0"
                 >
                   {slides[currentSlide] && (
-                    <Image
-                      src={slides[currentSlide] as string}
-                      alt={`${project.title} slide ${currentSlide}`}
-                      fill
-                      className="object-cover"
-                    />
+                    <>
+                      {/* Debug: Log the image URL being rendered */}
+                      {console.log(
+                        `[Project Debug] Rendering slide ${currentSlide}:`,
+                        slides[currentSlide],
+                      )}
+                      <Image
+                        src={slides[currentSlide] as string}
+                        alt={`${project.title} slide ${currentSlide}`}
+                        fill
+                        className="object-cover"
+                        onError={(e) =>
+                          console.error(
+                            `[Project Error] Failed to load image: ${slides[currentSlide]}`,
+                            e,
+                          )
+                        }
+                      />
+                    </>
                   )}
                 </motion.div>
               </AnimatePresence>
