@@ -69,6 +69,7 @@ export function AboutSection() {
                       src={aboutImages[currentImage]}
                       alt="Ameen"
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   </motion.div>
