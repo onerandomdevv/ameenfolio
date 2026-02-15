@@ -149,6 +149,7 @@ export function Hero() {
                     alt="Background"
                     fill
                     priority
+                    unoptimized
                     className="object-cover object-center md:object-top lg:object-center opacity-70 md:opacity-60"
                   />
                   {/* Mobile specific gradient: Heavy bottom fade for text readability */}
