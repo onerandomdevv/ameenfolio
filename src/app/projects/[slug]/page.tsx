@@ -260,6 +260,7 @@ function ProjectDetailsContent() {
                                     src={tech.image}
                                     alt={tech.name}
                                     fill
+                                    unoptimized
                                     className="object-contain"
                                   />
                                 </div>
@@ -300,26 +301,13 @@ function ProjectDetailsContent() {
                   className="absolute inset-0"
                 >
                   {slides[currentSlide] && (
-                    <>
-                      {/* Debug: Log the image URL being rendered */}
-                      {console.log(
-                        `[Project Debug] Rendering slide ${currentSlide}:`,
-                        slides[currentSlide],
-                      )}
-                      <Image
-                        src={slides[currentSlide] as string}
-                        alt={`${project.title} slide ${currentSlide}`}
-                        fill
-                        unoptimized
-                        className="object-cover"
-                        onError={(e) =>
-                          console.error(
-                            `[Project Error] Failed to load image: ${slides[currentSlide]}`,
-                            e,
-                          )
-                        }
-                      />
-                    </>
+                    <Image
+                      src={slides[currentSlide] as string}
+                      alt={`${project.title} slide ${currentSlide}`}
+                      fill
+                      unoptimized
+                      className="object-cover"
+                    />
                   )}
                 </motion.div>
               </AnimatePresence>
