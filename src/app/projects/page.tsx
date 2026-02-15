@@ -180,7 +180,7 @@ function ProjectsContent() {
                           alt={project.title}
                           fill
                           unoptimized
-                          className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                          className="object-cover transition-all duration-700 group-hover:scale-105"
                         />
                       )}
                     </div>
@@ -241,19 +241,19 @@ function ProjectsContent() {
 
                         <div className="grid grid-cols-3 gap-2">
                           <div
-                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center transition-all cursor-pointer"
                             title="Source Code"
                           >
                             <Github className="w-4 h-4" />
                           </div>
                           <div
-                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center transition-all cursor-pointer"
                             title="Live Preview"
                           >
                             <Globe className="w-4 h-4" />
                           </div>
                           <div
-                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center hover:bg-accent-lime hover:text-black transition-all cursor-pointer"
+                            className="p-2.5 rounded-lg bg-accent-lime/5 border border-accent-lime/20 text-accent-lime flex items-center justify-center transition-all cursor-pointer"
                             title="Contact"
                           >
                             <MessageSquare className="w-4 h-4" />

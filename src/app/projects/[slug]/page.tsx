@@ -276,13 +276,6 @@ function ProjectDetailsContent() {
                 )}
               </div>
             </div>
-
-            {/* Content Body */}
-            {project.content && (
-              <div className="prose prose-invert max-w-none prose-headings:text-accent-lime prose-headings:uppercase prose-headings:font-black prose-p:text-text-secondary prose-p:font-light prose-p:text-lg">
-                <PortableText value={project.content} />
-              </div>
-            )}
           </div>
 
           {/* Right Column: Visuals (Cinematic Slider) */}
@@ -351,6 +344,13 @@ function ProjectDetailsContent() {
                     />
                   </button>
                 ))}
+              </div>
+            )}
+
+            {/* Content Body - Moved to right column */}
+            {project.content && (
+              <div className="prose prose-invert max-w-none prose-headings:text-accent-lime prose-headings:uppercase prose-headings:font-black prose-p:text-text-secondary prose-p:font-light prose-p:text-lg pt-8 border-t border-border-subtle mt-8">
+                <PortableText value={project.content} />
               </div>
             )}
           </div>
