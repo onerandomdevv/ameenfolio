@@ -1,6 +1,6 @@
 # Ameen's Portfolio
 
-![Portfolio Banner](/public/herobanner/hero-1.png)
+![Portfolio Banner](/public/resumeimg/resume.png)
 
 > **"Crafting digital ecosystems with purpose. Building the future of web interactions, one pixel at a time."**
 
