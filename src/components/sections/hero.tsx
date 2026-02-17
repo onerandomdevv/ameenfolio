@@ -129,9 +129,11 @@ export function Hero() {
 
         <section className="relative min-h-screen md:min-h-[85vh] lg:min-h-screen w-full flex items-center justify-center p-0 md:p-6 lg:p-12 lg:pt-12">
           {/* Main Contained Hero Card - Full Bleed on Mobile, Card on Desktop */}
-          <div className="relative w-full h-full min-h-[100dvh] md:min-h-[600px] lg:min-h-full max-w-[1700px] rounded-none md:rounded-[2rem] lg:rounded-[3.5rem] overflow-hidden border-none md:border md:border-border-subtle shadow-none md:shadow-2xl bg-bg-base flex flex-col justify-end">
+          <div className="relative w-full h-full min-h-[100dvh] md:min-h-[600px] lg:min-h-full max-w-[1700px] rounded-none md:rounded-[2rem] lg:rounded-[3.5rem] overflow-hidden border-none md:border md:border-border-subtle shadow-none md:shadow-2xl bg-bg-base md:bg-bg-base flex flex-col justify-end">
+            {/* Mobile Gradient Background */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-zinc-800/20 via-bg-base to-bg-base lg:hidden" />
             {/* Background Slider */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 hidden lg:block">
               <AnimatePresence initial={false}>
                 <motion.div
                   key={currentImage}
@@ -150,13 +152,10 @@ export function Hero() {
                     fill
                     priority
                     unoptimized
-                    className="object-cover object-center md:object-top lg:object-center opacity-70 md:opacity-60"
+                    className="object-cover object-center opacity-60"
                   />
-                  {/* Mobile specific gradient: Heavy bottom fade for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-bg-base via-bg-base/80 to-transparent opacity-90 md:hidden" />
-
                   {/* Desktop gradient */}
-                  <div className="hidden md:block absolute inset-0 bg-gradient-to-tr from-bg-base via-transparent to-bg-base opacity-80" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-bg-base via-transparent to-bg-base opacity-80" />
                 </motion.div>
               </AnimatePresence>
             </div>
