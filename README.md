@@ -10,7 +10,7 @@ Welcome to my personal portfolio. This project is a representation of my technic
 
 ## 👨‍💻 About Me
 
-I am **Ameen** (@onerandomdevv), a versatile software engineer with a passion for building robust, scalable systems and intuitive user experiences. My expertise spans the entire development stack, from architecting backend logic to crafting pixel-perfect frontend interfaces.
+My name is **Ameen** (@onerandomdevv), a versatile software engineer with a passion for building robust, scalable systems and intuitive user experiences. My expertise spans the entire development stack, from architecting backend logic to crafting frontend interfaces.
 
 ### My Roles & Expertise
 
@@ -69,44 +69,6 @@ Optimized for every device, from the smallest iPhone SE to the largest 4K monito
 - **Lazy Loading**: Components and heavy assets load only when needed.
 - **Next.js Image Optimization**: Bypassed for specific CDN assets to ensure reliable loading, while maintaining performance for static assets.
 - **Semantic HTML**: Built with accessibility and SEO best practices from the ground up.
-
----
-
-## 🛠️ Getting Started
-
-If you'd like to run this project locally or use it as a reference:
-
-1.  **Clone the repository**:
-
-    ```bash
-    git clone https://github.com/onerandomdevv/ameen-s-portfolio.git
-    cd ameen-s-portfolio
-    ```
-
-2.  **Install dependencies**:
-
-    ```bash
-    npm install
-    # or
-    yarn install
-    ```
-
-3.  **Environment Setup**:
-    Create a `.env.local` file in the root directory with your Sanity credentials:
-
-    ```env
-    NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id
-    NEXT_PUBLIC_SANITY_DATASET=your_dataset
-    ```
-
-4.  **Run the development server**:
-
-    ```bash
-    npm run dev
-    ```
-
-5.  **Open your browser**:
-    Navigate to [http://localhost:3000](http://localhost:3000) to view the application.
 
 ---
 
