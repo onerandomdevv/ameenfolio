@@ -20,9 +20,11 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
       "technologies",
     ]);
     const triggers = await sql`
-      select trigger_name from information_schema.triggers
-      where event_object_table = 'projects'
-        and trigger_name = 'projects_homepage_limit'
+      select tgname
+      from pg_trigger
+      where tgrelid = 'projects'::regclass
+        and tgname = 'projects_homepage_limit'
+        and not tgisinternal
     `;
     expect(triggers).toHaveLength(1);
   });
