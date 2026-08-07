@@ -34,14 +34,16 @@ export function StatusPage({
           <EmptyMedia variant="icon">
             <Icon />
           </EmptyMedia>
-          <p className="font-mono text-xs font-bold text-primary">{code}</p>
+          <p className="font-mono text-xs font-medium text-muted-foreground">
+            {code}
+          </p>
           <EmptyTitle>
-            <h1 className="text-3xl font-black uppercase">{title}</h1>
+            <h1 className="text-xl font-semibold">{title}</h1>
           </EmptyTitle>
           <EmptyDescription>{description}</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button asChild>
+          <Button asChild variant="outline" className="hover:text-primary">
             <Link href={actionHref}>{actionLabel}</Link>
           </Button>
         </EmptyContent>

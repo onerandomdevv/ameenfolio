@@ -1,6 +1,6 @@
 import { getObject } from "@/lib/storage/server";
-import { isPublicIconKey } from "@/lib/storage/rules";
-import { isReferencedPublicIcon } from "@/db/queries";
+import { isPublicMediaKey } from "@/lib/storage/rules";
+import { isReferencedPublicMedia } from "@/db/queries";
 
 export const runtime = "nodejs";
 
@@ -9,7 +9,7 @@ export async function GET(
   { params }: { params: Promise<{ key: string[] }> },
 ) {
   const key = (await params).key.join("/");
-  if (!isPublicIconKey(key) || !(await isReferencedPublicIcon(key))) {
+  if (!isPublicMediaKey(key) || !(await isReferencedPublicMedia(key))) {
     return new Response("Not found", { status: 404 });
   }
   try {

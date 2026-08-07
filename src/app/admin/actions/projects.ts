@@ -36,6 +36,14 @@ export async function saveProject(
   await requireAdmin();
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
+  const values = {
+    ...parsed.data,
+    contribution: parsed.data.contribution || null,
+    statusLabel: parsed.data.statusLabel || null,
+    githubUrl: parsed.data.githubUrl || null,
+    iconKey: parsed.data.iconKey ?? null,
+    iconAlt: parsed.data.iconAlt || null,
+  };
   if (
     parsed.data.published &&
     parsed.data.showOnHomepage &&
@@ -48,8 +56,8 @@ export async function saveProject(
   }
 
   try {
-    if (parsed.data.iconKey) {
-      await assertStoredUpload(parsed.data.iconKey, "icon");
+    if (values.iconKey) {
+      await assertStoredUpload(values.iconKey, "icon");
     }
     if (id) {
       const previous = await getDb()
@@ -58,12 +66,12 @@ export async function saveProject(
         .where(eq(projects.id, id));
       const [row] = await getDb()
         .update(projects)
-        .set({ ...parsed.data, updatedAt: new Date() })
+        .set({ ...values, updatedAt: new Date() })
         .where(eq(projects.id, id))
         .returning({ id: projects.id });
       if (!row) return { ok: false, message: "Project not found." };
       refreshPublicContent();
-      if (previous[0]?.iconKey !== parsed.data.iconKey) {
+      if (previous[0]?.iconKey !== values.iconKey) {
         await deleteObject(previous[0]?.iconKey);
       }
       return { ok: true, id: row.id };
@@ -71,7 +79,7 @@ export async function saveProject(
 
     const [row] = await getDb()
       .insert(projects)
-      .values(parsed.data)
+      .values(values)
       .returning({ id: projects.id });
     refreshPublicContent();
     return { ok: true, id: row.id };

@@ -8,7 +8,7 @@ test.skip(
 test("unauthenticated admin requests are sent to owner login", async ({
   page,
 }) => {
-  await page.goto("/admin/projects");
+  await page.goto("/admin/now");
   await expect(page).toHaveURL(/\/admin\/login/);
   await expect(
     page.getByRole("button", { name: /continue with github/i }),

@@ -8,7 +8,7 @@ export default async function SettingsPage() {
     <>
       <AdminPageHeader
         title="Site settings"
-        description="Manage the combined hero, contact links, résumé, and SEO defaults."
+        description="Manage your profile image, contact destinations, résumé, and SEO defaults."
       />
       <SettingsForm settings={settings} />
     </>
