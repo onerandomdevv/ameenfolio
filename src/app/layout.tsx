@@ -1,22 +1,24 @@
-import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import "./globals.css";
-import { LayoutWrapper } from "@/components/layout/layout-wrapper";
-const inter = Inter({ subsets: ["latin"] });
-
-import { Metadata } from "next";
+import { Toaster } from "@/components/ui/sonner";
+import { portfolioIdentity } from "@/config/portfolio";
+import { inter } from "@/app/fonts";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://onerandomdevv.pxxl.click"),
+  metadataBase: new URL(
+    process.env.CANONICAL_SITE_URL ?? "http://localhost:3000",
+  ),
   title: {
-    default: "Ameen's Portfolio",
-    template: "%s | Ameen's Portfolio",
+    default: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
+    template: `%s | ${portfolioIdentity.name}`,
   },
-  description: "A showcase of my work and skills",
+  description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
+  alternates: { canonical: "/" },
   openGraph: {
-    title: "Ameen's Portfolio",
-    description: "A showcase of my work and skills",
-    url: "https://onerandomdevv.pxxl.click",
-    siteName: "Ameen's Portfolio",
+    title: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
+    description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
+    url: "/",
+    siteName: portfolioIdentity.name,
     locale: "en_US",
     type: "website",
   },
@@ -32,7 +34,7 @@ export const metadata: Metadata = {
     },
   },
   twitter: {
-    title: "Ameen",
+    title: portfolioIdentity.name,
     card: "summary_large_image",
   },
 };
@@ -45,7 +47,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <LayoutWrapper>{children}</LayoutWrapper>
+        <div className="min-h-screen">{children}</div>
+        <Toaster richColors position="bottom-center" />
       </body>
     </html>
   );

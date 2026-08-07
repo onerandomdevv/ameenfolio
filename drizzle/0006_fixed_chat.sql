@@ -1,0 +1,2 @@
+ALTER TABLE "recognitions" ADD COLUMN "icon_name" text DEFAULT 'trophy' NOT NULL;--> statement-breakpoint
+ALTER TABLE "recognitions" ADD CONSTRAINT "recognitions_icon_name_valid" CHECK ("recognitions"."icon_name" in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles'));
