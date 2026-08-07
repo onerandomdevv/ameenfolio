@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { GlitchText } from "@/components/ui/glitch-text";
 import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
@@ -8,7 +7,7 @@ export default function NotFound() {
       <div className="space-y-8 relative z-10">
         {/* Large Glitched 404 */}
         <h1 className="text-[150px] md:text-[200px] font-black leading-none tracking-tighter text-accent-lime opacity-90 select-none">
-          <GlitchText text="404" />
+          404
         </h1>
 
         <div className="space-y-2">
