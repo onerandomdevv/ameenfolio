@@ -67,7 +67,7 @@ export const technologySchema = z
     message: "Alt text is required when an icon is uploaded.",
   });
 
-export const socialLinkSchema = z.object({
+const socialLinkSchema = z.object({
   label: z.string().trim().min(1).max(40),
   url: z.url().startsWith("https://"),
 });

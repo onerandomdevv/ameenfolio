@@ -11,7 +11,7 @@ import {
   type SiteSettings,
 } from "@/db/schema";
 
-export const defaultSiteSettings: SiteSettings = {
+const defaultSiteSettings: SiteSettings = {
   id: 1,
   name: "Ameen",
   role: "Product Engineer",
