@@ -2,15 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, Download, Mail } from "lucide-react";
 import { getPublicPortfolio } from "@/db/queries";
+import { AssetIcon } from "@/components/portfolio/asset-icon";
+import { PortfolioEmptyState } from "@/components/portfolio/empty-state";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { SectionHeading } from "@/components/portfolio/section-heading";
-import { AssetIcon } from "@/components/portfolio/asset-icon";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { settings } = await getPublicPortfolio();
+
   return {
     title: settings.seoTitle,
     description: settings.seoDescription,
@@ -35,30 +40,28 @@ export default async function HomePage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-5 pb-10 pt-20 sm:px-6 sm:pt-28">
       <section className="mx-auto flex max-w-2xl flex-col items-center text-center">
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-accent-lime">
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-primary">
           Available for thoughtful work
         </p>
         <h1 className="mt-5 text-5xl font-black uppercase tracking-[-0.07em] sm:text-7xl">
           {settings.name}
         </h1>
-        <p className="mt-3 text-lg font-semibold text-white sm:text-xl">
-          {settings.role}
-        </p>
-        <p className="mt-6 max-w-xl text-pretty text-base leading-7 text-text-secondary sm:text-lg sm:leading-8">
+        <p className="mt-3 text-lg font-semibold sm:text-xl">{settings.role}</p>
+        <p className="mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
           {settings.introduction}
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           {settings.socialLinks.map((link) => (
-            <Button asChild variant="outline" key={link.url} className="min-h-11 border-white/15 bg-black/40">
+            <Button asChild variant="outline" key={link.url}>
               <a href={link.url} target="_blank" rel="noreferrer">
                 {link.label}
-                <ArrowUpRight aria-hidden="true" className="size-4" />
+                <ArrowUpRight aria-hidden="true" data-icon="inline-end" />
               </a>
             </Button>
           ))}
-          <Button asChild className="min-h-11 bg-accent-lime font-bold text-black hover:bg-white">
+          <Button asChild>
             <a href={`mailto:${settings.email}`}>
-              <Mail aria-hidden="true" className="size-4" />
+              <Mail aria-hidden="true" data-icon="inline-start" />
               Contact me
             </a>
           </Button>
@@ -66,65 +69,137 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-28" aria-labelledby="projects-heading">
-        <SectionHeading id="projects-heading" eyebrow="Selected work" title="Recent projects" />
+        <SectionHeading
+          id="projects-heading"
+          eyebrow="Selected work"
+          title="Recent projects"
+        />
         {projects.length ? (
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {projects.map((project) => <ProjectCard key={project.id} project={project} />)}
+            {projects.map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
           </div>
         ) : (
-          <EmptyState>Fresh projects will be published here soon.</EmptyState>
+          <PortfolioEmptyState>
+            Fresh projects will be published here soon.
+          </PortfolioEmptyState>
         )}
         <div className="mt-7 text-center">
-          <Link className="inline-flex min-h-11 items-center gap-2 px-3 text-sm font-bold text-accent-lime hover:text-white" href="/projects">
-            View all projects <ArrowUpRight aria-hidden="true" className="size-4" />
-          </Link>
+          <Button asChild variant="link">
+            <Link href="/projects">
+              View all projects
+              <ArrowUpRight aria-hidden="true" data-icon="inline-end" />
+            </Link>
+          </Button>
         </div>
       </section>
 
       <section className="mt-28" aria-labelledby="recognitions-heading">
-        <SectionHeading id="recognitions-heading" eyebrow="Proof of work" title="Recognitions" />
+        <SectionHeading
+          id="recognitions-heading"
+          eyebrow="Proof of work"
+          title="Recognitions"
+        />
         {recognitions.length ? (
           <div className="mt-8 grid gap-3">
             {recognitions.map((recognition) => (
-              <article key={recognition.id} className="glass flex items-start gap-4 rounded-2xl p-5 text-left">
-                <AssetIcon objectKey={recognition.iconKey} alt={recognition.iconAlt ?? ""} />
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h3 className="font-bold text-white">{recognition.title}</h3>
-                    {recognition.recognizedOn ? <time className="font-mono text-xs text-text-muted">{recognition.recognizedOn}</time> : null}
+              <Card key={recognition.id} role="article" className="gap-4">
+                <CardHeader className="grid-cols-[auto_1fr]">
+                  <AssetIcon
+                    objectKey={recognition.iconKey}
+                    alt={recognition.iconAlt ?? ""}
+                  />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <CardTitle>
+                        <h3>{recognition.title}</h3>
+                      </CardTitle>
+                      {recognition.recognizedOn ? (
+                        <time className="font-mono text-xs text-muted-foreground">
+                          {recognition.recognizedOn}
+                        </time>
+                      ) : null}
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-primary">
+                      {recognition.issuer}
+                    </p>
                   </div>
-                  <p className="mt-1 text-sm font-medium text-accent-lime">{recognition.issuer}</p>
-                  <p className="mt-3 text-sm leading-6 text-text-secondary">{recognition.description}</p>
+                </CardHeader>
+                <CardContent className="sm:pl-[5.75rem]">
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {recognition.description}
+                  </p>
                   {recognition.verificationUrl ? (
-                    <a className="mt-3 inline-flex min-h-10 items-center gap-1 text-sm font-semibold text-white hover:text-accent-lime" href={recognition.verificationUrl} target="_blank" rel="noreferrer">
-                      Verify <ArrowUpRight aria-hidden="true" className="size-4" />
-                    </a>
+                    <Button asChild variant="link" className="mt-2 px-0">
+                      <a
+                        href={recognition.verificationUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Verify
+                        <ArrowUpRight
+                          aria-hidden="true"
+                          data-icon="inline-end"
+                        />
+                      </a>
+                    </Button>
                   ) : null}
-                </div>
-              </article>
+                </CardContent>
+              </Card>
             ))}
           </div>
-        ) : <EmptyState>Recognition entries will appear here once published.</EmptyState>}
+        ) : (
+          <PortfolioEmptyState>
+            Recognition entries will appear here once published.
+          </PortfolioEmptyState>
+        )}
       </section>
 
       <section className="mt-28" aria-labelledby="stack-heading">
-        <SectionHeading id="stack-heading" eyebrow="How I build" title="Tech stack" />
+        <SectionHeading
+          id="stack-heading"
+          eyebrow="How I build"
+          title="Tech stack"
+        />
         {technologies.length ? (
           <div className="mt-8 grid gap-8">
             {Object.entries(groupedTechnologies).map(([category, items]) => (
               <div key={category}>
-                <h3 className="text-center font-mono text-xs font-bold uppercase tracking-[0.2em] text-text-muted">{category}</h3>
+                <h3 className="text-center font-mono text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                  {category}
+                </h3>
                 <ul className="mt-4 flex flex-wrap justify-center gap-3">
                   {items?.map((technology) => (
                     <li key={technology.id}>
                       {technology.websiteUrl ? (
-                        <a className="glass flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold hover:border-accent-lime/40" href={technology.websiteUrl} target="_blank" rel="noreferrer">
-                          <AssetIcon objectKey={technology.iconKey} alt={technology.iconAlt ?? ""} size="sm" /> {technology.name}
-                        </a>
+                        <Badge
+                          asChild
+                          variant="secondary"
+                          className="min-h-11 px-4"
+                        >
+                          <a
+                            href={technology.websiteUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <AssetIcon
+                              objectKey={technology.iconKey}
+                              alt={technology.iconAlt ?? ""}
+                              size="sm"
+                            />
+                            {technology.name}
+                          </a>
+                        </Badge>
                       ) : (
-                        <span className="glass flex min-h-11 items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold">
-                          <AssetIcon objectKey={technology.iconKey} alt={technology.iconAlt ?? ""} size="sm" /> {technology.name}
-                        </span>
+                        <Badge variant="secondary" className="min-h-11 px-4">
+                          <AssetIcon
+                            objectKey={technology.iconKey}
+                            alt={technology.iconAlt ?? ""}
+                            size="sm"
+                          />
+                          {technology.name}
+                        </Badge>
                       )}
                     </li>
                   ))}
@@ -132,31 +207,47 @@ export default async function HomePage() {
               </div>
             ))}
           </div>
-        ) : <EmptyState>The stack list will be published from the admin.</EmptyState>}
+        ) : (
+          <PortfolioEmptyState>
+            The stack list will be published from the admin.
+          </PortfolioEmptyState>
+        )}
       </section>
 
-      <section className="mx-auto mt-28 max-w-xl text-center" aria-labelledby="resume-heading">
-        <SectionHeading id="resume-heading" eyebrow="Want the full story?" title="Let’s work together" />
-        <p className="mt-5 leading-7 text-text-secondary">Download my résumé or send an email to start a conversation.</p>
+      <section
+        className="mx-auto mt-28 max-w-xl text-center"
+        aria-labelledby="resume-heading"
+      >
+        <SectionHeading
+          id="resume-heading"
+          eyebrow="Want the full story?"
+          title="Let’s work together"
+        />
+        <p className="mt-5 leading-7 text-muted-foreground">
+          Download my résumé or send an email to start a conversation.
+        </p>
         <div className="mt-7 flex flex-wrap justify-center gap-3">
           {settings.resumeKey ? (
-            <Button asChild className="min-h-11 bg-accent-lime font-bold text-black hover:bg-white">
-              <a href="/resume"><Download aria-hidden="true" className="size-4" /> Download résumé</a>
+            <Button asChild>
+              <a href="/resume">
+                <Download aria-hidden="true" data-icon="inline-start" />
+                Download résumé
+              </a>
             </Button>
           ) : null}
-          <Button asChild variant="outline" className="min-h-11 border-white/15 bg-black/40">
-            <a href={`mailto:${settings.email}`}><Mail aria-hidden="true" className="size-4" /> Email me</a>
+          <Button asChild variant="outline">
+            <a href={`mailto:${settings.email}`}>
+              <Mail aria-hidden="true" data-icon="inline-start" />
+              Email me
+            </a>
           </Button>
         </div>
       </section>
 
-      <footer className="mt-24 border-t border-white/10 py-8 text-center font-mono text-xs text-text-muted">
-        © {new Date().getFullYear()} {settings.name}. Built with intention.
+      <footer className="mt-24 text-center font-mono text-xs text-muted-foreground">
+        <Separator className="mb-8" />© {new Date().getFullYear()}{" "}
+        {settings.name}. Built with intention.
       </footer>
     </main>
   );
-}
-
-function EmptyState({ children }: { children: React.ReactNode }) {
-  return <p className="mt-8 rounded-2xl border border-dashed border-white/10 px-5 py-10 text-center text-sm text-text-muted">{children}</p>;
 }

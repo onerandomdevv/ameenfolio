@@ -4,7 +4,7 @@ import {
   isPublicIconKey,
   isManagedObjectKey,
   validateUpload,
-} from "@/lib/storage-rules";
+} from "@/lib/storage/rules";
 
 describe("R2 asset safety", () => {
   it("generates unpredictable allowlisted icon keys", () => {

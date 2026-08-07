@@ -6,4 +6,16 @@ import { Button } from "@/components/ui/button";
 
 const auth = createAuthClient();
 
-export function SignOutButton() { return <Button variant="ghost" className="w-full justify-start text-muted-foreground" onClick={async () => { await auth.signOut(); window.location.assign("/admin/login"); }}><LogOut className="size-4" />Sign out</Button>; }
+export function SignOutButton() {
+  async function signOut() {
+    await auth.signOut();
+    window.location.assign("/admin/login");
+  }
+
+  return (
+    <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
+      <LogOut data-icon="inline-start" />
+      Sign out
+    </Button>
+  );
+}

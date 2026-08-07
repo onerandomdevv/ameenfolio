@@ -41,7 +41,9 @@ export function requireServerEnv<
   const env = getServerEnv();
   const missing = keys.filter((key) => !env[key]);
   if (missing.length) {
-    throw new Error(`Missing required server environment: ${missing.join(", ")}`);
+    throw new Error(
+      `Missing required server environment: ${missing.join(", ")}`,
+    );
   }
   return env as ServerEnv & Record<K, string>;
 }

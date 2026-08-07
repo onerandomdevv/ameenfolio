@@ -18,3 +18,27 @@ Neon Auth owns users and sessions in `neon_auth`. Application tables contain onl
 ## Cache invalidation
 
 Public reads are server cached with the `portfolio` and `projects` tags. Successful mutations invalidate both public routes immediately. Database and R2 clients initialize lazily so imports and CI builds do not require runtime secrets.
+
+## Source organization
+
+```text
+src/
+├── app/                  Next.js routes, layouts, route handlers, and Server Actions
+├── components/
+│   ├── admin/            Admin-specific forms, navigation, and content managers
+│   ├── layout/           Shared application-shell and status-page composition
+│   ├── portfolio/        Public portfolio compositions
+│   └── ui/               Registry-managed shadcn/ui primitives only
+├── db/                   Drizzle schema, queries, seed, and database tests
+└── lib/
+    ├── auth/             Neon Auth session and owner-authorization boundary
+    └── storage/          R2 client, upload rules, cleanup client, and tests
+```
+
+Route files coordinate requests and data. Reusable visual primitives live only in `components/ui` and stay aligned with the official shadcn registry. Application-specific components compose those primitives inside `admin`, `layout`, or `portfolio`; they do not reimplement buttons, fields, dialogs, alerts, cards, badges, tables, or empty states.
+
+Shared infrastructure is grouped by responsibility under `lib`. Server-only modules identify themselves explicitly and are imported directly rather than through barrel files, which keeps client/server boundaries visible and avoids accidental bundle expansion.
+
+## Maintenance checks
+
+Prettier formats application-owned source while `src/components/ui` remains in its upstream registry format. CI runs `format:check`, lint, type-checking, unit/integration tests, the production build, and browser tests. Empty legacy directories and static portfolio media are intentionally absent; managed content assets belong in R2.

@@ -4,10 +4,7 @@ import { createNeonAuth, type NeonAuth } from "@neondatabase/auth/next/server";
 import { forbidden, redirect } from "next/navigation";
 import { getServerEnv, requireServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
-import {
-  isAllowedAdminAccount,
-  type LinkedAccount,
-} from "@/lib/auth/guards";
+import { isAllowedAdminAccount, type LinkedAccount } from "@/lib/auth/guards";
 
 let authInstance: NeonAuth | undefined;
 
@@ -21,8 +18,10 @@ export function getAuth() {
       baseUrl: NEON_AUTH_BASE_URL,
       cookies: { secret: NEON_AUTH_COOKIE_SECRET, sessionDataTtl: 300 },
       logger: {
-        error: (message, meta) => logServer("error", "auth.sdk", { message, ...meta }),
-        warn: (message, meta) => logServer("warn", "auth.sdk", { message, ...meta }),
+        error: (message, meta) =>
+          logServer("error", "auth.sdk", { message, ...meta }),
+        warn: (message, meta) =>
+          logServer("warn", "auth.sdk", { message, ...meta }),
       },
     });
   }
