@@ -1,23 +1,30 @@
-export function SectionHeading({
-  id,
-  eyebrow,
-  title,
-}: {
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
+
+type SectionHeadingProps = {
   id: string;
-  eyebrow: string;
   title: string;
-}) {
+  action?: {
+    href: string;
+    label: string;
+  };
+};
+
+export function SectionHeading({ id, title, action }: SectionHeadingProps) {
   return (
-    <header className="text-center">
-      <p className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-primary">
-        {eyebrow}
-      </p>
-      <h2
-        id={id}
-        className="mt-3 text-3xl font-black uppercase tracking-[-0.045em] sm:text-4xl"
-      >
+    <header className="flex items-center">
+      <h2 id={id} className="text-xs font-medium text-muted-foreground">
         {title}
       </h2>
+      {action ? (
+        <Link
+          href={action.href}
+          aria-label={action.label}
+          className="-my-3.5 ml-1 inline-flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary"
+        >
+          <ArrowRight className="size-4" aria-hidden="true" />
+        </Link>
+      ) : null}
     </header>
   );
 }

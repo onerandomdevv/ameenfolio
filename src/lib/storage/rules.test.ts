@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createObjectKey,
   isPublicIconKey,
+  isPublicProfileKey,
   isManagedObjectKey,
   validateUpload,
 } from "@/lib/storage/rules";
@@ -13,6 +14,16 @@ describe("R2 asset safety", () => {
     expect(isPublicIconKey(key)).toBe(true);
   });
 
+  it("generates isolated profile image keys", () => {
+    const key = createObjectKey(
+      "profile",
+      "image/webp",
+      new Date("2026-08-07"),
+    );
+    expect(key).toMatch(/^profiles\/2026\/[a-f0-9]{48}\.webp$/);
+    expect(isPublicProfileKey(key)).toBe(true);
+  });
+
   it("rejects traversal and executable media", () => {
     expect(isPublicIconKey("icons/2026/../../secret.pdf")).toBe(false);
     expect(isManagedObjectKey("resumes/2026/../../secret.pdf")).toBe(false);
@@ -22,6 +33,7 @@ describe("R2 asset safety", () => {
 
   it("enforces upload size limits", () => {
     expect(validateUpload("icon", "image/png", 2 * 1024 * 1024)).toBe(true);
+    expect(validateUpload("profile", "image/webp", 2 * 1024 * 1024)).toBe(true);
     expect(validateUpload("icon", "image/png", 2 * 1024 * 1024 + 1)).toBe(
       false,
     );

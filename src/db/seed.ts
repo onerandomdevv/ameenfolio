@@ -11,15 +11,11 @@ await db
   .insert(siteSettings)
   .values({
     id: 1,
-    name: "Ameen",
-    role: "Product Engineer",
-    introduction:
-      "I design and build focused digital products, turning thoughtful ideas into reliable software people enjoy using.",
     email: "hello@example.com",
-    socialLinks: [],
-    seoTitle: "Ameen — Product Engineer",
+    contactLinks: {},
+    seoTitle: "Aliameen Kareem — Full-Stack Engineer",
     seoDescription:
-      "Selected projects, recognition, and the technologies behind Ameen's work.",
+      "Selected projects, recognition, and the technologies behind Aliameen Kareem's work.",
   })
   .onConflictDoNothing({ target: siteSettings.id });
 

@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 type AssetIconProps = {
   objectKey: string | null;
   alt: string;
-  size?: "sm" | "default";
+  size?: "xs" | "sm" | "default";
 };
 
 export function AssetIcon({
@@ -15,16 +15,24 @@ export function AssetIcon({
 }: AssetIconProps) {
   const classes = cn(
     "shrink-0 rounded-xl border bg-background object-contain p-2",
-    size === "sm" ? "size-8" : "size-11",
+    size === "xs"
+      ? "size-5 rounded-md p-0.5"
+      : size === "sm"
+        ? "size-8"
+        : "size-11",
   );
 
   if (!objectKey) {
     return (
       <span
-        className={cn(classes, "grid place-items-center text-primary")}
+        className={cn(classes, "grid place-items-center text-foreground")}
         aria-hidden="true"
       >
-        <Boxes className={size === "sm" ? "size-4" : "size-5"} />
+        <Boxes
+          className={
+            size === "xs" ? "size-3" : size === "sm" ? "size-4" : "size-5"
+          }
+        />
       </span>
     );
   }
@@ -36,8 +44,8 @@ export function AssetIcon({
     <Image
       src={src}
       unoptimized
-      width={size === "sm" ? 32 : 44}
-      height={size === "sm" ? 32 : 44}
+      width={size === "xs" ? 20 : size === "sm" ? 32 : 44}
+      height={size === "xs" ? 20 : size === "sm" ? 32 : 44}
       alt={alt}
       className={classes}
     />

@@ -13,6 +13,7 @@
 ### Task 1: Validation and limit behavior
 
 **Files:**
+
 - Modify: `src/lib/validation.ts`
 - Modify: `src/lib/validation.test.ts`
 - Modify: `src/lib/ordering.ts`
@@ -23,18 +24,22 @@
 Add tests that parse a 20-character description, reject descriptions longer than 600 characters, reject HTTP link URLs, require alt text when an icon key exists, and reject a seventh link through `canAddNowLink(6)`.
 
 ```ts
-expect(nowSectionSchema.safeParse({
-  description: "Building useful tools.",
-  published: true,
-  showLastUpdated: true,
-}).success).toBe(true);
+expect(
+  nowSectionSchema.safeParse({
+    description: "Building useful tools.",
+    published: true,
+    showLastUpdated: true,
+  }).success,
+).toBe(true);
 
-expect(nowLinkSchema.safeParse({
-  label: "Current product",
-  url: "http://example.com",
-  displayOrder: 0,
-  visible: true,
-}).success).toBe(false);
+expect(
+  nowLinkSchema.safeParse({
+    label: "Current product",
+    url: "http://example.com",
+    displayOrder: 0,
+    visible: true,
+  }).success,
+).toBe(false);
 
 expect(canAddNowLink(5)).toBe(true);
 expect(canAddNowLink(6)).toBe(false);
@@ -55,17 +60,19 @@ export const nowSectionSchema = z.object({
   showLastUpdated: z.boolean(),
 });
 
-export const nowLinkSchema = z.object({
-  label: z.string().trim().min(1).max(80),
-  url: z.url().startsWith("https://"),
-  iconKey: iconObjectKey,
-  iconAlt: optionalText(180),
-  displayOrder: z.number().int().min(0).max(999),
-  visible: z.boolean(),
-}).refine((value) => !value.iconKey || Boolean(value.iconAlt), {
-  path: ["iconAlt"],
-  message: "Alt text is required when an icon is uploaded.",
-});
+export const nowLinkSchema = z
+  .object({
+    label: z.string().trim().min(1).max(80),
+    url: z.url().startsWith("https://"),
+    iconKey: iconObjectKey,
+    iconAlt: optionalText(180),
+    displayOrder: z.number().int().min(0).max(999),
+    visible: z.boolean(),
+  })
+  .refine((value) => !value.iconKey || Boolean(value.iconAlt), {
+    path: ["iconAlt"],
+    message: "Alt text is required when an icon is uploaded.",
+  });
 
 export function canAddNowLink(existingLinks: number) {
   return existingLinks < 6;
@@ -81,6 +88,7 @@ Expected: PASS.
 ### Task 2: PostgreSQL schema and migration
 
 **Files:**
+
 - Modify: `src/db/schema.ts`
 - Modify: `src/db/schema.integration.test.ts`
 - Create: `drizzle/0004_*.sql`
@@ -99,27 +107,40 @@ expect(tables.map((row) => row.table_name)).toContain("now_section");
 - [ ] **Step 2: Define focused Drizzle tables**
 
 ```ts
-export const nowSection = pgTable("now_section", {
-  id: integer("id").primaryKey().default(1),
-  description: text("description").notNull(),
-  published: boolean("published").notNull().default(false),
-  showLastUpdated: boolean("show_last_updated").notNull().default(true),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-}, (table) => [check("now_section_singleton", sql`${table.id} = 1`)]);
+export const nowSection = pgTable(
+  "now_section",
+  {
+    id: integer("id").primaryKey().default(1),
+    description: text("description").notNull(),
+    published: boolean("published").notNull().default(false),
+    showLastUpdated: boolean("show_last_updated").notNull().default(true),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [check("now_section_singleton", sql`${table.id} = 1`)],
+);
 
-export const nowLinks = pgTable("now_links", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  label: text("label").notNull(),
-  url: text("url").notNull(),
-  iconKey: text("icon_key"),
-  iconAlt: text("icon_alt"),
-  displayOrder: integer("display_order").notNull().default(0),
-  visible: boolean("visible").notNull().default(true),
-  ...timestamps,
-}, (table) => [
-  index("now_links_visible_order_idx").on(table.visible, table.displayOrder),
-  check("now_links_icon_alt_required", sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`),
-]);
+export const nowLinks = pgTable(
+  "now_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    label: text("label").notNull(),
+    url: text("url").notNull(),
+    iconKey: text("icon_key"),
+    iconAlt: text("icon_alt"),
+    displayOrder: integer("display_order").notNull().default(0),
+    visible: boolean("visible").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    index("now_links_visible_order_idx").on(table.visible, table.displayOrder),
+    check(
+      "now_links_icon_alt_required",
+      sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`,
+    ),
+  ],
+);
 ```
 
 - [ ] **Step 3: Generate and inspect the migration**
@@ -137,6 +158,7 @@ Expected: migrations applied successfully. Verify the migration file SHA-256 equ
 ### Task 3: Public and admin queries
 
 **Files:**
+
 - Modify: `src/db/queries.ts`
 
 - [ ] **Step 1: Add safe defaults and public data reads**
@@ -147,9 +169,7 @@ Add a default unpublished section and extend the cached homepage query with `now
 const section = nowSectionRows[0];
 return {
   settings: settingsRows[0] ?? defaultSiteSettings,
-  now: section?.published
-    ? { ...section, links: nowLinkRows }
-    : null,
+  now: section?.published ? { ...section, links: nowLinkRows } : null,
   projects: projectRows,
   recognitions: recognitionRows,
   technologies: technologyRows,
@@ -162,7 +182,10 @@ return {
 export async function getAdminNow() {
   const [sectionRows, links] = await Promise.all([
     getDb().select().from(nowSection).where(eq(nowSection.id, 1)).limit(1),
-    getDb().select().from(nowLinks).orderBy(asc(nowLinks.displayOrder), asc(nowLinks.createdAt)),
+    getDb()
+      .select()
+      .from(nowLinks)
+      .orderBy(asc(nowLinks.displayOrder), asc(nowLinks.createdAt)),
   ]);
   return { section: sectionRows[0] ?? defaultNowSection, links };
 }
@@ -175,6 +198,7 @@ Query `now_links` by `icon_key` and `visible = true`, then include it in the fin
 ### Task 4: Protected Server Actions
 
 **Files:**
+
 - Create: `src/app/admin/actions/now.ts`
 - Modify: `src/app/admin/actions/shared.ts`
 
@@ -201,6 +225,7 @@ Update `refreshPublicContent` only if needed so the existing `portfolio` tag and
 ### Task 5: Admin Now page
 
 **Files:**
+
 - Create: `src/app/admin/(protected)/now/page.tsx`
 - Create: `src/components/admin/now-manager.tsx`
 - Modify: `src/components/admin/admin-nav.tsx`
@@ -220,6 +245,7 @@ Follow the existing recognition/technology manager pattern: ordered cards, visib
 ### Task 6: Public Now component
 
 **Files:**
+
 - Create: `src/components/portfolio/now-section.tsx`
 - Modify: `src/app/page.tsx`
 
@@ -246,6 +272,7 @@ Confirm unpublished data renders no heading or empty-state card and a published 
 ### Task 7: Automated and visual verification
 
 **Files:**
+
 - Modify: `src/lib/validation.test.ts`
 - Modify: `src/lib/ordering.test.ts`
 - Modify: `src/db/schema.integration.test.ts`
@@ -275,6 +302,7 @@ Use the in-app browser when available, otherwise Playwright fallback, to inspect
 ### Task 8: Commit the completed vertical slice
 
 **Files:**
+
 - All Now-section implementation, migration, test, spec, and plan files
 
 - [ ] **Step 1: Review the diff without disturbing existing redesign changes**

@@ -24,8 +24,14 @@ export async function saveSettings(
     if (parsed.data.resumeKey) {
       await assertStoredUpload(parsed.data.resumeKey, "resume");
     }
+    if (parsed.data.profileImageKey) {
+      await assertStoredUpload(parsed.data.profileImageKey, "profile");
+    }
     const previous = await getDb()
-      .select({ resumeKey: siteSettings.resumeKey })
+      .select({
+        profileImageKey: siteSettings.profileImageKey,
+        resumeKey: siteSettings.resumeKey,
+      })
       .from(siteSettings)
       .where(eq(siteSettings.id, 1));
     await getDb()
@@ -38,6 +44,9 @@ export async function saveSettings(
     refreshPublicContent();
     if (previous[0]?.resumeKey !== parsed.data.resumeKey) {
       await deleteObject(previous[0]?.resumeKey);
+    }
+    if (previous[0]?.profileImageKey !== parsed.data.profileImageKey) {
+      await deleteObject(previous[0]?.profileImageKey);
     }
     return { ok: true };
   } catch (error) {

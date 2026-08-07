@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { recognitionIconNames } from "@/config/recognition-icons";
 
 const optionalHttpsUrl = z
   .string()
@@ -14,6 +15,11 @@ const optionalText = (max: number) => z.string().trim().max(max).optional();
 const iconObjectKey = z
   .string()
   .regex(/^icons\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/)
+  .optional();
+
+const profileImageObjectKey = z
+  .string()
+  .regex(/^profiles\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/)
   .optional();
 
 const iconFields = {
@@ -39,27 +45,24 @@ export const projectSchema = z
     message: "Alt text is required when an icon is uploaded.",
   });
 
-export const recognitionSchema = z
-  .object({
-    title: z.string().trim().min(2).max(160),
-    issuer: z.string().trim().min(2).max(120),
-    description: z.string().trim().min(10).max(800),
-    recognizedOn: z.union([z.literal(""), z.iso.date()]).optional(),
-    verificationUrl: optionalHttpsUrl,
-    ...iconFields,
-    displayOrder: z.number().int().min(0).max(999),
-    published: z.boolean(),
-  })
-  .refine((value) => !value.iconKey || Boolean(value.iconAlt), {
-    path: ["iconAlt"],
-    message: "Alt text is required when an icon is uploaded.",
-  });
+export const recognitionSchema = z.object({
+  title: z.string().trim().min(2).max(180),
+  iconName: z.enum(recognitionIconNames),
+  verificationUrl: optionalHttpsUrl,
+  displayOrder: z.number().int().min(0).max(999),
+  published: z.boolean(),
+});
 
-export const technologySchema = z
+export const nowSectionSchema = z.object({
+  description: z.string().trim().min(20).max(600),
+  published: z.boolean(),
+  showLastUpdated: z.boolean(),
+});
+
+export const nowLinkSchema = z
   .object({
-    name: z.string().trim().min(1).max(80),
-    category: z.string().trim().min(1).max(80),
-    websiteUrl: optionalHttpsUrl,
+    label: z.string().trim().min(1).max(80),
+    url: z.url().startsWith("https://"),
     ...iconFields,
     displayOrder: z.number().int().min(0).max(999),
     visible: z.boolean(),
@@ -69,17 +72,17 @@ export const technologySchema = z
     message: "Alt text is required when an icon is uploaded.",
   });
 
-const socialLinkSchema = z.object({
-  label: z.string().trim().min(1).max(40),
-  url: z.url().startsWith("https://"),
-});
-
 export const siteSettingsSchema = z.object({
-  name: z.string().trim().min(2).max(100),
-  role: z.string().trim().min(2).max(140),
-  introduction: z.string().trim().min(20).max(1200),
   email: z.email(),
-  socialLinks: z.array(socialLinkSchema).max(8),
+  contactLinks: z.object({
+    github: optionalHttpsUrl,
+    x: optionalHttpsUrl,
+    instagram: optionalHttpsUrl,
+    tiktok: optionalHttpsUrl,
+    linkedin: optionalHttpsUrl,
+    whatsapp: optionalHttpsUrl,
+  }),
+  profileImageKey: profileImageObjectKey,
   resumeKey: z
     .string()
     .regex(/^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/)
@@ -90,7 +93,7 @@ export const siteSettingsSchema = z.object({
 });
 
 export const uploadRequestSchema = z.object({
-  resourceType: z.enum(["icon", "resume"]),
+  resourceType: z.enum(["icon", "profile", "resume"]),
   filename: z.string().trim().min(1).max(180),
   contentType: z.string().trim(),
   size: z.number().int().positive(),
@@ -98,5 +101,6 @@ export const uploadRequestSchema = z.object({
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 export type RecognitionInput = z.infer<typeof recognitionSchema>;
-export type TechnologyInput = z.infer<typeof technologySchema>;
+export type NowSectionInput = z.infer<typeof nowSectionSchema>;
+export type NowLinkInput = z.infer<typeof nowLinkSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;

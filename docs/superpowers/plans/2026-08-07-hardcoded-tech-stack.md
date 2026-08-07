@@ -13,6 +13,7 @@
 ## Task 1: Define and lock the hardcoded stack
 
 **Files:**
+
 - Create: `src/config/tech-stack.test.ts`
 - Create: `src/config/tech-stack.ts`
 
@@ -25,6 +26,7 @@
 ## Task 2: Build the public Tech Stack section
 
 **Files:**
+
 - Create: `src/components/portfolio/tech-stack-section.tsx`
 - Modify: `src/app/page.tsx`
 - Modify: `tests/e2e/public.spec.ts`
@@ -40,6 +42,7 @@
 ## Task 3: Remove technology administration and runtime data paths
 
 **Files:**
+
 - Delete: `src/app/admin/(protected)/technologies/page.tsx`
 - Delete: `src/app/admin/actions/technologies.ts`
 - Delete: `src/components/admin/technologies-manager.tsx`
@@ -59,6 +62,7 @@
 ## Task 4: Remove the active Drizzle model and migrate Neon forward
 
 **Files:**
+
 - Modify: `src/db/schema.ts`
 - Modify: `src/db/schema.integration.test.ts`
 - Create: `drizzle/0005_*.sql` (generated name)
@@ -78,6 +82,7 @@
 ## Task 5: Focused verification and redesign handoff
 
 **Files:**
+
 - Verify all files changed above.
 
 - [ ] Run focused unit tests: `npx vitest run src/config/tech-stack.test.ts src/db/schema.integration.test.ts`.

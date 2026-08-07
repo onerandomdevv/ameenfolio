@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { createElement, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -11,7 +11,6 @@ import {
 } from "@/app/admin/actions/recognitions";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { FormTextField } from "@/components/admin/form-text-field";
-import { UploadField } from "@/components/admin/upload-field";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +27,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardAction,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
@@ -47,16 +45,25 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  getRecognitionIcon,
+  recognitionIconOptions,
+} from "@/config/recognition-icons";
 import type { Recognition } from "@/db/schema";
-import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { recognitionSchema, type RecognitionInput } from "@/lib/validation";
 
 const emptyRecognition: RecognitionInput = {
   title: "",
-  issuer: "",
-  description: "",
+  iconName: "trophy",
   displayOrder: 0,
   published: false,
 };
@@ -80,40 +87,50 @@ export function RecognitionsManager({ items }: { items: Recognition[] }) {
       </div>
       {items.length ? (
         <div className="grid gap-3">
-          {items.map((item) => (
-            <Card key={item.id} className="gap-3">
-              <CardHeader>
-                <CardTitle>
-                  <h2>{item.title}</h2>
-                </CardTitle>
-                <CardDescription>{item.issuer}</CardDescription>
-                <CardAction className="flex items-center gap-1">
-                  <Badge variant={item.published ? "default" : "secondary"}>
-                    {item.published ? "Published" : "Draft"}
-                  </Badge>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    onClick={() => launch(item)}
-                    aria-label={`Edit ${item.title}`}
-                  >
-                    <Pencil />
-                  </Button>
-                  <DeleteRecognition item={item} />
-                </CardAction>
-              </CardHeader>
-              <CardContent>
-                <p className="line-clamp-2 text-sm text-muted-foreground">
-                  {item.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {items.map((item) => {
+            return (
+              <Card key={item.id} className="gap-3">
+                <CardHeader>
+                  <div className="flex min-w-0 items-start gap-3">
+                    {createElement(getRecognitionIcon(item.iconName), {
+                      className: "mt-0.5 size-4 shrink-0 text-muted-foreground",
+                      "aria-hidden": true,
+                    })}
+                    <div className="min-w-0">
+                      <CardTitle>
+                        <h2>{item.title}</h2>
+                      </CardTitle>
+                      <CardDescription className="mt-1">
+                        {item.verificationUrl
+                          ? "Linked evidence"
+                          : "Static recognition"}
+                        {` · Order ${item.displayOrder}`}
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <CardAction className="flex items-center gap-1">
+                    <Badge variant={item.published ? "default" : "secondary"}>
+                      {item.published ? "Published" : "Draft"}
+                    </Badge>
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => launch(item)}
+                      aria-label={`Edit ${item.title}`}
+                    >
+                      <Pencil />
+                    </Button>
+                    <DeleteRecognition item={item} />
+                  </CardAction>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <AdminEmptyState
           title="No recognitions yet"
-          description="Add awards, mentions, and other evidence of your work."
+          description="Add concise awards, milestones, and evidence of impact."
         />
       )}
       <RecognitionDialog
@@ -140,12 +157,8 @@ function RecognitionDialog({
     defaultValues: item
       ? {
           title: item.title,
-          issuer: item.issuer,
-          description: item.description,
-          recognizedOn: item.recognizedOn ?? undefined,
+          iconName: item.iconName,
           verificationUrl: item.verificationUrl ?? undefined,
-          iconKey: item.iconKey ?? undefined,
-          iconAlt: item.iconAlt ?? undefined,
           displayOrder: item.displayOrder,
           published: item.published,
         }
@@ -154,20 +167,14 @@ function RecognitionDialog({
   const {
     register,
     control,
-    setValue,
     setError,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = form;
-  const iconKey = useWatch({ control, name: "iconKey" });
 
   async function submit(values: RecognitionInput) {
     const result = await saveRecognition(values, item?.id);
     if (!result.ok) {
-      if (values.iconKey && values.iconKey !== item?.iconKey) {
-        await cleanupUpload(values.iconKey);
-        setValue("iconKey", undefined);
-      }
       Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
         setError(name as keyof RecognitionInput, { message: messages[0] }),
       );
@@ -188,41 +195,49 @@ function RecognitionDialog({
             {item ? "Edit recognition" : "Add recognition"}
           </DialogTitle>
           <DialogDescription>
-            Capture the issuer, evidence, and display order.
+            Add a concise recognition and an optional supporting link.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit(submit)}>
           <FieldGroup className="grid gap-5 sm:grid-cols-2">
             <FormTextField
-              label="Title"
+              className="sm:col-span-2"
+              label="Recognition"
               error={errors.title?.message}
               inputProps={register("title")}
             />
-            <FormTextField
-              label="Issuer"
-              error={errors.issuer?.message}
-              inputProps={register("issuer")}
-            />
-            <Field
-              className="sm:col-span-2"
-              data-invalid={Boolean(errors.description)}
-            >
-              <FieldLabel htmlFor="recognition-description">
-                Description
-              </FieldLabel>
-              <Textarea
-                id="recognition-description"
-                rows={4}
-                aria-invalid={Boolean(errors.description)}
-                {...register("description")}
-              />
-              <FieldError>{errors.description?.message}</FieldError>
-            </Field>
-            <FormTextField
-              label="Date"
-              type="date"
-              error={errors.recognizedOn?.message}
-              inputProps={register("recognizedOn")}
+            <Controller
+              control={control}
+              name="iconName"
+              render={({ field }) => (
+                <Field data-invalid={Boolean(errors.iconName)}>
+                  <FieldLabel htmlFor="recognition-icon">Icon</FieldLabel>
+                  <Select value={field.value} onValueChange={field.onChange}>
+                    <SelectTrigger
+                      id="recognition-icon"
+                      className="w-full"
+                      aria-invalid={Boolean(errors.iconName)}
+                    >
+                      <SelectValue placeholder="Select an icon" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {recognitionIconOptions.map((option) => {
+                          return (
+                            <SelectItem key={option.value} value={option.value}>
+                              {createElement(option.icon, {
+                                "aria-hidden": true,
+                              })}
+                              {option.label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  <FieldError>{errors.iconName?.message}</FieldError>
+                </Field>
+              )}
             />
             <FormTextField
               label="Display order"
@@ -232,20 +247,10 @@ function RecognitionDialog({
             />
             <FormTextField
               className="sm:col-span-2"
-              label="Verification URL"
+              label="Supporting link (optional)"
               type="url"
               error={errors.verificationUrl?.message}
               inputProps={register("verificationUrl")}
-            />
-            <UploadField
-              resourceType="icon"
-              value={iconKey}
-              onChange={(key) => setValue("iconKey", key)}
-            />
-            <FormTextField
-              label="Icon alt text"
-              error={errors.iconAlt?.message}
-              inputProps={register("iconAlt")}
             />
             <Controller
               control={control}
@@ -315,7 +320,7 @@ function DeleteRecognition({ item }: { item: Recognition }) {
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{item.title}”?</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently removes the recognition and its managed icon.
+            This permanently removes the recognition row.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

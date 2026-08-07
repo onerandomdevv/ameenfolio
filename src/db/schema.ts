@@ -1,19 +1,25 @@
 import {
   boolean,
   check,
-  date,
   index,
   integer,
   jsonb,
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { RecognitionIconName } from "@/config/recognition-icons";
 
-export type SocialLink = { label: string; url: string };
+export type ContactLinks = {
+  github?: string;
+  x?: string;
+  instagram?: string;
+  tiktok?: string;
+  linkedin?: string;
+  whatsapp?: string;
+};
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -60,12 +66,11 @@ export const recognitions = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     title: text("title").notNull(),
-    issuer: text("issuer").notNull(),
-    description: text("description").notNull(),
-    recognizedOn: date("recognized_on"),
+    iconName: text("icon_name")
+      .$type<RecognitionIconName>()
+      .notNull()
+      .default("trophy"),
     verificationUrl: text("verification_url"),
-    iconKey: text("icon_key"),
-    iconAlt: text("icon_alt"),
     displayOrder: integer("display_order").notNull().default(0),
     published: boolean("published").notNull().default(false),
     ...timestamps,
@@ -73,19 +78,32 @@ export const recognitions = pgTable(
   (table) => [
     index("recognitions_public_idx").on(table.published, table.displayOrder),
     check(
-      "recognitions_icon_alt_required",
-      sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`,
+      "recognitions_icon_name_valid",
+      sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles')`,
     ),
   ],
 );
 
-export const technologies = pgTable(
-  "technologies",
+export const nowSection = pgTable(
+  "now_section",
+  {
+    id: integer("id").primaryKey().default(1),
+    description: text("description").notNull(),
+    published: boolean("published").notNull().default(false),
+    showLastUpdated: boolean("show_last_updated").notNull().default(true),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [check("now_section_singleton", sql`${table.id} = 1`)],
+);
+
+export const nowLinks = pgTable(
+  "now_links",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
-    category: text("category").notNull(),
-    websiteUrl: text("website_url"),
+    label: text("label").notNull(),
+    url: text("url").notNull(),
     iconKey: text("icon_key"),
     iconAlt: text("icon_alt"),
     displayOrder: integer("display_order").notNull().default(0),
@@ -93,14 +111,9 @@ export const technologies = pgTable(
     ...timestamps,
   },
   (table) => [
-    uniqueIndex("technologies_name_unique").on(sql`lower(${table.name})`),
-    index("technologies_visible_order_idx").on(
-      table.visible,
-      table.category,
-      table.displayOrder,
-    ),
+    index("now_links_visible_order_idx").on(table.visible, table.displayOrder),
     check(
-      "technologies_icon_alt_required",
+      "now_links_icon_alt_required",
       sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`,
     ),
   ],
@@ -110,14 +123,12 @@ export const siteSettings = pgTable(
   "site_settings",
   {
     id: integer("id").primaryKey().default(1),
-    name: text("name").notNull(),
-    role: text("role").notNull(),
-    introduction: text("introduction").notNull(),
     email: text("email").notNull(),
-    socialLinks: jsonb("social_links")
-      .$type<SocialLink[]>()
+    contactLinks: jsonb("social_links")
+      .$type<ContactLinks>()
       .notNull()
-      .default([]),
+      .default({}),
+    profileImageKey: text("profile_image_key"),
     resumeKey: text("resume_key"),
     resumeFilename: text("resume_filename"),
     seoTitle: text("seo_title").notNull(),
@@ -131,5 +142,6 @@ export const siteSettings = pgTable(
 
 export type Project = typeof projects.$inferSelect;
 export type Recognition = typeof recognitions.$inferSelect;
-export type Technology = typeof technologies.$inferSelect;
+export type NowSection = typeof nowSection.$inferSelect;
+export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;

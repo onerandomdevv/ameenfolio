@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Award,
+  Clock3,
   ExternalLink,
   FolderKanban,
   Menu,
   Settings,
-  Wrench,
 } from "lucide-react";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { Button } from "@/components/ui/button";
@@ -23,8 +23,8 @@ import {
 
 const links = [
   { href: "/admin/projects", label: "Projects", icon: FolderKanban },
+  { href: "/admin/now", label: "Now", icon: Clock3 },
   { href: "/admin/recognitions", label: "Recognitions", icon: Award },
-  { href: "/admin/technologies", label: "Technologies", icon: Wrench },
   { href: "/admin/settings", label: "Site settings", icon: Settings },
 ];
 

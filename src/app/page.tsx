@@ -1,15 +1,24 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowUpRight, Download, Mail } from "lucide-react";
+import { Download, Github, Instagram, Linkedin, Mail } from "lucide-react";
 import { getPublicPortfolio } from "@/db/queries";
-import { AssetIcon } from "@/components/portfolio/asset-icon";
-import { PortfolioEmptyState } from "@/components/portfolio/empty-state";
+import { NowSection } from "@/components/portfolio/now-section";
+import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
+import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
+import { RecognitionRow } from "@/components/portfolio/recognition-row";
+import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
-import { Badge } from "@/components/ui/badge";
+import { TechStackSection } from "@/components/portfolio/tech-stack-section";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import {
+  TikTokIcon,
+  WhatsAppIcon,
+  XIcon,
+} from "@/components/icons/brand-icons";
+import { portfolioIdentity } from "@/config/portfolio";
+import { instrumentSerif } from "@/app/fonts";
 
 export const dynamic = "force-dynamic";
 
@@ -30,223 +39,230 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const { settings, projects, recognitions, technologies } =
-    await getPublicPortfolio();
-  const groupedTechnologies = Object.groupBy(
-    technologies,
-    (technology) => technology.category,
-  );
+  const { settings, now, projects, recognitions } = await getPublicPortfolio();
+  const profileImageBase = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+  const contactLinks = settings.contactLinks ?? {};
+  const profileImageSrc = settings.profileImageKey
+    ? profileImageBase
+      ? `${profileImageBase}/${settings.profileImageKey}`
+      : `/media/${settings.profileImageKey}`
+    : undefined;
+  const initials = portfolioIdentity.name
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+  const contactItems = [
+    {
+      label: "GitHub",
+      href: contactLinks.github,
+      icon: Github,
+      external: true,
+    },
+    {
+      label: "Mail",
+      href: `mailto:${settings.email}`,
+      icon: Mail,
+      external: false,
+    },
+    {
+      label: "X (Twitter)",
+      href: contactLinks.x,
+      icon: XIcon,
+      external: true,
+    },
+  ];
+  const footerSocialItems = [
+    {
+      label: "Instagram",
+      href: contactLinks.instagram,
+      icon: Instagram,
+    },
+    {
+      label: "TikTok",
+      href: contactLinks.tiktok,
+      icon: TikTokIcon,
+    },
+    {
+      label: "LinkedIn",
+      href: contactLinks.linkedin,
+      icon: Linkedin,
+    },
+    {
+      label: "WhatsApp",
+      href: contactLinks.whatsapp,
+      icon: WhatsAppIcon,
+    },
+  ];
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-5 pb-10 pt-20 sm:px-6 sm:pt-28">
-      <section className="mx-auto flex max-w-2xl flex-col items-center text-center">
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-primary">
-          Available for thoughtful work
-        </p>
-        <h1 className="mt-5 text-5xl font-black uppercase tracking-[-0.07em] sm:text-7xl">
-          {settings.name}
-        </h1>
-        <p className="mt-3 text-lg font-semibold sm:text-xl">{settings.role}</p>
-        <p className="mt-6 max-w-xl text-pretty text-base leading-7 text-muted-foreground sm:text-lg sm:leading-8">
-          {settings.introduction}
-        </p>
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {settings.socialLinks.map((link) => (
-            <Button asChild variant="outline" key={link.url}>
-              <a href={link.url} target="_blank" rel="noreferrer">
-                {link.label}
-                <ArrowUpRight aria-hidden="true" data-icon="inline-end" />
-              </a>
-            </Button>
-          ))}
-          <Button asChild>
-            <a href={`mailto:${settings.email}`}>
-              <Mail aria-hidden="true" data-icon="inline-start" />
-              Contact me
-            </a>
-          </Button>
+    <main className="mx-auto w-full max-w-xl px-5 pb-10 pt-20 sm:px-6 sm:pt-28">
+      <PortfolioNav current="home" />
+
+      <section className="mt-10 max-w-xl">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <Avatar className="size-24 rounded-[22%] border sm:size-28">
+            {profileImageSrc ? (
+              <AvatarImage
+                src={profileImageSrc}
+                alt={`${portfolioIdentity.name} profile photo`}
+                className="rounded-[22%] object-cover"
+              />
+            ) : null}
+            <AvatarFallback className="rounded-[22%] text-base font-medium">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex min-h-24 min-w-0 flex-1 flex-col justify-center sm:min-h-28">
+            <h1
+              className={`${instrumentSerif.className} text-[clamp(2.25rem,8vw,3.25rem)] leading-[0.95] tracking-[-0.02em] text-foreground`}
+            >
+              {portfolioIdentity.name}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {portfolioIdentity.role}
+            </p>
+          </div>
         </div>
+        <p className="mt-8 max-w-xl text-pretty text-base leading-7 text-foreground/90">
+          {portfolioIdentity.introduction}
+        </p>
+        <nav className="mt-3" aria-label="Contact links">
+          <ul className="flex flex-wrap gap-x-5 gap-y-3">
+            {contactItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <li key={item.label}>
+                  {item.href ? (
+                    <a
+                      className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground underline decoration-border underline-offset-4 transition-colors hover:text-primary focus-visible:text-primary"
+                      href={item.href}
+                      target={item.external ? "_blank" : undefined}
+                      rel={item.external ? "noreferrer" : undefined}
+                    >
+                      <Icon
+                        className="size-4 text-foreground"
+                        aria-hidden="true"
+                      />
+                      {item.label}
+                    </a>
+                  ) : (
+                    <span
+                      className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground"
+                      aria-disabled="true"
+                    >
+                      <Icon
+                        className="size-4 text-foreground"
+                        aria-hidden="true"
+                      />
+                      {item.label}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </section>
 
-      <section className="mt-28" aria-labelledby="projects-heading">
+      <NowSection section={now} />
+
+      <section className="mt-24" aria-labelledby="projects-heading">
         <SectionHeading
           id="projects-heading"
-          eyebrow="Selected work"
-          title="Recent projects"
+          title="Recent Projects"
+          action={{ href: "/projects", label: "View all projects" }}
         />
         {projects.length ? (
-          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
             {projects.map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
         ) : (
-          <PortfolioEmptyState>
-            Fresh projects will be published here soon.
-          </PortfolioEmptyState>
+          <ProjectsEmptyState description="Fresh projects will be published here soon." />
         )}
-        <div className="mt-7 text-center">
-          <Button asChild variant="link">
-            <Link href="/projects">
-              View all projects
-              <ArrowUpRight aria-hidden="true" data-icon="inline-end" />
-            </Link>
-          </Button>
-        </div>
       </section>
 
-      <section className="mt-28" aria-labelledby="recognitions-heading">
-        <SectionHeading
-          id="recognitions-heading"
-          eyebrow="Proof of work"
-          title="Recognitions"
-        />
+      <section className="mt-24" aria-labelledby="recognitions-heading">
+        <SectionHeading id="recognitions-heading" title="Recognitions" />
         {recognitions.length ? (
-          <div className="mt-8 grid gap-3">
+          <ul className="mt-5 divide-y divide-solid divide-border">
             {recognitions.map((recognition) => (
-              <Card key={recognition.id} role="article" className="gap-4">
-                <CardHeader className="grid-cols-[auto_1fr]">
-                  <AssetIcon
-                    objectKey={recognition.iconKey}
-                    alt={recognition.iconAlt ?? ""}
-                  />
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <CardTitle>
-                        <h3>{recognition.title}</h3>
-                      </CardTitle>
-                      {recognition.recognizedOn ? (
-                        <time className="font-mono text-xs text-muted-foreground">
-                          {recognition.recognizedOn}
-                        </time>
-                      ) : null}
-                    </div>
-                    <p className="mt-1 text-sm font-medium text-primary">
-                      {recognition.issuer}
-                    </p>
-                  </div>
-                </CardHeader>
-                <CardContent className="sm:pl-[5.75rem]">
-                  <p className="text-sm leading-6 text-muted-foreground">
-                    {recognition.description}
-                  </p>
-                  {recognition.verificationUrl ? (
-                    <Button asChild variant="link" className="mt-2 px-0">
-                      <a
-                        href={recognition.verificationUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Verify
-                        <ArrowUpRight
-                          aria-hidden="true"
-                          data-icon="inline-end"
-                        />
-                      </a>
-                    </Button>
-                  ) : null}
-                </CardContent>
-              </Card>
+              <li key={recognition.id}>
+                <RecognitionRow
+                  title={recognition.title}
+                  iconName={recognition.iconName}
+                  verificationUrl={recognition.verificationUrl}
+                />
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
-          <PortfolioEmptyState>
+          <RecognitionsEmptyState>
             Recognition entries will appear here once published.
-          </PortfolioEmptyState>
+          </RecognitionsEmptyState>
         )}
       </section>
 
-      <section className="mt-28" aria-labelledby="stack-heading">
-        <SectionHeading
-          id="stack-heading"
-          eyebrow="How I build"
-          title="Tech stack"
-        />
-        {technologies.length ? (
-          <div className="mt-8 grid gap-8">
-            {Object.entries(groupedTechnologies).map(([category, items]) => (
-              <div key={category}>
-                <h3 className="text-center font-mono text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground">
-                  {category}
-                </h3>
-                <ul className="mt-4 flex flex-wrap justify-center gap-3">
-                  {items?.map((technology) => (
-                    <li key={technology.id}>
-                      {technology.websiteUrl ? (
-                        <Badge
-                          asChild
-                          variant="secondary"
-                          className="min-h-11 px-4"
-                        >
-                          <a
-                            href={technology.websiteUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <AssetIcon
-                              objectKey={technology.iconKey}
-                              alt={technology.iconAlt ?? ""}
-                              size="sm"
-                            />
-                            {technology.name}
-                          </a>
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="min-h-11 px-4">
-                          <AssetIcon
-                            objectKey={technology.iconKey}
-                            alt={technology.iconAlt ?? ""}
-                            size="sm"
-                          />
-                          {technology.name}
-                        </Badge>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <PortfolioEmptyState>
-            The stack list will be published from the admin.
-          </PortfolioEmptyState>
-        )}
-      </section>
+      <TechStackSection />
 
-      <section
-        className="mx-auto mt-28 max-w-xl text-center"
-        aria-labelledby="resume-heading"
-      >
-        <SectionHeading
-          id="resume-heading"
-          eyebrow="Want the full story?"
-          title="Let’s work together"
-        />
-        <p className="mt-5 leading-7 text-muted-foreground">
-          Download my résumé or send an email to start a conversation.
-        </p>
-        <div className="mt-7 flex flex-wrap justify-center gap-3">
-          {settings.resumeKey ? (
-            <Button asChild>
-              <a href="/resume">
-                <Download aria-hidden="true" data-icon="inline-start" />
-                Download résumé
-              </a>
-            </Button>
-          ) : null}
-          <Button asChild variant="outline">
-            <a href={`mailto:${settings.email}`}>
-              <Mail aria-hidden="true" data-icon="inline-start" />
-              Email me
+      <footer className="mt-24 font-mono text-xs text-muted-foreground">
+        <div className="relative flex items-center justify-end">
+          <Separator />
+          <Button
+            asChild
+            variant="link"
+            className="absolute right-0 bg-background pl-4 pr-0 font-bold text-foreground underline hover:text-primary"
+          >
+            <a href="/resume">
+              <Download aria-hidden="true" data-icon="inline-start" />
+              View Resume
             </a>
           </Button>
         </div>
-      </section>
+        <div className="mt-8 flex items-center justify-between gap-4">
+          <p
+            className={`${instrumentSerif.className} text-lg font-bold text-foreground`}
+          >
+            © {new Date().getFullYear()} onerandomdevv
+          </p>
+          <nav aria-label="Footer social links">
+            <ul className="flex items-center">
+              {footerSocialItems.map((item) => {
+                const Icon = item.icon;
+                const className =
+                  "inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary";
 
-      <footer className="mt-24 text-center font-mono text-xs text-muted-foreground">
-        <Separator className="mb-8" />© {new Date().getFullYear()}{" "}
-        {settings.name}. Built with intention.
+                return (
+                  <li key={item.label}>
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        aria-label={item.label}
+                        className={className}
+                      >
+                        <Icon className="size-[18px]" aria-hidden="true" />
+                      </a>
+                    ) : (
+                      <span
+                        role="img"
+                        aria-label={item.label}
+                        className="inline-flex size-9 items-center justify-center text-muted-foreground opacity-50"
+                      >
+                        <Icon className="size-[18px]" aria-hidden="true" />
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        </div>
       </footer>
     </main>
   );

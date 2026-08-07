@@ -13,6 +13,7 @@
 ## Task 1: Lock the simplified recognition contract
 
 **Files:**
+
 - Create: `src/config/recognition-icons.ts`
 - Modify: `src/lib/validation.test.ts`
 - Modify: `src/lib/validation.ts`
@@ -27,6 +28,7 @@
 ## Task 2: Build and test the public recognition row
 
 **Files:**
+
 - Create: `src/components/portfolio/recognition-row.test.ts`
 - Create: `src/components/portfolio/recognition-row.tsx`
 - Modify: `src/app/page.tsx`
@@ -41,6 +43,7 @@
 ## Task 3: Simplify recognition administration
 
 **Files:**
+
 - Add: `src/components/ui/select.tsx` through `npx shadcn@latest add select`
 - Modify: `src/components/admin/recognitions-manager.tsx`
 - Modify: `src/app/admin/actions/recognitions.ts`
@@ -57,6 +60,7 @@
 ## Task 4: Migrate the recognition table forward
 
 **Files:**
+
 - Modify: `src/db/schema.ts`
 - Modify: `src/db/schema.integration.test.ts`
 - Create: `drizzle/0006_*.sql` and `drizzle/meta/0006_snapshot.json` through Drizzle generation
@@ -74,6 +78,7 @@
 ## Task 5: Focused verification
 
 **Files:**
+
 - Verify all files changed above.
 
 - [ ] Run `npx vitest run src/lib/validation.test.ts src/components/portfolio/recognition-row.test.ts src/db/schema.integration.test.ts`.

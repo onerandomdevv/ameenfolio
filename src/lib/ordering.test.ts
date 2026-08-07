@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { byDisplayOrder, canAddHomepageProject } from "@/lib/ordering";
+import {
+  byDisplayOrder,
+  canAddHomepageProject,
+  canAddNowLink,
+} from "@/lib/ordering";
 
 describe("portfolio ordering", () => {
   it("prevents a ninth homepage project", () => {
@@ -11,5 +15,10 @@ describe("portfolio ordering", () => {
     expect(
       [{ displayOrder: 20 }, { displayOrder: 2 }].sort(byDisplayOrder),
     ).toEqual([{ displayOrder: 2 }, { displayOrder: 20 }]);
+  });
+
+  it("prevents a seventh Now link", () => {
+    expect(canAddNowLink(5)).toBe(true);
+    expect(canAddNowLink(6)).toBe(false);
   });
 });

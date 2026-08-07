@@ -1,28 +1,26 @@
-import { Inter } from "next/font/google";
+import type { Metadata } from "next";
 import "./globals.css";
-import { PixelBackground } from "@/components/layout/pixel-background";
 import { Toaster } from "@/components/ui/sonner";
-const inter = Inter({ subsets: ["latin"] });
-
-import { Metadata } from "next";
+import { portfolioIdentity } from "@/config/portfolio";
+import { inter } from "@/app/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
     process.env.CANONICAL_SITE_URL ?? "http://localhost:3000",
   ),
   title: {
-    default: "Ameen's Portfolio",
-    template: "%s | Ameen's Portfolio",
+    default: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
+    template: `%s | ${portfolioIdentity.name}`,
   },
   description:
     "Selected projects, recognition, and the technologies behind Ameen's work.",
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Ameen's Portfolio",
+    title: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
     description:
       "Selected projects, recognition, and the technologies behind Ameen's work.",
     url: "/",
-    siteName: "Ameen's Portfolio",
+    siteName: portfolioIdentity.name,
     locale: "en_US",
     type: "website",
   },
@@ -38,7 +36,7 @@ export const metadata: Metadata = {
     },
   },
   twitter: {
-    title: "Ameen",
+    title: portfolioIdentity.name,
     card: "summary_large_image",
   },
 };
@@ -51,8 +49,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <PixelBackground />
-        <div className="relative z-10 min-h-screen">{children}</div>
+        <div className="min-h-screen">{children}</div>
         <Toaster richColors position="bottom-center" />
       </body>
     </html>

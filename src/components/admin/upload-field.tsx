@@ -11,6 +11,7 @@ import {
   FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { uploadFile } from "@/lib/storage/client";
 
 type UploadFieldProps = {
   resourceType: "icon" | "resume";
@@ -40,31 +41,7 @@ export function UploadField({
     setLocalError(undefined);
 
     try {
-      const signed = await fetch("/api/admin/uploads/sign", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          resourceType,
-          filename: file.name,
-          contentType: file.type,
-          size: file.size,
-        }),
-      });
-      if (!signed.ok) throw new Error("This file is not allowed.");
-
-      const payload = (await signed.json()) as {
-        uploadUrl: string;
-        key: string;
-      };
-      const sent = await fetch(payload.uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-      if (!sent.ok) {
-        throw new Error("Upload failed before the file was saved.");
-      }
-
+      const payload = await uploadFile(resourceType, file);
       onChange(payload.key, file.name);
     } catch (uploadError) {
       setLocalError(

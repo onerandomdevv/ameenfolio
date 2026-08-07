@@ -8,7 +8,7 @@ export default async function RecognitionsPage() {
     <>
       <AdminPageHeader
         title="Recognitions"
-        description="Publish concise, verifiable evidence of impact."
+        description="Publish concise icon-led recognition rows with optional supporting links."
       />
       <RecognitionsManager items={items} />
     </>

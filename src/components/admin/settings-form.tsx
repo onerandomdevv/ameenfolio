@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch } from "react-hook-form";
+import { useForm, useWatch, type FieldPath } from "react-hook-form";
 import { LoaderCircle, Save } from "lucide-react";
 import { toast } from "sonner";
 import { saveSettings } from "@/app/admin/actions/settings";
 import { FormTextField } from "@/components/admin/form-text-field";
+import { ProfileImageField } from "@/components/admin/profile-image-field";
 import { UploadField } from "@/components/admin/upload-field";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,19 +25,18 @@ import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { siteSettingsSchema, type SiteSettingsInput } from "@/lib/validation";
 
 export function SettingsForm({ settings }: { settings: SiteSettings }) {
-  const [socialText, setSocialText] = useState(
-    settings.socialLinks
-      .map((link) => `${link.label} | ${link.url}`)
-      .join("\n"),
+  const [persistedProfileKey, setPersistedProfileKey] = useState(
+    settings.profileImageKey ?? undefined,
+  );
+  const [persistedResumeKey, setPersistedResumeKey] = useState(
+    settings.resumeKey ?? undefined,
   );
   const form = useForm<SiteSettingsInput>({
     resolver: zodResolver(siteSettingsSchema),
     defaultValues: {
-      name: settings.name,
-      role: settings.role,
-      introduction: settings.introduction,
       email: settings.email,
-      socialLinks: settings.socialLinks,
+      contactLinks: settings.contactLinks,
+      profileImageKey: settings.profileImageKey ?? undefined,
       resumeKey: settings.resumeKey ?? undefined,
       resumeFilename: settings.resumeFilename ?? undefined,
       seoTitle: settings.seoTitle,
@@ -53,88 +53,95 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   } = form;
   const resumeKey = useWatch({ control, name: "resumeKey" });
   const resumeFilename = useWatch({ control, name: "resumeFilename" });
+  const profileImageKey = useWatch({ control, name: "profileImageKey" });
 
   async function submit(values: SiteSettingsInput) {
-    const socialLinks = socialText
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const [label, ...url] = line.split("|");
-        return { label: label.trim(), url: url.join("|").trim() };
-      });
-    const result = await saveSettings({ ...values, socialLinks });
+    const result = await saveSettings(values);
 
     if (!result.ok) {
-      if (values.resumeKey && values.resumeKey !== settings.resumeKey) {
+      if (values.resumeKey && values.resumeKey !== persistedResumeKey) {
         await cleanupUpload(values.resumeKey);
         setValue("resumeKey", undefined);
         setValue("resumeFilename", undefined);
       }
+      if (
+        values.profileImageKey &&
+        values.profileImageKey !== persistedProfileKey
+      ) {
+        await cleanupUpload(values.profileImageKey);
+        setValue("profileImageKey", undefined);
+      }
       Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
-        setError(name as keyof SiteSettingsInput, { message: messages[0] }),
+        setError(name as FieldPath<SiteSettingsInput>, {
+          message: messages[0],
+        }),
       );
       toast.error(result.message);
       return;
     }
 
+    setPersistedProfileKey(values.profileImageKey);
+    setPersistedResumeKey(values.resumeKey);
     toast.success("Site settings saved.");
   }
 
   return (
     <form onSubmit={handleSubmit(submit)} className="grid gap-9">
       <FieldSet>
-        <FieldLegend>Hero and contact</FieldLegend>
+        <FieldLegend>Profile and contacts</FieldLegend>
         <FieldGroup className="grid gap-6 sm:grid-cols-2">
-          <FormTextField
-            label="Name"
-            error={errors.name?.message}
-            inputProps={register("name")}
-          />
-          <FormTextField
-            label="Role"
-            error={errors.role?.message}
-            inputProps={register("role")}
-          />
-          <Field
+          <ProfileImageField
             className="sm:col-span-2"
-            data-invalid={Boolean(errors.introduction)}
-          >
-            <FieldLabel htmlFor="introduction">Introduction</FieldLabel>
-            <Textarea
-              id="introduction"
-              rows={5}
-              aria-invalid={Boolean(errors.introduction)}
-              {...register("introduction")}
-            />
-            <FieldError>{errors.introduction?.message}</FieldError>
-          </Field>
+            value={profileImageKey}
+            initialValue={persistedProfileKey}
+            onChange={(key) =>
+              setValue("profileImageKey", key, { shouldDirty: true })
+            }
+            error={errors.profileImageKey?.message}
+          />
           <FormTextField
             label="Contact email"
             type="email"
             error={errors.email?.message}
             inputProps={register("email")}
           />
-          <Field
-            className="sm:col-span-2"
-            data-invalid={Boolean(errors.socialLinks)}
-          >
-            <FieldLabel htmlFor="social-links">Social links</FieldLabel>
-            <Textarea
-              id="social-links"
-              rows={5}
-              value={socialText}
-              aria-invalid={Boolean(errors.socialLinks)}
-              onChange={(event) => setSocialText(event.target.value)}
-              placeholder={
-                "GitHub | https://github.com/username\nLinkedIn | https://linkedin.com/in/username"
-              }
-            />
-            <FieldDescription>
-              One per line as Label | HTTPS URL. Up to eight links.
-            </FieldDescription>
-            <FieldError>{errors.socialLinks?.message}</FieldError>
-          </Field>
+          <FormTextField
+            label="GitHub URL"
+            type="url"
+            error={errors.contactLinks?.github?.message}
+            inputProps={register("contactLinks.github")}
+          />
+          <FormTextField
+            label="X (Twitter) URL"
+            type="url"
+            error={errors.contactLinks?.x?.message}
+            inputProps={register("contactLinks.x")}
+          />
+          <FormTextField
+            label="Instagram URL"
+            type="url"
+            error={errors.contactLinks?.instagram?.message}
+            inputProps={register("contactLinks.instagram")}
+          />
+          <FormTextField
+            label="TikTok URL"
+            type="url"
+            error={errors.contactLinks?.tiktok?.message}
+            inputProps={register("contactLinks.tiktok")}
+          />
+          <FormTextField
+            label="LinkedIn URL"
+            type="url"
+            error={errors.contactLinks?.linkedin?.message}
+            inputProps={register("contactLinks.linkedin")}
+          />
+          <FormTextField
+            label="WhatsApp URL"
+            type="url"
+            description="Use an HTTPS link such as https://wa.me/234..."
+            error={errors.contactLinks?.whatsapp?.message}
+            inputProps={register("contactLinks.whatsapp")}
+          />
         </FieldGroup>
       </FieldSet>
 
