@@ -69,12 +69,12 @@
 - Modify: `drizzle/meta/_journal.json` (generated)
 - Create/Modify: `drizzle/meta/0005_snapshot.json` (generated)
 
-- [ ] Query the connected database read-only and record the existing technologies row count before removal.
+- [ ] Verify the exact Neon project and branch, query the database read-only, record the existing technologies row count, and export or snapshot any rows before removal.
 - [ ] Update the schema integration expectation so `technologies` is not among active application tables.
 - [ ] Remove the `technologies` table declaration, `Technology` type export, and any now-unused schema imports.
 - [ ] Run `npm run db:generate` to generate a forward migration; do not edit historical migrations.
 - [ ] Inspect the generated migration and confirm its only schema-destructive operation is `DROP TABLE "technologies"`.
-- [ ] Run `npm run db:migrate` against the configured Neon database.
+- [ ] Obtain explicit approval for the verified target and destructive SQL, then run `npm run db:migrate` without automatic confirmation flags.
 - [ ] Query `information_schema.tables` and confirm the public `technologies` table no longer exists.
 - [ ] Run the focused schema test with `npx vitest run src/db/schema.integration.test.ts` (using `TEST_DATABASE_URL` when configured).
 - [ ] Self-review: compare the active Drizzle schema and generated snapshot for type consistency and confirm no unrelated table, index, or trigger changed.

@@ -124,6 +124,7 @@ export const siteSettings = pgTable(
   {
     id: integer("id").primaryKey().default(1),
     email: text("email").notNull(),
+    // Keep the legacy physical column name so existing deployments retain data.
     contactLinks: jsonb("social_links")
       .$type<ContactLinks>()
       .notNull()

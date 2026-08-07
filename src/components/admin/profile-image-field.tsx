@@ -221,6 +221,7 @@ export function ProfileImageField({
             <FieldLabel htmlFor="profile-image-zoom">Zoom</FieldLabel>
             <Slider
               id="profile-image-zoom"
+              thumbLabel="Profile image zoom"
               min={1}
               max={3}
               step={0.01}

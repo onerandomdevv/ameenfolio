@@ -6,7 +6,9 @@ Use the development Neon branch and `ameenfolio-media-dev` for preview deploymen
 
 Before production traffic switches:
 
-- apply migrations and seed the settings singleton;
+- inspect pending SQL; for destructive statements, verify the exact project and branch, record affected row counts, export removed values and storage-key manifests, create and test a restore point, and obtain explicit approval before applying;
+- after a destructive migration succeeds and its export is verified, delete only storage objects proven unreferenced and retain a cleanup-failure log for retry;
+- apply approved migrations and seed the settings and Now-section singletons;
 - sign in through GitHub as `onerandomdevv` and verify another account receives 403;
 - populate required production content;
 - verify icon upload/replacement, résumé download, CRUD, sign-out, `/`, and `/projects`;

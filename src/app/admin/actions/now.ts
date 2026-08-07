@@ -11,7 +11,7 @@ import { getDb } from "@/db/client";
 import { nowLinks, nowSection } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
 import { logServer } from "@/lib/logger";
-import { canAddNowLink } from "@/lib/ordering";
+import { canAddNowLink, MAX_NOW_LINKS } from "@/lib/ordering";
 import { assertStoredUpload, deleteObject } from "@/lib/storage/server";
 import {
   nowLinkSchema,
@@ -67,6 +67,12 @@ export async function saveNowLink(
   const parsed = nowLinkSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
 
+  const values = {
+    ...parsed.data,
+    iconKey: parsed.data.iconKey ?? null,
+    iconAlt: parsed.data.iconAlt || null,
+  };
+
   try {
     const db = getDb();
     const previous = id
@@ -85,13 +91,13 @@ export async function saveNowLink(
       if (!canAddNowLink(Number(result.value))) {
         return {
           ok: false,
-          message: "Only six Now links can be created.",
+          message: `Only ${MAX_NOW_LINKS} Now links can be created.`,
         };
       }
     }
 
-    if (parsed.data.iconKey) {
-      await assertStoredUpload(parsed.data.iconKey, "icon");
+    if (values.iconKey) {
+      await assertStoredUpload(values.iconKey, "icon");
     }
 
     const linkId = id ?? randomUUID();
@@ -99,17 +105,23 @@ export async function saveNowLink(
     const linkMutation = id
       ? db
           .update(nowLinks)
-          .set({ ...parsed.data, updatedAt })
+          .set({ ...values, updatedAt })
           .where(eq(nowLinks.id, id))
-      : db.insert(nowLinks).values({ id: linkId, ...parsed.data, updatedAt });
+      : db.insert(nowLinks).values({ id: linkId, ...values, updatedAt });
 
     await db.batch([linkMutation, touchSection(db, updatedAt)]);
     refreshPublicContent();
-    if (previous[0]?.iconKey !== parsed.data.iconKey) {
+    if (previous[0]?.iconKey !== values.iconKey) {
       await deleteObject(previous[0]?.iconKey);
     }
     return { ok: true, id: linkId };
   } catch (error) {
+    if (String(error).includes("now_links_limit_exceeded")) {
+      return {
+        ok: false,
+        message: `Only ${MAX_NOW_LINKS} Now links can be created.`,
+      };
+    }
     logServer("error", "crud.now_link_failed", { id, error: String(error) });
     return { ok: false, message: "The Now link could not be saved." };
   }

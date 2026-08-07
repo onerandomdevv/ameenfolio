@@ -55,6 +55,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { NowLink, NowSection } from "@/db/schema";
+import { MAX_NOW_LINKS } from "@/lib/ordering";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import {
   nowLinkSchema,
@@ -79,7 +80,7 @@ export function NowManager({
 }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<NowLink>();
-  const atLimit = links.length >= 6;
+  const atLimit = links.length >= MAX_NOW_LINKS;
 
   function launch(item?: NowLink) {
     setEditing(item);
@@ -97,7 +98,8 @@ export function NowManager({
               Linked items
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Add up to six current projects, learning topics, or contributions.
+              Add up to {MAX_NOW_LINKS} current projects, learning topics, or
+              contributions.
             </p>
           </div>
           <Button onClick={() => launch()} disabled={atLimit}>
@@ -108,7 +110,7 @@ export function NowManager({
 
         {atLimit ? (
           <p className="mb-4 text-sm text-muted-foreground">
-            Maximum of six links reached.
+            Maximum of {MAX_NOW_LINKS} links reached.
           </p>
         ) : null}
 

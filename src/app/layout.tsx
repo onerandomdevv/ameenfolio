@@ -12,13 +12,11 @@ export const metadata: Metadata = {
     default: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
     template: `%s | ${portfolioIdentity.name}`,
   },
-  description:
-    "Selected projects, recognition, and the technologies behind Ameen's work.",
+  description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
   alternates: { canonical: "/" },
   openGraph: {
     title: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
-    description:
-      "Selected projects, recognition, and the technologies behind Ameen's work.",
+    description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
     url: "/",
     siteName: portfolioIdentity.name,
     locale: "en_US",

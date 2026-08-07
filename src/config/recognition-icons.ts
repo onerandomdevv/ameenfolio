@@ -39,6 +39,6 @@ const iconsByName = Object.fromEntries(
   recognitionIconOptions.map((option) => [option.value, option.icon]),
 ) as Record<RecognitionIconName, LucideIcon>;
 
-export function getRecognitionIcon(iconName: RecognitionIconName) {
-  return iconsByName[iconName];
+export function getRecognitionIcon(iconName: RecognitionIconName | string) {
+  return iconsByName[iconName as RecognitionIconName] ?? Trophy;
 }

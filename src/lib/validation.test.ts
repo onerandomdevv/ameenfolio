@@ -106,6 +106,26 @@ describe("portfolio validation", () => {
     ).toBe(true);
   });
 
+  it("accepts any non-empty Now section description", () => {
+    expect(
+      nowSectionSchema.safeParse({
+        description: "Shipping.",
+        published: true,
+        showLastUpdated: false,
+      }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a whitespace-only Now section description", () => {
+    expect(
+      nowSectionSchema.safeParse({
+        description: "   ",
+        published: true,
+        showLastUpdated: false,
+      }).success,
+    ).toBe(false);
+  });
+
   it("limits the Now section description to 600 characters", () => {
     expect(
       nowSectionSchema.safeParse({

@@ -1,6 +1,8 @@
 import { neon } from "@neondatabase/serverless";
+import { readFileSync } from "node:fs";
 import { getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+import { recognitionIconNames } from "@/config/recognition-icons";
 import * as schema from "@/db/schema";
 import { nowLinks, nowSection, recognitions } from "@/db/schema";
 
@@ -26,6 +28,32 @@ describe("active application schema", () => {
     expect(recognitions).not.toHaveProperty("iconKey");
     expect(recognitions).not.toHaveProperty("iconAlt");
   });
+
+  it("keeps the schema and migration icon constraints aligned with the registry", () => {
+    const extractConstraintIcons = (source: string) => {
+      const constraint = source.match(
+        /recognitions_icon_name_valid[\s\S]*?in \(([^)]+)\)/,
+      );
+      expect(constraint).not.toBeNull();
+      return Array.from(
+        constraint![1].matchAll(/'([^']+)'/g),
+        ([, name]) => name,
+      );
+    };
+    const schemaSource = readFileSync(
+      new URL("./schema.ts", import.meta.url),
+      "utf8",
+    );
+    const migrationSource = readFileSync(
+      new URL("../../drizzle/0006_fixed_chat.sql", import.meta.url),
+      "utf8",
+    );
+
+    expect(extractConstraintIcons(schemaSource)).toEqual(recognitionIconNames);
+    expect(extractConstraintIcons(migrationSource)).toEqual(
+      recognitionIconNames,
+    );
+  });
 });
 
 describe.skipIf(!testUrl)("Drizzle migration integration", () => {
@@ -35,7 +63,6 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
       select table_name
       from information_schema.tables
       where table_schema = 'public'
-        and table_name in ('now_links', 'now_section', 'projects', 'recognitions', 'site_settings')
       order by table_name
     `;
     expect(tables.map((row) => row.table_name)).toEqual([
@@ -53,5 +80,39 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
         and not tgisinternal
     `;
     expect(triggers).toHaveLength(1);
+    const nowTriggers = await sql`
+      select tgname
+      from pg_trigger
+      where tgrelid = 'now_links'::regclass
+        and tgname = 'now_links_limit'
+        and not tgisinternal
+    `;
+    expect(nowTriggers).toHaveLength(1);
+  });
+
+  it("serializes concurrent Now-link inserts at the six-row limit", async () => {
+    const sql = neon(testUrl!);
+    await sql`delete from now_links`;
+    await sql`
+      insert into now_links (label, url, display_order, visible)
+      select
+        'Limit test ' || value,
+        'https://example.com/' || value,
+        value,
+        true
+      from generate_series(1, 5) as value
+    `;
+
+    const attempts = await Promise.allSettled([
+      sql`insert into now_links (label, url) values ('Concurrent A', 'https://example.com/a')`,
+      sql`insert into now_links (label, url) values ('Concurrent B', 'https://example.com/b')`,
+    ]);
+    const rows = await sql`select count(*)::int as count from now_links`;
+
+    expect(
+      attempts.filter((attempt) => attempt.status === "fulfilled"),
+    ).toHaveLength(1);
+    expect(rows[0].count).toBe(6);
+    await sql`delete from now_links`;
   });
 });

@@ -19,17 +19,21 @@ export async function saveRecognition(
   await requireAdmin();
   const parsed = recognitionSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
+  const values = {
+    ...parsed.data,
+    verificationUrl: parsed.data.verificationUrl || null,
+  };
 
   try {
     const rows = id
       ? await getDb()
           .update(recognitions)
-          .set({ ...parsed.data, updatedAt: new Date() })
+          .set({ ...values, updatedAt: new Date() })
           .where(eq(recognitions.id, id))
           .returning({ id: recognitions.id })
       : await getDb()
           .insert(recognitions)
-          .values(parsed.data)
+          .values(values)
           .returning({ id: recognitions.id });
     if (!rows[0]) return { ok: false, message: "Recognition not found." };
     refreshPublicContent();

@@ -54,7 +54,7 @@ export const recognitionSchema = z.object({
 });
 
 export const nowSectionSchema = z.object({
-  description: z.string().trim().min(20).max(600),
+  description: z.string().trim().min(1, "Description is required.").max(600),
   published: z.boolean(),
   showLastUpdated: z.boolean(),
 });

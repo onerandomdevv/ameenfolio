@@ -66,12 +66,12 @@
 - Create: `drizzle/0006_*.sql` and `drizzle/meta/0006_snapshot.json` through Drizzle generation
 - Modify: `drizzle/meta/_journal.json` through Drizzle generation
 
-- [ ] Query the connected Neon database read-only for the current recognition row count before changing the table.
+- [ ] Verify the exact Neon project and branch, query the database read-only for the current recognition row count, and export or snapshot `issuer`, `description`, `recognized_on`, and `icon_key` before changing the table. Retain the exported icon-key manifest until rollback is no longer required.
 - [ ] Change the active `recognitions` table to `title`, `iconName` defaulting to `trophy`, optional `verificationUrl`, `displayOrder`, `published`, and timestamps; retain the public ordering index.
 - [ ] Extend the schema test to assert `iconName` exists and obsolete long-form/icon-upload properties do not.
 - [ ] Run the schema test before generation and confirm the active model assertions pass.
 - [ ] Run `npm run db:generate`; inspect the generated SQL and verify it only adds `icon_name` and drops the five obsolete columns/check constraint from `recognitions`.
-- [ ] Run `npm run db:migrate`, query `information_schema.columns`, and verify the live column set plus the recorded migration hash.
+- [ ] Obtain explicit approval for the verified target and destructive SQL, run `npm run db:migrate` without automatic confirmation flags, then query `information_schema.columns` and verify the live column set plus the recorded migration hash. Only after the database change succeeds and the export is verified, remove R2 objects from the exported manifest that are no longer referenced by another record; log every cleanup failure for retry.
 - [ ] Run the focused schema test again.
 - [ ] Self-review the snapshot for unrelated schema changes and keep every historical migration unchanged.
 

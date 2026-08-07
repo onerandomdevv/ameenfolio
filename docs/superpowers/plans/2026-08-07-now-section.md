@@ -10,7 +10,7 @@
 
 ---
 
-### Task 1: Validation and limit behavior
+## Task 1: Validation and limit behavior
 
 **Files:**
 
@@ -21,7 +21,7 @@
 
 - [ ] **Step 1: Write failing validation and link-limit tests**
 
-Add tests that parse a 20-character description, reject descriptions longer than 600 characters, reject HTTP link URLs, require alt text when an icon key exists, and reject a seventh link through `canAddNowLink(6)`.
+Add tests that accept any trimmed non-empty description, reject descriptions longer than 600 characters, reject HTTP link URLs, require alt text when an icon key exists, and reject a seventh link through `canAddNowLink(6)`.
 
 ```ts
 expect(
@@ -55,7 +55,7 @@ Expected: FAIL because `nowSectionSchema`, `nowLinkSchema`, and `canAddNowLink` 
 
 ```ts
 export const nowSectionSchema = z.object({
-  description: z.string().trim().min(20).max(600),
+  description: z.string().trim().min(1).max(600),
   published: z.boolean(),
   showLastUpdated: z.boolean(),
 });
@@ -85,7 +85,7 @@ Run: `npm test -- --run src/lib/validation.test.ts src/lib/ordering.test.ts`
 
 Expected: PASS.
 
-### Task 2: PostgreSQL schema and migration
+## Task 2: PostgreSQL schema and migration
 
 **Files:**
 
@@ -155,7 +155,7 @@ Run: `npm run db:migrate`
 
 Expected: migrations applied successfully. Verify the migration file SHA-256 equals the latest `drizzle.__drizzle_migrations.hash` value.
 
-### Task 3: Public and admin queries
+## Task 3: Public and admin queries
 
 **Files:**
 
@@ -172,7 +172,6 @@ return {
   now: section?.published ? { ...section, links: nowLinkRows } : null,
   projects: projectRows,
   recognitions: recognitionRows,
-  technologies: technologyRows,
 };
 ```
 
@@ -195,7 +194,7 @@ export async function getAdminNow() {
 
 Query `now_links` by `icon_key` and `visible = true`, then include it in the final boolean returned by `isReferencedPublicMedia`.
 
-### Task 4: Protected Server Actions
+## Task 4: Protected Server Actions
 
 **Files:**
 
@@ -208,7 +207,7 @@ Implement `saveNowSection(input)` with `requireAdmin`, Zod parsing, singleton up
 
 - [ ] **Step 2: Add link limit and icon validation**
 
-Before creating a link, count all `now_links` and return `Only six Now links can be created.` when `canAddNowLink` returns false. Call `assertStoredUpload(iconKey, "icon")` when an icon is provided.
+Before creating a link, count all `now_links` and return `Only six Now links can be created.` when `canAddNowLink` returns false. Add a database trigger that takes a transaction-scoped advisory lock and enforces the same limit so concurrent requests cannot both create a seventh row. Test competing inserts against an isolated database. Call `assertStoredUpload(iconKey, "icon")` when an icon is provided.
 
 - [ ] **Step 3: Save links and touch the section atomically**
 
@@ -222,7 +221,7 @@ Read the existing link first, batch the delete with the section timestamp update
 
 Update `refreshPublicContent` only if needed so the existing `portfolio` tag and `/` revalidation cover Now changes without introducing a new public API.
 
-### Task 5: Admin Now page
+## Task 5: Admin Now page
 
 **Files:**
 
@@ -242,7 +241,7 @@ Use React Hook Form with `nowSectionSchema`, a textarea, shadcn Switch fields fo
 
 Follow the existing recognition/technology manager pattern: ordered cards, visible/hidden badge, create/edit shadcn Dialog, delete AlertDialog, `UploadField`, HTTPS URL field, order field, visibility switch, pending states, orphan upload cleanup, and a disabled Add button with explanatory text at six records.
 
-### Task 6: Public Now component
+## Task 6: Public Now component
 
 **Files:**
 
@@ -269,7 +268,7 @@ Destructure `now` from `getPublicPortfolio()` and conditionally render `<NowSect
 
 Confirm unpublished data renders no heading or empty-state card and a published section with zero links still renders its description and date.
 
-### Task 7: Automated and visual verification
+## Task 7: Automated and visual verification
 
 **Files:**
 
@@ -299,7 +298,7 @@ Expected: all public, admin, media, and auth routes compile successfully.
 
 Use the in-app browser when available, otherwise Playwright fallback, to inspect the homepage and `/admin/now`. Check desktop and mobile wrapping, heading/description hierarchy, chip focus states, update-date formatting, unpublished omission, dialog labels, keyboard accessibility, and console errors.
 
-### Task 8: Commit the completed vertical slice
+## Task 8: Commit the completed vertical slice
 
 **Files:**
 
