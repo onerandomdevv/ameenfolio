@@ -1,0 +1,5 @@
+# Registry-managed shadcn/ui source stays aligned with upstream formatting.
+src/components/ui/
+
+# Generated database artifacts are not hand-maintained.
+drizzle/

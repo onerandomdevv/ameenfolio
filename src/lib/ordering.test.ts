@@ -8,9 +8,8 @@ describe("portfolio ordering", () => {
   });
 
   it("sorts display items in ascending administrator order", () => {
-    expect([{ displayOrder: 20 }, { displayOrder: 2 }].sort(byDisplayOrder)).toEqual([
-      { displayOrder: 2 },
-      { displayOrder: 20 },
-    ]);
+    expect(
+      [{ displayOrder: 20 }, { displayOrder: 2 }].sort(byDisplayOrder),
+    ).toEqual([{ displayOrder: 2 }, { displayOrder: 20 }]);
   });
 });

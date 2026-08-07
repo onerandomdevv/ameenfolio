@@ -7,6 +7,8 @@ A mobile-first portfolio and owner-only content admin built with Next.js 16, Tai
 ```text
 npm run dev
 npm run lint
+npm run format
+npm run format:check
 npm run typecheck
 npm test
 npm run test:e2e

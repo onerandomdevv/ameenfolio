@@ -14,11 +14,13 @@ export const metadata: Metadata = {
     default: "Ameen's Portfolio",
     template: "%s | Ameen's Portfolio",
   },
-  description: "Selected projects, recognition, and the technologies behind Ameen's work.",
+  description:
+    "Selected projects, recognition, and the technologies behind Ameen's work.",
   alternates: { canonical: "/" },
   openGraph: {
     title: "Ameen's Portfolio",
-    description: "Selected projects, recognition, and the technologies behind Ameen's work.",
+    description:
+      "Selected projects, recognition, and the technologies behind Ameen's work.",
     url: "/",
     siteName: "Ameen's Portfolio",
     locale: "en_US",

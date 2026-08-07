@@ -1,5 +1,5 @@
-import { getObject } from "@/lib/storage";
-import { isPublicIconKey } from "@/lib/storage-rules";
+import { getObject } from "@/lib/storage/server";
+import { isPublicIconKey } from "@/lib/storage/rules";
 import { isReferencedPublicIcon } from "@/db/queries";
 
 export const runtime = "nodejs";

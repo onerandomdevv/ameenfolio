@@ -3,11 +3,13 @@ import { z } from "zod";
 const optionalHttpsUrl = z
   .string()
   .trim()
-  .refine((value) => !value || value.startsWith("https://"), "URL must use HTTPS.")
+  .refine(
+    (value) => !value || value.startsWith("https://"),
+    "URL must use HTTPS.",
+  )
   .optional();
 
-const optionalText = (max: number) =>
-  z.string().trim().max(max).optional();
+const optionalText = (max: number) => z.string().trim().max(max).optional();
 
 const iconObjectKey = z
   .string()

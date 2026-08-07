@@ -59,7 +59,6 @@ export function isPublicIconKey(key: string) {
 
 export function isManagedObjectKey(key: string) {
   return (
-    isPublicIconKey(key) ||
-    /^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/.test(key)
+    isPublicIconKey(key) || /^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/.test(key)
   );
 }

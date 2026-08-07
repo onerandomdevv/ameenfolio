@@ -49,7 +49,10 @@ const cachedPublicPortfolio = unstable_cache(
           .select()
           .from(projects)
           .where(
-            and(eq(projects.published, true), eq(projects.showOnHomepage, true)),
+            and(
+              eq(projects.published, true),
+              eq(projects.showOnHomepage, true),
+            ),
           )
           .orderBy(asc(projects.homepageOrder), desc(projects.createdAt))
           .limit(8),
@@ -57,7 +60,10 @@ const cachedPublicPortfolio = unstable_cache(
           .select()
           .from(recognitions)
           .where(eq(recognitions.published, true))
-          .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
+          .orderBy(
+            asc(recognitions.displayOrder),
+            desc(recognitions.createdAt),
+          ),
         db
           .select()
           .from(technologies)
@@ -127,9 +133,23 @@ export async function isReferencedPublicIcon(key: string) {
   if (!canQueryDatabase()) return false;
   const db = getDb();
   const [project, recognition, technology] = await Promise.all([
-    db.select({ id: projects.id }).from(projects).where(and(eq(projects.iconKey, key), eq(projects.published, true))).limit(1),
-    db.select({ id: recognitions.id }).from(recognitions).where(and(eq(recognitions.iconKey, key), eq(recognitions.published, true))).limit(1),
-    db.select({ id: technologies.id }).from(technologies).where(and(eq(technologies.iconKey, key), eq(technologies.visible, true))).limit(1),
+    db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(and(eq(projects.iconKey, key), eq(projects.published, true)))
+      .limit(1),
+    db
+      .select({ id: recognitions.id })
+      .from(recognitions)
+      .where(
+        and(eq(recognitions.iconKey, key), eq(recognitions.published, true)),
+      )
+      .limit(1),
+    db
+      .select({ id: technologies.id })
+      .from(technologies)
+      .where(and(eq(technologies.iconKey, key), eq(technologies.visible, true)))
+      .limit(1),
   ]);
   return Boolean(project[0] || recognition[0] || technology[0]);
 }

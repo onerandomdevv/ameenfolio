@@ -14,7 +14,7 @@ import {
   createObjectKey,
   UPLOAD_RULES,
   validateUpload,
-} from "@/lib/storage-rules";
+} from "@/lib/storage/rules";
 
 let r2: S3Client | undefined;
 
@@ -57,7 +57,9 @@ export async function signUpload(
 
 export async function getObject(key: string) {
   const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
-  return getR2().send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
+  return getR2().send(
+    new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }),
+  );
 }
 
 export async function assertStoredUpload(
@@ -73,7 +75,9 @@ export async function assertStoredUpload(
     !metadata.ContentLength ||
     !validateUpload(resourceType, metadata.ContentType, metadata.ContentLength)
   ) {
-    throw new Error("Stored upload does not match the permitted type and size.");
+    throw new Error(
+      "Stored upload does not match the permitted type and size.",
+    );
   }
 }
 
