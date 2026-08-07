@@ -2,7 +2,9 @@
  * TEMPORARY DIAGNOSTIC ROUTE — remove once the /api/auth 502 is resolved.
  *
  * Disabled unless DIAG_TOKEN is set in the environment, and requires that exact
- * token as ?token=... Returns 404 otherwise so it is invisible in production.
+ * token in the `x-diag-token` request header. Returns 404 otherwise so it is
+ * invisible in production. The token is read from a header rather than the query
+ * string because proxy and CDN access logs record URLs.
  *
  * Reports env-var *presence* (never values) and the result of server-side
  * fetches from inside the runtime, to distinguish "cannot reach Neon Auth"
@@ -59,7 +61,7 @@ async function probe(label: string, url: string) {
 }
 
 export async function GET(request: Request) {
-  const token = new URL(request.url).searchParams.get("token");
+  const token = request.headers.get("x-diag-token");
   if (!tokenMatches(token)) {
     return new Response(null, { status: 404 });
   }
@@ -90,18 +92,22 @@ export async function GET(request: Request) {
     }
   }
 
-  const probes = [];
+  const targets: Array<[string, string]> = [];
   if (authBaseUrl && !parseError) {
-    probes.push(
-      await probe("neon-auth-base", authBaseUrl),
-      await probe(
-        "neon-auth-session",
-        `${authBaseUrl.replace(/\/$/, "")}/session`,
-      ),
+    targets.push(
+      ["neon-auth-base", authBaseUrl],
+      ["neon-auth-session", `${authBaseUrl.replace(/\/$/, "")}/session`],
     );
   }
   // Control: proves whether outbound egress works at all from this runtime.
-  probes.push(await probe("control-egress", "https://neon.tech/robots.txt"));
+  targets.push(["control-egress", "https://neon.tech/robots.txt"]);
+
+  // Concurrent so the worst case stays near one probe timeout. Sequentially,
+  // three hung probes would exceed the platform request budget and the
+  // diagnostic would itself fail before reporting anything.
+  const probes = await Promise.all(
+    targets.map(([label, url]) => probe(label, url)),
+  );
 
   return Response.json(
     {
