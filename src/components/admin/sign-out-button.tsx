@@ -2,14 +2,18 @@
 
 import { createAuthClient } from "@neondatabase/auth/next";
 import { LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 const auth = createAuthClient();
 
 export function SignOutButton() {
+  const router = useRouter();
+
   async function signOut() {
     await auth.signOut();
-    window.location.assign("/admin/login");
+    router.replace("/admin/login");
+    router.refresh();
   }
 
   return (
