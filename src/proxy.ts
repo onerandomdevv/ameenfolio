@@ -10,7 +10,11 @@ export default function proxy(request: NextRequest) {
   // the call resolves to nothing — the mutation fails with nothing surfaced to
   // the user. Let them through; every action in src/app/admin/actions calls
   // requireAdmin() itself, which redirects visibly when the session is gone.
-  if (request.headers.get("next-action")) return NextResponse.next();
+  // Method is checked too: Server Actions are always POST, so a spoofed header
+  // on any other method has no reason to skip the session check.
+  if (request.method === "POST" && request.headers.get("next-action")) {
+    return NextResponse.next();
+  }
   return getAuth().middleware({ loginUrl: "/admin/login" })(request);
 }
 
