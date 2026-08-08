@@ -14,6 +14,28 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
+## Admin host
+
+The admin app has two mountings, both always live. A host whose first label is `admin.` serves it at the root — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Every other host serves it under `/admin`. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
+
+The subdomain is the intended route. On it, the `/admin` route prefix is an implementation detail and is not a URL:
+
+| Request                    | Serves                    |
+| -------------------------- | ------------------------- |
+| `admin.<domain>/`          | admin projects list       |
+| `admin.<domain>/settings`  | admin settings            |
+| `admin.<domain>/login`     | owner sign-in             |
+| `admin.<domain>/admin/...` | 404                       |
+| `<domain>/admin/settings`  | admin settings (fallback) |
+
+Used through the subdomain, the session cookie is scoped to that host and never sent to the public site, and the admin can be put behind network-level controls without touching the portfolio.
+
+The `/admin` path mount is kept as a fallback rather than blocked. A platform-assigned URL has no `admin.` sibling to point anywhere, so if DNS lapses or the domain expires, the path mount is the only remaining way in. Blocking it would make the admin unreachable at exactly the moment it is needed to fix things.
+
+Links resolve per request from the `Host` header, so the same page links correctly under either mounting. Nothing needs configuring for this; no environment variable names the admin host.
+
+Register `https://admin.<domain>` as its own origin everywhere in the next section — the GitHub OAuth callback and R2 CORS both need it, and the apex entry does not cover it.
+
 ## Origins registered outside the host
 
 Adding a domain to your hosting platform is not enough. The same exact origin must also be allowed in:

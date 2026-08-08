@@ -3,24 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { useAdminBase } from "@/lib/use-admin-base";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/admin/projects", label: "Projects" },
-  { href: "/admin/now", label: "Now" },
-  { href: "/admin/recognitions", label: "Recognitions" },
-  { href: "/admin/settings", label: "Settings" },
+  { href: "/projects", label: "Projects" },
+  { href: "/now", label: "Now" },
+  { href: "/recognitions", label: "Recognitions" },
+  { href: "/settings", label: "Settings" },
 ] as const;
+
+// On an `admin.` host, `/` is rewritten to the admin projects page, so a
+// relative root link sends "View site" back into the admin instead of the
+// portfolio. The public origin has to be named rather than inferred from the
+// current one. NEXT_PUBLIC_APP_URL already has to be the public site for
+// canonical URLs and the sitemap, so it is the same fact, not new config.
+const publicSiteHref = process.env.NEXT_PUBLIC_APP_URL || "/";
 
 export function AdminNav() {
   const pathname = usePathname();
+  const base = useAdminBase();
 
   return (
     <header className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <nav aria-label="Admin navigation">
         <ul className="flex flex-wrap items-center text-sm">
           {links.map((link, index) => {
-            const active = pathname.startsWith(link.href);
+            const href = `${base}${link.href}`;
+            const active = pathname.startsWith(href);
 
             return (
               <li key={link.href} className="flex items-center">
@@ -33,7 +43,7 @@ export function AdminNav() {
                   </span>
                 ) : null}
                 <Link
-                  href={link.href}
+                  href={href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "inline-flex min-h-11 items-center transition-colors hover:text-foreground",
@@ -50,7 +60,7 @@ export function AdminNav() {
 
       <div className="flex items-center gap-4 text-sm">
         <a
-          href="/"
+          href={publicSiteHref}
           target="_blank"
           rel="noreferrer"
           className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
