@@ -5,6 +5,7 @@ import { forbidden, redirect } from "next/navigation";
 import { getServerEnv, requireServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import { isAllowedAdminAccount, type LinkedAccount } from "@/lib/auth/guards";
+import { adminHref } from "@/lib/admin-path";
 
 let authInstance: NeonAuth | undefined;
 
@@ -36,7 +37,7 @@ export async function requireAdmin() {
     logServer("warn", "auth.unauthenticated", {
       reason: sessionError?.message ?? "missing_session",
     });
-    redirect("/login");
+    redirect(await adminHref("/login"));
   }
 
   const { data: accounts, error: accountsError } = await auth.listAccounts();

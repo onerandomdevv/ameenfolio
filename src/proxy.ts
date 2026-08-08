@@ -42,10 +42,14 @@ export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (!onAdminHost(request)) {
-    // The admin app is served only from the admin host, so the public host must
-    // not expose a second set of URLs for it.
+    // Path-mounted fallback. The admin host is the intended way in, but a
+    // platform URL cannot have an `admin.` sibling, so refusing this would make
+    // the admin unreachable exactly when DNS is the thing that is broken.
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-      return NextResponse.rewrite(new URL("/_not-found", request.url));
+      if (pathname === "/admin/login" || isServerAction(request)) {
+        return NextResponse.next();
+      }
+      return getAuth().middleware({ loginUrl: "/admin/login" })(request);
     }
     return NextResponse.next();
   }

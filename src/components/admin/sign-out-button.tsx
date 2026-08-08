@@ -2,15 +2,17 @@
 
 import { createAuthClient } from "@neondatabase/auth/next";
 import { useRouter } from "next/navigation";
+import { useAdminBase } from "@/lib/use-admin-base";
 
 const auth = createAuthClient();
 
 export function SignOutButton() {
   const router = useRouter();
+  const base = useAdminBase();
 
   async function signOut() {
     await auth.signOut();
-    router.replace("/login");
+    router.replace(`${base}/login`);
     router.refresh();
   }
 

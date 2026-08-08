@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignOutButton } from "@/components/admin/sign-out-button";
+import { useAdminBase } from "@/lib/use-admin-base";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -14,13 +15,15 @@ const links = [
 
 export function AdminNav() {
   const pathname = usePathname();
+  const base = useAdminBase();
 
   return (
     <header className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
       <nav aria-label="Admin navigation">
         <ul className="flex flex-wrap items-center text-sm">
           {links.map((link, index) => {
-            const active = pathname.startsWith(link.href);
+            const href = `${base}${link.href}`;
+            const active = pathname.startsWith(href);
 
             return (
               <li key={link.href} className="flex items-center">
@@ -33,7 +36,7 @@ export function AdminNav() {
                   </span>
                 ) : null}
                 <Link
-                  href={link.href}
+                  href={href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "inline-flex min-h-11 items-center transition-colors hover:text-foreground",

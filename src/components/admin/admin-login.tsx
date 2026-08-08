@@ -5,12 +5,14 @@ import { createAuthClient } from "@neondatabase/auth/next";
 import { LoaderCircle } from "lucide-react";
 import { instrumentSerif } from "@/app/fonts";
 import { Button } from "@/components/ui/button";
+import { useAdminBase } from "@/lib/use-admin-base";
 
 const auth = createAuthClient();
 
 export function AdminLogin() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
+  const base = useAdminBase();
 
   async function signIn() {
     setPending(true);
@@ -18,7 +20,7 @@ export function AdminLogin() {
     const result = await auth.signIn.social({
       provider: "github",
       callbackURL: new URL(
-        "/",
+        `${base}/projects`,
         window.location.origin,
       ).toString(),
     });

@@ -26,9 +26,13 @@ On the admin host the `/admin` route prefix is an implementation detail and is n
 | `admin.<domain>/settings` | admin settings |
 | `admin.<domain>/login` | owner sign-in |
 | `admin.<domain>/admin/...` | 404 |
-| `<domain>/admin/...` | 404 |
+| `<domain>/admin/settings` | admin settings (fallback) |
 
-This means the session cookie is scoped to the admin host and is never sent to the public site, and the admin can be put behind network-level controls without touching the portfolio.
+Used through the subdomain, the session cookie is scoped to that host and never sent to the public site, and the admin can be put behind network-level controls without touching the portfolio.
+
+The `/admin` path mount is kept as a fallback rather than blocked. A platform-assigned URL has no `admin.` sibling to point anywhere, so if DNS lapses or the domain expires, the path mount is the only remaining way in. Blocking it would make the admin unreachable at exactly the moment it is needed to fix things.
+
+Links resolve per request from the `Host` header, so the same page links correctly under either mounting. Nothing needs configuring for this; no environment variable names the admin host.
 
 Register `https://admin.<domain>` as its own origin everywhere in the next section — the GitHub OAuth callback and R2 CORS both need it, and the apex entry does not cover it.
 

@@ -11,11 +11,29 @@ test.skip(
 // rather than by navigating to it.
 const ADMIN_HOST = "admin.localhost:3000";
 
-test("the public host does not serve the admin app", async ({ request }) => {
-  for (const path of ["/admin", "/admin/now", "/admin/login"]) {
-    const response = await request.get(path, { maxRedirects: 0 });
-    expect(response.status(), `${path} should not exist publicly`).toBe(404);
-  }
+// The path mount is the way back in when no `admin.` host can exist — a
+// platform fallback URL has no subdomain to point at the deployment.
+test("the path-mounted admin stays reachable off the admin host", async ({
+  request,
+}) => {
+  const guarded = await request.get("/admin/now", { maxRedirects: 0 });
+  expect([302, 303, 307]).toContain(guarded.status());
+  expect(guarded.headers()["location"]).toContain("/admin/login");
+
+  const login = await request.get("/admin/login");
+  expect(login.status()).toBe(200);
+  expect(await login.text()).toContain("Continue with GitHub");
+});
+
+// On the admin host the prefix is a detail of the route tree, not an address.
+test("the admin host does not double-mount under /admin", async ({
+  request,
+}) => {
+  const response = await request.get("/admin/login", {
+    headers: { Host: ADMIN_HOST },
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBe(404);
 });
 
 test("unauthenticated admin requests are sent to owner login", async ({
