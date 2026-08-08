@@ -1,9 +1,7 @@
 "use client";
 
 import { createAuthClient } from "@neondatabase/auth/next";
-import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
 
 const auth = createAuthClient();
 
@@ -17,9 +15,12 @@ export function SignOutButton() {
   }
 
   return (
-    <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
-      <LogOut data-icon="inline-start" />
+    <button
+      type="button"
+      onClick={signOut}
+      className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+    >
       Sign out
-    </Button>
+    </button>
   );
 }

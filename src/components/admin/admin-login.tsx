@@ -2,17 +2,9 @@
 
 import { useState } from "react";
 import { createAuthClient } from "@neondatabase/auth/next";
-import { Github, LoaderCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { LoaderCircle } from "lucide-react";
+import { instrumentSerif } from "@/app/fonts";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 const auth = createAuthClient();
 
@@ -38,36 +30,28 @@ export function AdminLogin() {
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="text-center">
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-primary">
-          Owner access
-        </p>
-        <CardTitle className="mt-2">
-          <h1 className="text-2xl">Portfolio admin</h1>
-        </CardTitle>
-        <CardDescription>
-          Sign in with the authorized GitHub account to manage content.
-        </CardDescription>
-      </CardHeader>
+    <div className="w-full max-w-sm">
+      <h1
+        className={`${instrumentSerif.className} text-3xl leading-none tracking-[-0.02em] text-foreground`}
+      >
+        Portfolio admin
+      </h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Sign in with the authorized GitHub account to manage content.
+      </p>
+
       {error ? (
-        <CardContent>
-          <Alert variant="destructive">
-            <AlertTitle>Sign-in failed</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </CardContent>
+        <p role="alert" className="mt-6 text-sm text-destructive">
+          {error}
+        </p>
       ) : null}
-      <CardFooter>
-        <Button className="w-full" onClick={signIn} disabled={pending}>
-          {pending ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Github data-icon="inline-start" />
-          )}
-          Continue with GitHub
-        </Button>
-      </CardFooter>
-    </Card>
+
+      <Button className="mt-8 w-full" onClick={signIn} disabled={pending}>
+        {pending ? (
+          <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        ) : null}
+        Continue with GitHub
+      </Button>
+    </div>
   );
 }

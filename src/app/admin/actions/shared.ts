@@ -1,6 +1,6 @@
 import "server-only";
 
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -16,9 +16,13 @@ export function validationFailure(error: {
   };
 }
 
+// Called only from Server Actions, so updateTag applies: it expires the tag
+// immediately and makes the next request wait for fresh data. revalidateTag
+// only marks the entry stale, which let /projects keep serving a cached empty
+// list after a project was published.
 export function refreshPublicContent() {
-  revalidateTag("portfolio", "max");
-  revalidateTag("projects", "max");
+  updateTag("portfolio");
+  updateTag("projects");
   revalidatePath("/");
   revalidatePath("/projects");
 }
