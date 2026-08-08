@@ -16,9 +16,9 @@ Use the development Neon branch and `ameenfolio-media-dev` for previews. Product
 
 ## Admin host
 
-The admin app is served only from a host whose first label is `admin.` — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
+The admin app has two mountings, both always live. A host whose first label is `admin.` serves it at the root — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Every other host serves it under `/admin`. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
 
-On the admin host the `/admin` route prefix is an implementation detail and is not a URL:
+The subdomain is the intended route. On it, the `/admin` route prefix is an implementation detail and is not a URL:
 
 | Request | Serves |
 | --- | --- |

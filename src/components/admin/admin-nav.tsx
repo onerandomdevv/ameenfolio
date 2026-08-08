@@ -13,6 +13,13 @@ const links = [
   { href: "/settings", label: "Settings" },
 ] as const;
 
+// On an `admin.` host, `/` is rewritten to the admin projects page, so a
+// relative root link sends "View site" back into the admin instead of the
+// portfolio. The public origin has to be named rather than inferred from the
+// current one. NEXT_PUBLIC_APP_URL already has to be the public site for
+// canonical URLs and the sitemap, so it is the same fact, not new config.
+const publicSiteHref = process.env.NEXT_PUBLIC_APP_URL || "/";
+
 export function AdminNav() {
   const pathname = usePathname();
   const base = useAdminBase();
@@ -53,7 +60,7 @@ export function AdminNav() {
 
       <div className="flex items-center gap-4 text-sm">
         <a
-          href="/"
+          href={publicSiteHref}
           target="_blank"
           rel="noreferrer"
           className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
