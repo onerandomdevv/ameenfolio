@@ -18,6 +18,6 @@ npm run db:migrate
 npm run db:seed
 ```
 
-Start with [docs/setup.md](docs/setup.md). System boundaries are documented in [docs/architecture.md](docs/architecture.md), and the PXXL checklist is in [docs/deployment-pxxl.md](docs/deployment-pxxl.md).
+Start with [docs/setup.md](docs/setup.md). System boundaries are documented in [docs/architecture.md](docs/architecture.md), and the deployment checklist is in [docs/deployment.md](docs/deployment.md).
 
 Public routes are `/` and `/projects`. The résumé is an attachment at `/resume`; there are no project detail, résumé viewer, Studio, or public mutation routes.
