@@ -8,7 +8,7 @@ export default function Unauthorized() {
       title="Sign in required"
       description="Authenticate with the authorized GitHub account to continue."
       actionLabel="Go to admin login"
-      actionHref="/admin/login"
+      actionHref="/login"
       icon={LogIn}
     />
   );

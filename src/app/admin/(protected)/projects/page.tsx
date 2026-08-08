@@ -13,7 +13,7 @@ export default async function AdminProjectsPage() {
         description="Publish work and choose up to eight homepage highlights."
         action={
           <Link
-            href="/admin/projects/new"
+            href="/projects/new"
             className="inline-flex min-h-11 items-center text-sm text-foreground underline underline-offset-4 transition-colors hover:text-muted-foreground"
           >
             New project
@@ -30,7 +30,7 @@ export default async function AdminProjectsPage() {
             >
               <div className="min-w-0">
                 <Link
-                  href={`/admin/projects/${project.id}/edit`}
+                  href={`/projects/${project.id}/edit`}
                   className="text-sm text-foreground transition-colors hover:text-muted-foreground"
                 >
                   {project.title}
@@ -61,7 +61,7 @@ export default async function AdminProjectsPage() {
                   </a>
                 ) : null}
                 <Link
-                  href={`/admin/projects/${project.id}/edit`}
+                  href={`/projects/${project.id}/edit`}
                   className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
                 >
                   Edit

@@ -36,7 +36,7 @@ export async function requireAdmin() {
     logServer("warn", "auth.unauthenticated", {
       reason: sessionError?.message ?? "missing_session",
     });
-    redirect("/admin/login");
+    redirect("/login");
   }
 
   const { data: accounts, error: accountsError } = await auth.listAccounts();

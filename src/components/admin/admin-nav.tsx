@@ -6,10 +6,10 @@ import { SignOutButton } from "@/components/admin/sign-out-button";
 import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/admin/projects", label: "Projects" },
-  { href: "/admin/now", label: "Now" },
-  { href: "/admin/recognitions", label: "Recognitions" },
-  { href: "/admin/settings", label: "Settings" },
+  { href: "/projects", label: "Projects" },
+  { href: "/now", label: "Now" },
+  { href: "/recognitions", label: "Recognitions" },
+  { href: "/settings", label: "Settings" },
 ] as const;
 
 export function AdminNav() {

@@ -18,7 +18,7 @@ export function AdminLogin() {
     const result = await auth.signIn.social({
       provider: "github",
       callbackURL: new URL(
-        "/admin/projects",
+        "/",
         window.location.origin,
       ).toString(),
     });

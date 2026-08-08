@@ -78,7 +78,7 @@ export function ProjectForm({ project }: { project?: Project }) {
     }
 
     toast.success(project ? "Project updated." : "Project created.");
-    router.push("/admin/projects");
+    router.push("/projects");
     router.refresh();
   }
 

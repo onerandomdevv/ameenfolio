@@ -5,14 +5,38 @@ test.skip(
   "Neon Auth credentials are required for protected-route E2E tests.",
 );
 
+// The admin app is served only from a host beginning with `admin.`, so requests
+// are distinguished by Host rather than by path. 127.0.0.1 cannot carry a
+// subdomain label, so the admin host is asserted through a header override
+// rather than by navigating to it.
+const ADMIN_HOST = "admin.localhost:3000";
+
+test("the public host does not serve the admin app", async ({ request }) => {
+  for (const path of ["/admin", "/admin/now", "/admin/login"]) {
+    const response = await request.get(path, { maxRedirects: 0 });
+    expect(response.status(), `${path} should not exist publicly`).toBe(404);
+  }
+});
+
 test("unauthenticated admin requests are sent to owner login", async ({
-  page,
+  request,
 }) => {
-  await page.goto("/admin/now");
-  await expect(page).toHaveURL(/\/admin\/login/);
-  await expect(
-    page.getByRole("button", { name: /continue with github/i }),
-  ).toBeVisible();
+  const response = await request.get("/now", {
+    headers: { Host: ADMIN_HOST },
+    maxRedirects: 0,
+  });
+
+  expect([302, 303, 307]).toContain(response.status());
+  expect(response.headers()["location"]).toContain("/login");
+});
+
+test("the admin login page renders on the admin host", async ({ request }) => {
+  const response = await request.get("/login", {
+    headers: { Host: ADMIN_HOST },
+  });
+
+  expect(response.status()).toBe(200);
+  expect(await response.text()).toContain("Continue with GitHub");
 });
 
 test("upload signing is unavailable without an admin session", async ({

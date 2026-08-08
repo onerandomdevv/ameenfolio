@@ -14,6 +14,24 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
+## Admin host
+
+The admin app is served only from a host whose first label is `admin.` — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
+
+On the admin host the `/admin` route prefix is an implementation detail and is not a URL:
+
+| Request | Serves |
+| --- | --- |
+| `admin.<domain>/` | admin projects list |
+| `admin.<domain>/settings` | admin settings |
+| `admin.<domain>/login` | owner sign-in |
+| `admin.<domain>/admin/...` | 404 |
+| `<domain>/admin/...` | 404 |
+
+This means the session cookie is scoped to the admin host and is never sent to the public site, and the admin can be put behind network-level controls without touching the portfolio.
+
+Register `https://admin.<domain>` as its own origin everywhere in the next section — the GitHub OAuth callback and R2 CORS both need it, and the apex entry does not cover it.
+
 ## Origins registered outside the host
 
 Adding a domain to your hosting platform is not enough. The same exact origin must also be allowed in:
