@@ -2,106 +2,63 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Award,
-  Clock3,
-  ExternalLink,
-  FolderKanban,
-  Menu,
-  Settings,
-} from "lucide-react";
 import { SignOutButton } from "@/components/admin/sign-out-button";
-import { Button } from "@/components/ui/button";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { cn } from "@/lib/utils";
 
 const links = [
-  { href: "/admin/projects", label: "Projects", icon: FolderKanban },
-  { href: "/admin/now", label: "Now", icon: Clock3 },
-  { href: "/admin/recognitions", label: "Recognitions", icon: Award },
-  { href: "/admin/settings", label: "Site settings", icon: Settings },
-];
+  { href: "/admin/projects", label: "Projects" },
+  { href: "/admin/now", label: "Now" },
+  { href: "/admin/recognitions", label: "Recognitions" },
+  { href: "/admin/settings", label: "Settings" },
+] as const;
 
-function Brand() {
-  return (
-    <p className="font-black uppercase tracking-tight">
-      Ameen<span className="text-primary">folio</span>
-    </p>
-  );
-}
-
-function NavLinks() {
+export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Admin navigation" className="flex flex-col gap-1">
-      {links.map(({ href, label, icon: Icon }) => (
-        <Button
-          asChild
-          key={href}
-          variant={pathname.startsWith(href) ? "default" : "ghost"}
-          className="justify-start"
-        >
-          <Link href={href}>
-            <Icon data-icon="inline-start" />
-            {label}
-          </Link>
-        </Button>
-      ))}
-    </nav>
-  );
-}
+    <header className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <nav aria-label="Admin navigation">
+        <ul className="flex flex-wrap items-center text-sm">
+          {links.map((link, index) => {
+            const active = pathname.startsWith(link.href);
 
-export function DesktopAdminNav() {
-  return (
-    <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-background p-5 lg:block">
-      <div className="mb-8 text-lg">
-        <Brand />
-      </div>
-      <NavLinks />
-      <div className="absolute right-5 bottom-5 left-5 grid gap-1">
-        <Button asChild variant="ghost" className="justify-start">
-          <a href="/" target="_blank" rel="noreferrer">
-            View portfolio
-            <ExternalLink data-icon="inline-end" />
-          </a>
-        </Button>
+            return (
+              <li key={link.href} className="flex items-center">
+                {index > 0 ? (
+                  <span
+                    className="mx-2 text-muted-foreground/50"
+                    aria-hidden="true"
+                  >
+                    /
+                  </span>
+                ) : null}
+                <Link
+                  href={link.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex min-h-11 items-center transition-colors hover:text-foreground",
+                    active ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      <div className="flex items-center gap-4 text-sm">
+        <a
+          href="/"
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+        >
+          View site
+        </a>
         <SignOutButton />
       </div>
-    </aside>
-  );
-}
-
-export function MobileAdminNav() {
-  return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between border-b bg-background/90 px-5 backdrop-blur lg:hidden">
-      <Brand />
-      <Sheet>
-        <SheetTrigger asChild>
-          <Button
-            size="icon"
-            variant="outline"
-            aria-label="Open admin navigation"
-          >
-            <Menu />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="left" className="w-72">
-          <SheetHeader>
-            <SheetTitle>Admin navigation</SheetTitle>
-            <SheetDescription>Manage portfolio content.</SheetDescription>
-          </SheetHeader>
-          <div className="px-4">
-            <NavLinks />
-          </div>
-        </SheetContent>
-      </Sheet>
     </header>
   );
 }
