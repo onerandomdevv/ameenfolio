@@ -45,3 +45,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .neon
+
+.claude
+CLAUDE.md
+.vscode

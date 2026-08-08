@@ -1,7 +1,7 @@
 # Local and service setup
 
 1. Copy `.env.example` to `.env.local` and replace every placeholder used by your environment.
-2. In your own Neon account, create the `ameenfolio` project in the region closest to PXXL. Keep the production branch and create a long-lived development branch. Use temporary branches to test migrations.
+2. In your own Neon account, create the `ameenfolio` project in the region closest to wherever you deploy. Keep the production branch and create a long-lived development branch. Use temporary branches to test migrations.
 3. Put the pooled connection string in `DATABASE_URL` and the direct/unpooled string in `DATABASE_MIGRATION_URL`.
 4. Provision Neon Auth, enable GitHub only, and configure its callback URL for local, preview, and production origins. Set a random cookie secret of at least 32 characters. Leave `ADMIN_GITHUB_USER_ID=231661599`.
 5. Run `npm run db:migrate`, then `npm run db:seed`.
