@@ -1,0 +1,20 @@
+# Normalise line endings so a checkout is identical on every platform.
+#
+# Without this, Windows checkouts get CRLF while Prettier defaults to
+# endOfLine: "lf", so `npm run format:check` fails locally on nearly every file
+# regardless of how they are written. That noise hides genuine formatting
+# failures until CI catches them.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.otf binary
