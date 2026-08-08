@@ -3,7 +3,7 @@
 import { createElement, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   deleteRecognition,
@@ -22,15 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -86,47 +78,43 @@ export function RecognitionsManager({ items }: { items: Recognition[] }) {
         </Button>
       </div>
       {items.length ? (
-        <div className="grid gap-3">
+        <ul className="divide-y border-y">
           {items.map((item) => {
             return (
-              <Card key={item.id} className="gap-3">
-                <CardHeader>
-                  <div className="flex min-w-0 items-start gap-3">
-                    {createElement(getRecognitionIcon(item.iconName), {
-                      className: "mt-0.5 size-4 shrink-0 text-muted-foreground",
-                      "aria-hidden": true,
-                    })}
-                    <div className="min-w-0">
-                      <CardTitle>
-                        <h2>{item.title}</h2>
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {item.verificationUrl
-                          ? "Linked evidence"
-                          : "Static recognition"}
-                        {` · Order ${item.displayOrder}`}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <CardAction className="flex items-center gap-1">
-                    <Badge variant={item.published ? "default" : "secondary"}>
+              <li
+                key={item.id}
+                className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  {createElement(getRecognitionIcon(item.iconName), {
+                    className: "mt-0.5 size-4 shrink-0 text-muted-foreground",
+                    "aria-hidden": true,
+                  })}
+                  <div className="min-w-0">
+                    <h2 className="text-sm text-foreground">{item.title}</h2>
+                    <p className="mt-1 text-xs text-muted-foreground">
                       {item.published ? "Published" : "Draft"}
-                    </Badge>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => launch(item)}
-                      aria-label={`Edit ${item.title}`}
-                    >
-                      <Pencil />
-                    </Button>
-                    <DeleteRecognition item={item} />
-                  </CardAction>
-                </CardHeader>
-              </Card>
+                      {item.verificationUrl
+                        ? " / Linked evidence"
+                        : " / Static recognition"}
+                      {` / Order ${item.displayOrder}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-4 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => launch(item)}
+                    className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Edit
+                  </button>
+                  <DeleteRecognition item={item} />
+                </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       ) : (
         <AdminEmptyState
           title="No recognitions yet"

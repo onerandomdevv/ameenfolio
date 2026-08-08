@@ -97,7 +97,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-xl px-5 pb-10 pt-20 sm:px-6 sm:pt-28">
+    <main className="mx-auto w-full max-w-xl px-5 pb-10 pt-8 sm:px-6 sm:pt-12">
       <PortfolioNav current="home" />
 
       <section className="mt-10 max-w-xl">
@@ -125,7 +125,7 @@ export default async function HomePage() {
             </p>
           </div>
         </div>
-        <p className="mt-8 max-w-xl text-pretty text-base leading-7 text-foreground/90">
+        <p className="mt-8 max-w-xl whitespace-pre-line text-pretty text-base leading-7 text-foreground/90">
           {portfolioIdentity.introduction}
         </p>
         <nav className="mt-3" aria-label="Contact links">
@@ -169,7 +169,7 @@ export default async function HomePage() {
 
       <NowSection section={now} />
 
-      <section className="mt-24" aria-labelledby="projects-heading">
+      <section className="mt-14" aria-labelledby="projects-heading">
         <SectionHeading
           id="projects-heading"
           title="Recent Projects"

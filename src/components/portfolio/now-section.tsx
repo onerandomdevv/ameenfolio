@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { formatNowLastUpdated, type PublicNow } from "@/lib/now";
 
 export function NowSection({ section }: { section: PublicNow | null }) {
+  const lastUpdated = section ? formatNowLastUpdated(section.updatedAt) : null;
+
   return (
     <section className="mt-8 max-w-xl" aria-labelledby="now-heading">
       <SectionHeading id="now-heading" title="Now" />
@@ -39,9 +41,9 @@ export function NowSection({ section }: { section: PublicNow | null }) {
             </ul>
           ) : null}
 
-          {section.showLastUpdated ? (
+          {section.showLastUpdated && lastUpdated ? (
             <p className="mt-4 text-xs text-muted-foreground">
-              Last updated {formatNowLastUpdated(section.updatedAt)}
+              Last updated {lastUpdated}
             </p>
           ) : null}
         </>
