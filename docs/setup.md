@@ -14,6 +14,8 @@ No Sanity data is migrated. Enter development content in the admin, then repeat 
 
 Generate SQL with `npm run db:generate`. Create a temporary Neon branch from development, point `DATABASE_MIGRATION_URL` at it, and run `npm run db:migrate`. Test the application there before applying the same immutable migration to development and later production. Never use the pooled URL for Drizzle migration commands.
 
+Before any migration containing `DROP TABLE`, `DROP COLUMN`, or another destructive statement, verify the exact Neon project and branch, record the affected row count, and export or snapshot the affected data. Applying a destructive migration requires explicit approval for that target after the preflight is recorded. Production additionally requires a tested restore point. Never use automatic confirmation flags for destructive changes.
+
 ## R2 rules
 
 Icons accept PNG, JPEG, or WebP up to 2 MB. Résumés accept PDF up to 10 MB. SVG, HTML, scripts, archives, and executables are rejected. Presigned PUT URLs expire in five minutes and bind `Content-Type`. Configure an R2 lifecycle rule to remove unreferenced temporary objects after a conservative window as a final fallback for interrupted browser sessions.

@@ -10,7 +10,6 @@ import { getDb } from "@/db/client";
 import { recognitions } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
 import { logServer } from "@/lib/logger";
-import { assertStoredUpload, deleteObject } from "@/lib/storage/server";
 import { recognitionSchema, type RecognitionInput } from "@/lib/validation";
 
 export async function saveRecognition(
@@ -20,32 +19,24 @@ export async function saveRecognition(
   await requireAdmin();
   const parsed = recognitionSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
+  const values = {
+    ...parsed.data,
+    verificationUrl: parsed.data.verificationUrl || null,
+  };
 
   try {
-    if (parsed.data.iconKey) {
-      await assertStoredUpload(parsed.data.iconKey, "icon");
-    }
-    const previous = id
-      ? await getDb()
-          .select({ iconKey: recognitions.iconKey })
-          .from(recognitions)
-          .where(eq(recognitions.id, id))
-      : [];
     const rows = id
       ? await getDb()
           .update(recognitions)
-          .set({ ...parsed.data, updatedAt: new Date() })
+          .set({ ...values, updatedAt: new Date() })
           .where(eq(recognitions.id, id))
           .returning({ id: recognitions.id })
       : await getDb()
           .insert(recognitions)
-          .values(parsed.data)
+          .values(values)
           .returning({ id: recognitions.id });
     if (!rows[0]) return { ok: false, message: "Recognition not found." };
     refreshPublicContent();
-    if (previous[0]?.iconKey !== parsed.data.iconKey) {
-      await deleteObject(previous[0]?.iconKey);
-    }
     return { ok: true, id: rows[0].id };
   } catch (error) {
     logServer("error", "crud.recognition_failed", {
@@ -62,10 +53,9 @@ export async function deleteRecognition(id: string): Promise<ActionResult> {
     const [deleted] = await getDb()
       .delete(recognitions)
       .where(eq(recognitions.id, id))
-      .returning({ iconKey: recognitions.iconKey });
+      .returning({ id: recognitions.id });
     if (!deleted) return { ok: false, message: "Recognition not found." };
     refreshPublicContent();
-    await deleteObject(deleted.iconKey);
     return { ok: true };
   } catch (error) {
     logServer("error", "crud.recognition_delete_failed", {
