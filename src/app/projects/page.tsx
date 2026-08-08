@@ -17,7 +17,7 @@ export default async function ProjectsPage() {
   const projects = await getAllPublishedProjects();
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-20 sm:px-6 sm:pt-28">
+    <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
       <PortfolioNav current="projects" />
 
       <header className="mt-10">

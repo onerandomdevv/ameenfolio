@@ -4,10 +4,6 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Premium Palette */
-  --color-accent-lime: #ccff00;
-  --color-accent-lime-dim: #849e00;
-
   --color-bg-base: #000000;
   --color-bg-card: #09090b;
   --color-bg-glass: rgba(255, 255, 255, 0.03);
@@ -59,7 +55,7 @@
   --card-foreground: #ffffff;
   --popover: #111113;
   --popover-foreground: #ffffff;
-  --primary: #ccff00;
+  --primary: #fafafa;
   --primary-foreground: #050505;
   --secondary: #18181b;
   --secondary-foreground: #fafafa;
@@ -70,15 +66,15 @@
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #ccff00;
+  --ring: rgba(255, 255, 255, 0.45);
   --sidebar: #09090b;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #ccff00;
+  --sidebar-primary: #fafafa;
   --sidebar-primary-foreground: #050505;
   --sidebar-accent: #18181b;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #ccff00;
+  --sidebar-ring: rgba(255, 255, 255, 0.45);
 }
 
 @layer utilities {
@@ -107,7 +103,7 @@ body {
 }
 
 ::selection {
-  background: #ccff00;
+  background: #fafafa;
   color: #000;
 }
 
@@ -117,7 +113,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--color-accent-lime);
+  outline: 2px solid var(--ring);
   outline-offset: 4px;
 }
 
