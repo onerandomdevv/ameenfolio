@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
-import { LoaderCircle, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   deleteNowLink,
@@ -24,17 +24,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -115,39 +105,35 @@ export function NowManager({
         ) : null}
 
         {links.length ? (
-          <div className="grid gap-3">
+          <ul className="divide-y border-y">
             {links.map((item) => (
-              <Card key={item.id} className="gap-3">
-                <CardHeader>
-                  <CardTitle>
-                    <h3>{item.label}</h3>
-                  </CardTitle>
-                  <CardDescription className="truncate">
+              <li
+                key={item.id}
+                className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+              >
+                <div className="min-w-0">
+                  <h3 className="text-sm text-foreground">{item.label}</h3>
+                  <p className="mt-1 truncate text-xs text-muted-foreground">
                     {item.url}
-                  </CardDescription>
-                  <CardAction className="flex items-center gap-1">
-                    <Badge variant={item.visible ? "default" : "secondary"}>
-                      {item.visible ? "Visible" : "Hidden"}
-                    </Badge>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => launch(item)}
-                      aria-label={`Edit ${item.label}`}
-                    >
-                      <Pencil />
-                    </Button>
-                    <DeleteNowLink item={item} />
-                  </CardAction>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground">
-                    Display order: {item.displayOrder}
                   </p>
-                </CardContent>
-              </Card>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {item.visible ? "Visible" : "Hidden"} / Order{" "}
+                    {item.displayOrder}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-4 text-sm">
+                  <button
+                    type="button"
+                    onClick={() => launch(item)}
+                    className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    Edit
+                  </button>
+                  <DeleteNowLink item={item} />
+                </div>
+              </li>
             ))}
-          </div>
+          </ul>
         ) : (
           <AdminEmptyState
             title="No linked items yet"
@@ -198,14 +184,12 @@ function NowSectionForm({ section }: { section: NowSection }) {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Current focus</CardTitle>
-        <CardDescription>
-          This copy appears below the fixed “Now” heading on the homepage.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
+    <section>
+      <h2 className="text-sm text-foreground">Current focus</h2>
+      <p className="mt-1 mb-6 text-sm text-muted-foreground">
+        This copy appears below the fixed “Now” heading on the homepage.
+      </p>
+      <div>
         <form id="now-section-form" onSubmit={handleSubmit(submit)}>
           <FieldGroup>
             <Field data-invalid={Boolean(errors.description)}>
@@ -258,18 +242,16 @@ function NowSectionForm({ section }: { section: NowSection }) {
             </FieldSet>
           </FieldGroup>
         </form>
-      </CardContent>
-      <CardFooter>
+      </div>
+      <div className="mt-8 flex justify-end">
         <Button type="submit" form="now-section-form" disabled={isSubmitting}>
           {isSubmitting ? (
             <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Save data-icon="inline-start" />
-          )}
+          ) : null}
           {isSubmitting ? "Saving…" : "Save Now section"}
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </section>
   );
 }
 
