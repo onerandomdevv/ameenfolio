@@ -20,24 +20,40 @@ export async function saveSettings(
   const parsed = siteSettingsSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
 
+  const values = {
+    ...parsed.data,
+    profileImageKey: parsed.data.profileImageKey ?? null,
+    resumeKey: parsed.data.resumeKey ?? null,
+    resumeFilename: parsed.data.resumeFilename || null,
+  };
+
   try {
-    if (parsed.data.resumeKey) {
-      await assertStoredUpload(parsed.data.resumeKey, "resume");
+    if (values.resumeKey) {
+      await assertStoredUpload(values.resumeKey, "resume");
+    }
+    if (values.profileImageKey) {
+      await assertStoredUpload(values.profileImageKey, "profile");
     }
     const previous = await getDb()
-      .select({ resumeKey: siteSettings.resumeKey })
+      .select({
+        profileImageKey: siteSettings.profileImageKey,
+        resumeKey: siteSettings.resumeKey,
+      })
       .from(siteSettings)
       .where(eq(siteSettings.id, 1));
     await getDb()
       .insert(siteSettings)
-      .values({ id: 1, ...parsed.data, updatedAt: new Date() })
+      .values({ id: 1, ...values, updatedAt: new Date() })
       .onConflictDoUpdate({
         target: siteSettings.id,
-        set: { ...parsed.data, updatedAt: new Date() },
+        set: { ...values, updatedAt: new Date() },
       });
     refreshPublicContent();
-    if (previous[0]?.resumeKey !== parsed.data.resumeKey) {
+    if (previous[0]?.resumeKey !== values.resumeKey) {
       await deleteObject(previous[0]?.resumeKey);
+    }
+    if (previous[0]?.profileImageKey !== values.profileImageKey) {
+      await deleteObject(previous[0]?.profileImageKey);
     }
     return { ok: true };
   } catch (error) {

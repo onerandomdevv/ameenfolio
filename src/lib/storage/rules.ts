@@ -7,6 +7,11 @@ export const UPLOAD_RULES = {
     maxBytes: 2 * 1024 * 1024,
     prefix: "icons",
   },
+  profile: {
+    contentTypes: ["image/png", "image/jpeg", "image/webp"],
+    maxBytes: 2 * 1024 * 1024,
+    prefix: "profiles",
+  },
   resume: {
     contentTypes: ["application/pdf"],
     maxBytes: 10 * 1024 * 1024,
@@ -57,8 +62,22 @@ export function isPublicIconKey(key: string) {
   );
 }
 
+export function isPublicProfileKey(key: string) {
+  const normalized = key.replaceAll("\\", "/");
+  return (
+    normalized === key &&
+    !normalized.includes("..") &&
+    /^profiles\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/.test(normalized) &&
+    path.posix.normalize(normalized) === normalized
+  );
+}
+
+export function isPublicMediaKey(key: string) {
+  return isPublicIconKey(key) || isPublicProfileKey(key);
+}
+
 export function isManagedObjectKey(key: string) {
   return (
-    isPublicIconKey(key) || /^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/.test(key)
+    isPublicMediaKey(key) || /^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/.test(key)
   );
 }

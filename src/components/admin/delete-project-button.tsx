@@ -2,7 +2,6 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteProject } from "@/app/admin/actions/projects";
 import {
@@ -16,7 +15,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
 
 export function DeleteProjectButton({
   id,
@@ -43,9 +41,12 @@ export function DeleteProjectButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Delete ${title}`}>
-          <Trash2 />
-        </Button>
+        <button
+          type="button"
+          className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-destructive"
+        >
+          Delete
+        </button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
