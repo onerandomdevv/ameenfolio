@@ -22,6 +22,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { Project } from "@/db/schema";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
+import { useAdminBase } from "@/lib/use-admin-base";
 import { projectSchema, type ProjectInput } from "@/lib/validation";
 
 const emptyProject: ProjectInput = {
@@ -35,6 +36,7 @@ const emptyProject: ProjectInput = {
 
 export function ProjectForm({ project }: { project?: Project }) {
   const router = useRouter();
+  const base = useAdminBase();
   const form = useForm<ProjectInput>({
     resolver: zodResolver(projectSchema),
     defaultValues: project
@@ -78,7 +80,7 @@ export function ProjectForm({ project }: { project?: Project }) {
     }
 
     toast.success(project ? "Project updated." : "Project created.");
-    router.push("/admin/projects");
+    router.push(`${base}/projects`);
     router.refresh();
   }
 

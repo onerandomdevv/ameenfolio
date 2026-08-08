@@ -5,14 +5,56 @@ test.skip(
   "Neon Auth credentials are required for protected-route E2E tests.",
 );
 
-test("unauthenticated admin requests are sent to owner login", async ({
-  page,
+// The admin app is served only from a host beginning with `admin.`, so requests
+// are distinguished by Host rather than by path. 127.0.0.1 cannot carry a
+// subdomain label, so the admin host is asserted through a header override
+// rather than by navigating to it.
+const ADMIN_HOST = "admin.localhost:3000";
+
+// The path mount is the way back in when no `admin.` host can exist — a
+// platform fallback URL has no subdomain to point at the deployment.
+test("the path-mounted admin stays reachable off the admin host", async ({
+  request,
 }) => {
-  await page.goto("/admin/now");
-  await expect(page).toHaveURL(/\/admin\/login/);
-  await expect(
-    page.getByRole("button", { name: /continue with github/i }),
-  ).toBeVisible();
+  const guarded = await request.get("/admin/now", { maxRedirects: 0 });
+  expect([302, 303, 307]).toContain(guarded.status());
+  expect(guarded.headers()["location"]).toContain("/admin/login");
+
+  const login = await request.get("/admin/login");
+  expect(login.status()).toBe(200);
+  expect(await login.text()).toContain("Continue with GitHub");
+});
+
+// On the admin host the prefix is a detail of the route tree, not an address.
+test("the admin host does not double-mount under /admin", async ({
+  request,
+}) => {
+  const response = await request.get("/admin/login", {
+    headers: { Host: ADMIN_HOST },
+    maxRedirects: 0,
+  });
+  expect(response.status()).toBe(404);
+});
+
+test("unauthenticated admin requests are sent to owner login", async ({
+  request,
+}) => {
+  const response = await request.get("/now", {
+    headers: { Host: ADMIN_HOST },
+    maxRedirects: 0,
+  });
+
+  expect([302, 303, 307]).toContain(response.status());
+  expect(response.headers()["location"]).toContain("/login");
+});
+
+test("the admin login page renders on the admin host", async ({ request }) => {
+  const response = await request.get("/login", {
+    headers: { Host: ADMIN_HOST },
+  });
+
+  expect(response.status()).toBe(200);
+  expect(await response.text()).toContain("Continue with GitHub");
 });
 
 test("upload signing is unavailable without an admin session", async ({
