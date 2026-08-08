@@ -97,7 +97,7 @@ export default async function HomePage() {
   ];
 
   return (
-    <main className="mx-auto w-full max-w-xl px-5 pb-10 pt-20 sm:px-6 sm:pt-28">
+    <main className="mx-auto w-full max-w-xl px-5 pb-10 pt-8 sm:px-6 sm:pt-12">
       <PortfolioNav current="home" />
 
       <section className="mt-10 max-w-xl">
