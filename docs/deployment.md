@@ -20,13 +20,13 @@ The admin app has two mountings, both always live. A host whose first label is `
 
 The subdomain is the intended route. On it, the `/admin` route prefix is an implementation detail and is not a URL:
 
-| Request | Serves |
-| --- | --- |
-| `admin.<domain>/` | admin projects list |
-| `admin.<domain>/settings` | admin settings |
-| `admin.<domain>/login` | owner sign-in |
-| `admin.<domain>/admin/...` | 404 |
-| `<domain>/admin/settings` | admin settings (fallback) |
+| Request                    | Serves                    |
+| -------------------------- | ------------------------- |
+| `admin.<domain>/`          | admin projects list       |
+| `admin.<domain>/settings`  | admin settings            |
+| `admin.<domain>/login`     | owner sign-in             |
+| `admin.<domain>/admin/...` | 404                       |
+| `<domain>/admin/settings`  | admin settings (fallback) |
 
 Used through the subdomain, the session cookie is scoped to that host and never sent to the public site, and the admin can be put behind network-level controls without touching the portfolio.
 
