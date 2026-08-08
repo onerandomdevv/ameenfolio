@@ -92,18 +92,18 @@ export async function getPublicPortfolio() {
   return cachedPublicPortfolio();
 }
 
-export const getAllPublishedProjects = unstable_cache(
-  async () => {
-    if (!canQueryDatabase()) return [];
-    return getDb()
-      .select()
-      .from(projects)
-      .where(eq(projects.published, true))
-      .orderBy(asc(projects.homepageOrder), desc(projects.createdAt));
-  },
-  ["published-projects"],
-  { tags: ["portfolio", "projects"] },
-);
+// Deliberately uncached. /projects is force-dynamic, so the unstable_cache
+// wrapper this used to have bought nothing, and its entry outlived tag
+// invalidation — a published project kept rendering as an empty list while the
+// same query returned the row.
+export async function getAllPublishedProjects() {
+  if (!canQueryDatabase()) return [];
+  return getDb()
+    .select()
+    .from(projects)
+    .where(eq(projects.published, true))
+    .orderBy(asc(projects.homepageOrder), desc(projects.createdAt));
+}
 
 export async function getAdminProjects() {
   return getDb().select().from(projects).orderBy(desc(projects.updatedAt));
