@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
+import { isAdminHostSharedPath } from "@/lib/routing/admin-host";
 
 // Matched on the subdomain label rather than a full domain so the project stays
 // host-neutral: any host beginning with `admin.` serves the admin app at its
 // root, whatever domain it is deployed under.
 const ADMIN_HOST_PREFIX = "admin.";
-
-// Paths that must reach their real route on the admin host untouched. /api/auth
-// in particular is where the auth SDK's own handler lives.
-function isSharedPath(pathname: string) {
-  return (
-    pathname.startsWith("/api/") ||
-    pathname.startsWith("/_next/") ||
-    pathname.startsWith("/media/") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/robots.txt" ||
-    pathname === "/sitemap.xml"
-  );
-}
 
 function onAdminHost(request: NextRequest) {
   const host = request.headers.get("host")?.toLowerCase() ?? "";
@@ -54,7 +42,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isSharedPath(pathname)) return NextResponse.next();
+  if (isAdminHostSharedPath(pathname)) return NextResponse.next();
 
   // On the admin host the /admin prefix is an implementation detail of the route
   // tree, not a URL. Rejecting it keeps one page reachable at one address.
