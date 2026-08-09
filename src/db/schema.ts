@@ -12,6 +12,7 @@ import {
 import { sql } from "drizzle-orm";
 import type { Availability } from "@/config/availability";
 import type { RecognitionIconName } from "@/config/recognition-icons";
+import type { TechStackGroupValue } from "@/config/tech-stack";
 
 export type ContactLinks = {
   github?: string;
@@ -82,6 +83,29 @@ export const recognitions = pgTable(
     check(
       "recognitions_icon_name_valid",
       sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles', 'github', 'x', 'instagram', 'tiktok', 'linkedin', 'whatsapp', 'youtube', 'globe')`,
+    ),
+  ],
+);
+
+export const techStackItems = pgTable(
+  "tech_stack_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    groupKey: text("group_key").$type<TechStackGroupValue>().notNull(),
+    displayOrder: integer("display_order").notNull().default(0),
+    visible: boolean("visible").notNull().default(true),
+    ...timestamps,
+  },
+  (table) => [
+    index("tech_stack_public_idx").on(
+      table.visible,
+      table.groupKey,
+      table.displayOrder,
+    ),
+    check(
+      "tech_stack_group_key_valid",
+      sql`${table.groupKey} in ('core', 'tools')`,
     ),
   ],
 );
@@ -190,3 +214,4 @@ export type NowSection = typeof nowSection.$inferSelect;
 export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type StatsSnapshot = typeof statsSnapshot.$inferSelect;
+export type TechStackItem = typeof techStackItems.$inferSelect;
