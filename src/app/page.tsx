@@ -181,7 +181,7 @@ export default async function HomePage() {
             segment.emphasized ? (
               <strong
                 key={index}
-                className="font-bold text-accent-lime underline decoration-1 underline-offset-4"
+                className="font-bold text-foreground underline decoration-1 underline-offset-4"
               >
                 {segment.text}
               </strong>

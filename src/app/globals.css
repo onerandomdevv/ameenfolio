@@ -15,10 +15,10 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-highlight: rgba(255, 255, 255, 0.12);
 
-  /* The brand lime, matching the GitHub profile README. Carried by two things
-     only: the emphasised phrases in the introduction and the stats strip
-     values. Keeping it to those leaves it meaning "this is who I am and what
-     I have done" rather than spreading into general decoration. */
+  /* The brand lime, matching the GitHub profile README. Carried by three
+     things: the stats strip values, the tech stack group headings, and a
+     project card's arrow on hover. Keeping the list short is what stops it
+     becoming general decoration. */
   --color-accent-lime: #7fff00;
 
   --color-background: var(--background);
