@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getWakaTimeHeartbeatDate,
   isPublicWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
   toPublicWakaTimeStatus,
@@ -29,6 +30,7 @@ describe("WakaTime public status", () => {
       toPublicWakaTimeStatus(
         { data: { last_heartbeat_at: "2026-08-09T11:58:00.000Z" } },
         { data: { grand_total: { text: "3 hrs 24 mins" } } },
+        null,
         now,
       ),
     ).toEqual({
@@ -43,6 +45,7 @@ describe("WakaTime public status", () => {
       toPublicWakaTimeStatus(
         { data: { last_heartbeat_at: "2026-08-09T11:58:00.000Z" } },
         null,
+        null,
         now,
       ),
     ).toEqual({
@@ -50,6 +53,26 @@ describe("WakaTime public status", () => {
       todayText: null,
       checkedAt: now.toISOString(),
     });
+  });
+
+  it("prefers the authoritative heartbeat feed over a stale profile value", () => {
+    expect(
+      toPublicWakaTimeStatus(
+        { data: { last_heartbeat_at: "2026-08-09T10:00:00.000Z" } },
+        { data: { grand_total: { text: "18 mins" } } },
+        { data: [{ time: now.getTime() / 1_000 - 30 }] },
+        now,
+      ).isCoding,
+    ).toBe(true);
+  });
+
+  it("formats the heartbeat query date in the account timezone", () => {
+    expect(
+      getWakaTimeHeartbeatDate(
+        { data: { timezone: "Africa/Lagos" } },
+        new Date("2026-08-09T23:30:00.000Z"),
+      ),
+    ).toBe("2026-08-10");
   });
 
   it("validates the sanitized browser response shape", () => {

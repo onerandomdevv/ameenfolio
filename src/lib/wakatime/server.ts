@@ -3,6 +3,7 @@ import "server-only";
 import { getServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import {
+  getWakaTimeHeartbeatDate,
   inactiveWakaTimeStatus,
   toPublicWakaTimeStatus,
   type PublicWakaTimeStatus,
@@ -37,14 +38,25 @@ export async function fetchWakaTimeStatus(
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
 
-  const [userResponse, todayResult] = await Promise.all([
-    request(WAKATIME_API_URL),
-    request(WAKATIME_TODAY_URL).catch(() => null),
-  ]);
+  const userResponse = await request(WAKATIME_API_URL);
   const userPayload = await getJson(userResponse, "user endpoint");
+  const heartbeatDate = getWakaTimeHeartbeatDate(userPayload, now);
+  const heartbeatsUrl = `${WAKATIME_API_URL}/heartbeats?date=${heartbeatDate}`;
+  const [todayResult, heartbeatsResult] = await Promise.all([
+    request(WAKATIME_TODAY_URL).catch(() => null),
+    request(heartbeatsUrl).catch(() => null),
+  ]);
   const todayPayload = todayResult?.ok ? await todayResult.json() : null;
+  const heartbeatsPayload = heartbeatsResult?.ok
+    ? await heartbeatsResult.json()
+    : null;
 
-  return toPublicWakaTimeStatus(userPayload, todayPayload, now);
+  return toPublicWakaTimeStatus(
+    userPayload,
+    todayPayload,
+    heartbeatsPayload,
+    now,
+  );
 }
 
 async function refreshWakaTimeStatus() {

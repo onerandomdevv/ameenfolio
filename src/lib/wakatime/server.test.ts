@@ -24,14 +24,18 @@ describe("WakaTime server client", () => {
       .mockResolvedValueOnce(
         jsonResponse({
           data: {
-            last_heartbeat_at: "2026-08-09T11:58:00.000Z",
+            last_heartbeat_at: "2026-08-09T10:00:00.000Z",
             last_project: "private-project",
             last_branch: "secret-branch",
+            timezone: "Africa/Lagos",
           },
         }),
       )
       .mockResolvedValueOnce(
         jsonResponse({ data: { grand_total: { text: "2 hrs 8 mins" } } }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
       );
     vi.stubGlobal("fetch", fetchMock);
 
@@ -41,7 +45,7 @@ describe("WakaTime server client", () => {
       checkedAt: now.toISOString(),
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     for (const [, init] of fetchMock.mock.calls) {
       expect(init?.headers).toEqual(
         expect.objectContaining({
@@ -57,10 +61,16 @@ describe("WakaTime server client", () => {
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
         jsonResponse({
-          data: { last_heartbeat_at: "2026-08-09T11:59:00.000Z" },
+          data: {
+            last_heartbeat_at: "2026-08-09T10:00:00.000Z",
+            timezone: "Africa/Lagos",
+          },
         }),
       )
-      .mockResolvedValueOnce(jsonResponse({ error: "busy" }, 503));
+      .mockResolvedValueOnce(jsonResponse({ error: "busy" }, 503))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
+      );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
@@ -75,10 +85,16 @@ describe("WakaTime server client", () => {
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
         jsonResponse({
-          data: { last_heartbeat_at: "2026-08-09T11:59:00.000Z" },
+          data: {
+            last_heartbeat_at: "2026-08-09T10:00:00.000Z",
+            timezone: "Africa/Lagos",
+          },
         }),
       )
-      .mockRejectedValueOnce(new Error("summary unavailable"));
+      .mockRejectedValueOnce(new Error("summary unavailable"))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
+      );
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
@@ -91,14 +107,35 @@ describe("WakaTime server client", () => {
   it("rejects an unavailable authenticated user response", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockResolvedValueOnce(jsonResponse({ error: "unauthorized" }, 401))
-      .mockResolvedValueOnce(
-        jsonResponse({ data: { grand_total: { text: "" } } }),
-      );
+      .mockResolvedValueOnce(jsonResponse({ error: "unauthorized" }, 401));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("bad-key", now)).rejects.toThrow(
       "WakaTime user endpoint responded 401",
     );
+  });
+
+  it("falls back to the profile timestamp when heartbeats are unavailable", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            last_heartbeat_at: "2026-08-09T11:59:00.000Z",
+            timezone: "Africa/Lagos",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { grand_total: { text: "1 min" } } }),
+      )
+      .mockRejectedValueOnce(new Error("heartbeats unavailable"));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
+      isCoding: true,
+      todayText: "1 min",
+      checkedAt: now.toISOString(),
+    });
   });
 });
