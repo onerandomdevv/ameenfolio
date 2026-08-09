@@ -71,6 +71,13 @@
       "when": 1786250767660,
       "tag": "0009_premium_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786261001465,
+      "tag": "0010_soft_masque",
+      "breakpoints": true
     }
   ]
 }

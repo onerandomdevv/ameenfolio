@@ -133,6 +133,7 @@ export const siteSettings = pgTable(
     resumeKey: text("resume_key"),
     resumeFilename: text("resume_filename"),
     publicBippyEnabled: boolean("public_bippy_enabled").notNull().default(true),
+    hackathonWins: integer("hackathon_wins").notNull().default(0),
     seoTitle: text("seo_title").notNull(),
     seoDescription: text("seo_description").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
@@ -142,8 +143,30 @@ export const siteSettings = pgTable(
   (table) => [check("site_settings_singleton", sql`${table.id} = 1`)],
 );
 
+// A single cached row rather than a live fetch on render. The public pages are
+// force-dynamic, so calling GitHub per request would put the homepage's speed
+// at the mercy of api.github.com and burn the hourly rate limit under any real
+// traffic. Readers serve whatever is here and refresh it out of band.
+export const statsSnapshot = pgTable(
+  "stats_snapshot",
+  {
+    id: integer("id").primaryKey().default(1),
+    contributions: integer("contributions").notNull().default(0),
+    currentStreak: integer("current_streak").notNull().default(0),
+    longestStreak: integer("longest_streak").notNull().default(0),
+    firstContributionAt: timestamp("first_contribution_at", {
+      withTimezone: true,
+    }),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [check("stats_snapshot_singleton", sql`${table.id} = 1`)],
+);
+
 export type Project = typeof projects.$inferSelect;
 export type Recognition = typeof recognitions.$inferSelect;
 export type NowSection = typeof nowSection.$inferSelect;
 export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
+export type StatsSnapshot = typeof statsSnapshot.$inferSelect;

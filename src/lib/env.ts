@@ -10,6 +10,10 @@ const serverEnvSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   R2_BUCKET_NAME: z.string().min(1).optional(),
   R2_PUBLIC_BASE_URL: z.string().url().optional().or(z.literal("")),
+  // Both optional: without them the stats strip simply does not render, so a
+  // deployment that never sets them still builds and serves the whole site.
+  GITHUB_STATS_USERNAME: z.string().trim().min(1).optional(),
+  GITHUB_STATS_TOKEN: z.string().trim().min(1).optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CANONICAL_SITE_URL: z.string().url().default("http://localhost:3000"),
 });

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
@@ -8,6 +8,7 @@ import {
   projects,
   recognitions,
   siteSettings,
+  statsSnapshot,
   type SiteSettings,
 } from "@/db/schema";
 import { toPublicNow } from "@/lib/now";
@@ -21,6 +22,7 @@ const defaultSiteSettings: SiteSettings = {
   resumeKey: null,
   resumeFilename: null,
   publicBippyEnabled: true,
+  hackathonWins: 0,
   seoTitle: "Aliameen Kareem — Full-Stack Engineer",
   seoDescription:
     "Selected projects, recognition, and the technologies behind Aliameen Kareem's work.",
@@ -51,6 +53,8 @@ export async function getPublicPortfolio() {
       now: null,
       projects: [],
       recognitions: [],
+      publishedProjectCount: 0,
+      statsSnapshot: null,
     };
   }
 
@@ -61,6 +65,8 @@ export async function getPublicPortfolio() {
     nowLinkRows,
     projectRows,
     recognitionRows,
+    publishedProjectRows,
+    snapshotRows,
   ] = await Promise.all([
     db.select().from(siteSettings).where(eq(siteSettings.id, 1)).limit(1),
     db.select().from(nowSection).where(eq(nowSection.id, 1)).limit(1),
@@ -82,6 +88,12 @@ export async function getPublicPortfolio() {
       .from(recognitions)
       .where(eq(recognitions.published, true))
       .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
+    // Every project row counts, not just the eight the homepage shows.
+    db
+      .select({ value: count() })
+      .from(projects)
+      .where(eq(projects.published, true)),
+    db.select().from(statsSnapshot).where(eq(statsSnapshot.id, 1)).limit(1),
   ]);
 
   return {
@@ -89,6 +101,8 @@ export async function getPublicPortfolio() {
     now: toPublicNow(nowSectionRows[0], nowLinkRows),
     projects: projectRows,
     recognitions: recognitionRows,
+    publishedProjectCount: publishedProjectRows[0]?.value ?? 0,
+    statsSnapshot: snapshotRows[0] ?? null,
   };
 }
 
