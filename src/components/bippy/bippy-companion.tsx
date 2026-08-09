@@ -19,6 +19,7 @@ import {
   type BippyState,
 } from "@/components/bippy/bippy-machine";
 import {
+  clampBippyPosition,
   hasMeaningfulBippyTravel,
   resolveBippyPosition,
   type BippyMovementOptions,
@@ -200,6 +201,16 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     );
   }, []);
 
+  const constrainToViewport = useCallback((requested: BippyPoint) => {
+    const mobile = isMobileViewport();
+    return clampBippyPosition(
+      requested,
+      viewportBounds(),
+      companionSize(),
+      (mobile ? MOBILE_MOVEMENT_OPTIONS : DESKTOP_MOVEMENT_OPTIONS).insets,
+    );
+  }, []);
+
   const place = useCallback((point: BippyPoint) => {
     positionRef.current = point;
     targetRef.current = point;
@@ -247,25 +258,25 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       const size = companionSize();
       const bounds = viewportBounds();
       place(
-        resolveTarget({
+        constrainToViewport({
           x: saved.x * Math.max(bounds.width - size, 0),
           y: saved.y * Math.max(bounds.height - size, 0),
         }),
       );
     },
-    [place, resolveTarget],
+    [constrainToViewport, place],
   );
 
   const placeAtDefault = useCallback(() => {
     const size = companionSize();
     const bounds = viewportBounds();
     place(
-      resolveTarget({
+      constrainToViewport({
         x: Math.max(bounds.width - size - EDGE_GAP, 0),
         y: Math.max(bounds.height - size - EDGE_GAP, 0),
       }),
     );
-  }, [place, resolveTarget]);
+  }, [constrainToViewport, place]);
 
   const returnToRestingPosition = useCallback(() => {
     const persisted = parseSavedPosition(
@@ -491,18 +502,25 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   ]);
 
   useEffect(() => {
+    if (
+      !pageVisible ||
+      reducedMotion ||
+      state !== "moving" ||
+      !movingRef.current
+    ) {
+      return;
+    }
+
     let frame = 0;
     let previous = performance.now();
 
     const animate = (now: number) => {
-      frame = window.requestAnimationFrame(animate);
       if (
         stateRef.current === "moving" &&
         !movingRef.current &&
         dragRef.current === null
       ) {
         send({ type: "ARRIVED" });
-        previous = now;
         return;
       }
 
@@ -512,7 +530,6 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         stateRef.current !== "moving" ||
         !movingRef.current
       ) {
-        previous = now;
         return;
       }
 
@@ -540,11 +557,12 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         actorRef.current.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
       }
       setFacing(dx < 0 ? -1 : 1);
+      frame = window.requestAnimationFrame(animate);
     };
 
     frame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(frame);
-  }, [pageVisible, place, reducedMotion, send]);
+  }, [pageVisible, place, reducedMotion, send, state]);
 
   useEffect(() => {
     const reactTo = (element: HTMLElement) => {
@@ -666,6 +684,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     const routeChanged = previousPathRef.current !== pathname;
     let routeUpdateDelay: number | undefined;
     stopMovement();
+    if (routeChanged) returnToRestingPosition();
 
     if (pathname === "/projects") {
       lastActivityRef.current = Date.now();
@@ -682,7 +701,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
 
     previousPathRef.current = pathname;
     return () => window.clearTimeout(routeUpdateDelay);
-  }, [pathname, send, showMessage, stopMovement]);
+  }, [pathname, returnToRestingPosition, send, showMessage, stopMovement]);
 
   function startDragging(event: ReactPointerEvent<HTMLButtonElement>) {
     const actor = actorRef.current;
@@ -715,7 +734,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     }
 
     const current = positionRef.current;
-    const next = resolveTarget({
+    const next = constrainToViewport({
       x: event.clientX - drag.offsetX,
       y: event.clientY - drag.offsetY,
     });
@@ -766,7 +785,11 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   }
 
   function resetPosition() {
-    window.localStorage.removeItem(POSITION_STORAGE_KEY);
+    try {
+      window.localStorage.removeItem(POSITION_STORAGE_KEY);
+    } catch {
+      // A blocked storage API must not prevent the visible reset.
+    }
     hasCustomPositionRef.current = false;
     lastActivityRef.current = Date.now();
     stopMovement();
@@ -792,6 +815,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       onPointerMove={moveDraggedBippy}
       onPointerUp={stopDragging}
       onPointerCancel={stopDragging}
+      onLostPointerCapture={stopDragging}
       onPointerEnter={celebrateOnHover}
       data-coding={wakaTimeStatus?.isCoding ? "true" : "false"}
       data-state={state}
