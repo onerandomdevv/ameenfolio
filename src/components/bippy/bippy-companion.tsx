@@ -777,7 +777,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   const codingMessage: CompanionMessage | null = wakaTimeStatus?.isCoding
     ? {
         text: wakaTimeStatus.todayText
-          ? `Ameen is coding right now\n${wakaTimeStatus.todayText} today.`
+          ? `Ameen is coding right now.\n${wakaTimeStatus.todayText} today`
           : BIPPY_COPY.coding,
         kind: "coding",
         action: { label: "See what he’s building", href: "/projects" },
