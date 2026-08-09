@@ -3,13 +3,21 @@ import { availabilityValues } from "@/config/availability";
 import { recognitionIconNames } from "@/config/recognition-icons";
 import { cardWordLimitMessage, withinCardWordLimit } from "@/lib/word-count";
 
+// A prefix check alone accepts the bare string "https://", which passes
+// validation, saves, and renders as a link to nowhere. Parsing it means the
+// scheme and a real host both have to be there.
 const optionalHttpsUrl = z
   .string()
   .trim()
-  .refine(
-    (value) => !value || value.startsWith("https://"),
-    "URL must use HTTPS.",
-  )
+  .refine((value) => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && url.hostname.includes(".");
+    } catch {
+      return false;
+    }
+  }, "Enter a full HTTPS URL, for example https://example.com/you.")
   .optional();
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();

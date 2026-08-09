@@ -54,10 +54,14 @@ export const recognitionIconNames = recognitionIconOptions.map(
 export type RecognitionIconName =
   (typeof recognitionIconOptions)[number]["value"];
 
-const iconsByName = Object.fromEntries(
+// A Map rather than an object literal: this is looked up with an arbitrary
+// string from the database, and a plain object answers "constructor" or
+// "toString" with an inherited function, so `?? TrophyGlyph` never runs and
+// React is handed something that is not a component.
+const iconsByName = new Map<string, RecognitionIcon>(
   recognitionIconOptions.map((option) => [option.value, option.icon]),
-) as Record<RecognitionIconName, RecognitionIcon>;
+);
 
 export function getRecognitionIcon(iconName: RecognitionIconName | string) {
-  return iconsByName[iconName as RecognitionIconName] ?? TrophyGlyph;
+  return iconsByName.get(iconName) ?? TrophyGlyph;
 }

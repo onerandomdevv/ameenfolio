@@ -11,6 +11,8 @@ export type ContributionCalendar = {
   };
 };
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 // contributionsCollection accepts at most one year between `from` and `to`, so
 // an all-time total has to be assembled from consecutive year-long windows.
 export function contributionWindows(createdAt: Date, now: Date) {
@@ -20,6 +22,15 @@ export function contributionWindows(createdAt: Date, now: Date) {
   while (cursor < now) {
     const next = new Date(cursor);
     next.setUTCFullYear(next.getUTCFullYear() + 1);
+
+    // A calendar year is 366 days when it contains a leap day, so a day count
+    // cannot tell a legal window from an illegal one. The tell is the day of
+    // the month changing: 29 February has no counterpart in a common year and
+    // rolls forward to 1 March, putting the window a day over the limit.
+    if (next.getUTCDate() !== cursor.getUTCDate()) {
+      next.setTime(next.getTime() - DAY_MS);
+    }
+
     windows.push({ from: cursor, to: next > now ? now : next });
     cursor = next;
   }

@@ -32,21 +32,25 @@ export function LinkedInIcon(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// A solid disc with the graticule knocked out, so it carries the same visual
-// weight as the filled brand marks beside it — a stroked outline globe reads
-// noticeably lighter next to them. The mask id is fixed because exactly one
-// globe renders per page; a second instance would need it made unique.
+// Stroked rather than a solid disc with the graticule cut out. Both cut-out
+// techniques fail here: a <mask> needs a document-unique id and this renders
+// in the contact row and as a recognition icon, while fill-rule="evenodd"
+// flips the fill back on wherever the parallels cross the meridian, turning
+// the globe into a checkerboard. A heavy stroke keeps enough weight to sit
+// beside the filled brand marks.
 export function GlobeIcon(props: SVGProps<SVGSVGElement>) {
   return (
-    <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>
-      <mask id="brand-globe-graticule">
-        <rect width="24" height="24" fill="white" />
-        <g fill="none" stroke="black" strokeWidth="1.6">
-          <ellipse cx="12" cy="12" rx="4.6" ry="10" />
-          <path d="M2 12h20M4.5 6.2h15M4.5 17.8h15" />
-        </g>
-      </mask>
-      <circle cx="12" cy="12" r="10" mask="url(#brand-globe-graticule)" />
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      focusable="false"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="9.4" />
+      <ellipse cx="12" cy="12" rx="4.1" ry="9.4" />
+      <path d="M2.9 12h18.2M4.8 6.4h14.4M4.8 17.6h14.4" />
     </svg>
   );
 }

@@ -44,6 +44,8 @@ describe("contributionWindows", () => {
     expect(windows.at(-1)!.to.toISOString()).toBe("2026-08-09T00:00:00.000Z");
   });
 
+  // A calendar year containing a leap day is legitimately 366 days, so this is
+  // the widest a window may ever be.
   it("never exceeds one year per window", () => {
     const oneYearMs = 366 * 24 * 60 * 60 * 1000;
     const windows = contributionWindows(
@@ -55,6 +57,40 @@ describe("contributionWindows", () => {
       expect(window.to.getTime() - window.from.getTime()).toBeLessThanOrEqual(
         oneYearMs,
       );
+    }
+  });
+
+  // Adding a calendar year to 29 February lands on 1 March — a year and a day,
+  // which GitHub rejects, failing every fetch for such an account.
+  it("does not overshoot a year from a leap day", () => {
+    const [first] = contributionWindows(
+      new Date("2024-02-29T00:00:00.000Z"),
+      new Date("2026-08-09T00:00:00.000Z"),
+    );
+
+    expect(first.to.toISOString()).toBe("2025-02-28T00:00:00.000Z");
+    expect(first.to.getTime() - first.from.getTime()).toBe(
+      365 * 24 * 60 * 60 * 1000,
+    );
+  });
+
+  it("keeps whole calendar years for a non-leap start", () => {
+    const [first] = contributionWindows(
+      new Date("2023-03-01T00:00:00.000Z"),
+      new Date("2026-08-09T00:00:00.000Z"),
+    );
+
+    expect(first.to.toISOString()).toBe("2024-03-01T00:00:00.000Z");
+  });
+
+  it("leaves no gap between consecutive windows", () => {
+    const windows = contributionWindows(
+      new Date("2024-02-29T00:00:00.000Z"),
+      new Date("2026-08-09T00:00:00.000Z"),
+    );
+
+    for (let i = 1; i < windows.length; i += 1) {
+      expect(windows[i].from.getTime()).toBe(windows[i - 1].to.getTime());
     }
   });
 

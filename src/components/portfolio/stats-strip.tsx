@@ -61,15 +61,16 @@ export function StatsStrip({
 }: StatsStripProps) {
   const cells: StatCell[] = [
     {
+      // Keyed on the snapshot existing, not on the number being truthy. Zero is
+      // a real measurement — a broken streak or a quiet year — and rendering it
+      // as a dash claims the data is missing when it is simply zero.
       label: "Contributions",
-      value: snapshot?.contributions
-        ? snapshot.contributions.toLocaleString("en-US")
-        : null,
+      value: snapshot ? snapshot.contributions.toLocaleString("en-US") : null,
       subs: [sinceLabel(snapshot?.firstContributionAt ?? null)],
     },
     {
       label: "Current streak",
-      value: snapshot?.currentStreak ? `${snapshot.currentStreak}d` : null,
+      value: snapshot ? `${snapshot.currentStreak}d` : null,
       valueNote: dateRange(
         snapshot?.currentStreakStart ?? null,
         snapshot?.currentStreakEnd ?? null,
@@ -126,8 +127,11 @@ export function StatsStrip({
           lets the corner cells be clipped by the radius. */}
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
         {cells.map((cell) => {
-          const subs = cell.value ? (cell.subs ?? []).filter(Boolean) : [];
-          const valueNote = cell.value ? cell.valueNote : null;
+          // Filtered on their own content rather than on the value. Gating
+          // them behind the value meant a broken streak hid the record beneath
+          // it — the one line still worth reading at that moment.
+          const subs = (cell.subs ?? []).filter(Boolean);
+          const valueNote = cell.valueNote;
           const stacked = subs.length > 0 || Boolean(valueNote);
 
           return (
