@@ -72,28 +72,29 @@ export function StatsStrip({
       <h2 id="stats-heading" className="sr-only">
         Portfolio stats
       </h2>
-      {/* gap-px over a border-coloured background draws the hairlines, which
-          keeps them correct in both the four-across and the wrapped two-column
-          layout. Tailwind's divide-* utilities put a rule on the first cell of
-          every wrapped row instead. The negative margin pulls the cell padding
-          back so the leading value still lines up with the page text. */}
-      <dl className="-mx-3 grid grid-cols-2 gap-px border-y border-border bg-border sm:grid-cols-4">
+      {/* A closed panel in the same language as ProjectCard: rounded-xl, one
+          border, bg-card. gap-px over a border-coloured background draws the
+          interior hairlines, which stay correct in both the four-across and the
+          wrapped two-column layout — Tailwind's divide-* utilities instead put
+          a rule on the first cell of every wrapped row. overflow-hidden is what
+          lets the corner cells be clipped by the radius. */}
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
         {cells.map((cell) => (
-          <div key={cell.label} className="bg-background px-3 py-4">
-            <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+          <div key={cell.label} className="bg-card px-4 py-5">
+            <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
               {cell.label}
             </dt>
-            <dd className="mt-2">
+            <dd className="mt-2.5">
               <span
                 className={cn(
-                  "text-xl font-medium tabular-nums",
+                  "text-2xl font-medium tabular-nums",
                   cell.value ? "text-accent-lime" : "text-muted-foreground",
                 )}
               >
                 {cell.value ?? "—"}
               </span>
               {/* Reserved even when empty so all four cells bottom out flat. */}
-              <span className="mt-1 block min-h-4 text-[11px] leading-4 text-muted-foreground">
+              <span className="mt-1.5 block min-h-4 text-[11px] leading-4 text-muted-foreground">
                 {cell.value ? cell.sub : null}
               </span>
             </dd>
