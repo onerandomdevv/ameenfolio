@@ -7,8 +7,24 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
+import {
+  Activity,
+  Gauge,
+  Laptop,
+  Moon,
+  RotateCcw,
+  Sparkles,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
 import {
   bippyStateTimeouts,
   transitionBippy,
@@ -16,13 +32,19 @@ import {
   type BippyState,
 } from "@/components/bippy/bippy-machine";
 import {
+  clampBippyPosition,
   resolveBippyPosition,
   type BippyPoint,
   type BippySafeZone,
 } from "@/components/bippy/bippy-movement";
-import { BippySprite } from "@/components/bippy/bippy-sprite";
+import {
+  bippySpriteAssets,
+  BippySprite,
+} from "@/components/bippy/bippy-sprite";
 import styles from "@/components/bippy/bippy.module.css";
+import { useBippyPerformance } from "@/components/bippy/use-bippy-performance";
 import { useReducedMotion } from "@/components/bippy/use-reduced-motion";
+import { cn } from "@/lib/utils";
 
 const ACTOR_SIZE = 128;
 const INACTIVITY_MS = 12_000;
@@ -69,7 +91,11 @@ export function BippyPlayground() {
   const [state, setState] = useState<BippyState>("idle");
   const [facing, setFacing] = useState<1 | -1>(1);
   const [pageVisible, setPageVisible] = useState(true);
+  const [spriteStatus, setSpriteStatus] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
   const reducedMotion = useReducedMotion();
+  const performanceCheck = useBippyPerformance();
 
   useEffect(() => {
     lastActivityRef.current = Date.now();
@@ -102,24 +128,56 @@ export function BippyPlayground() {
     );
   }, []);
 
+  const constrainToArena = useCallback((requested: BippyPoint) => {
+    const arena = arenaRef.current;
+    if (!arena) return requested;
+    return clampBippyPosition(
+      requested,
+      { width: arena.clientWidth, height: arena.clientHeight },
+      actorSize(),
+    );
+  }, []);
+
   const placeAtStart = useCallback(() => {
     const arena = arenaRef.current;
     if (!arena) return;
     const size = actorSize();
     place(
-      resolveTarget({
+      constrainToArena({
         x: Math.max((arena.clientWidth - size) / 2, 0),
         y: Math.max(arena.clientHeight - size - 24, 0),
       }),
     );
-  }, [place, resolveTarget]);
+  }, [constrainToArena, place]);
 
   useEffect(() => {
     placeAtStart();
-    const resize = () => place(resolveTarget(positionRef.current));
+    const resize = () => place(constrainToArena(positionRef.current));
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
-  }, [place, placeAtStart, resolveTarget]);
+  }, [constrainToArena, place, placeAtStart]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all(
+      bippySpriteAssets.map(
+        (asset) =>
+          new Promise<boolean>((resolve) => {
+            const image = new Image();
+            image.onload = () => resolve(true);
+            image.onerror = () => resolve(false);
+            image.src = asset;
+          }),
+      ),
+    ).then((loaded) => {
+      if (!cancelled) {
+        setSpriteStatus(loaded.every(Boolean) ? "ready" : "error");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const activity = () => {
@@ -196,15 +254,13 @@ export function BippyPlayground() {
   }, [pageVisible, reducedMotion, resolveTarget, send]);
 
   useEffect(() => {
-    if (reducedMotion) return;
+    if (reducedMotion || !pageVisible || state !== "moving") return;
     let frame = 0;
     let previous = performance.now();
 
     const animate = (now: number) => {
-      frame = window.requestAnimationFrame(animate);
       const activeState = stateRef.current;
       if (!pageVisible || activeState !== "moving" || dragRef.current) {
-        previous = now;
         return;
       }
 
@@ -232,11 +288,12 @@ export function BippyPlayground() {
         actorRef.current.style.transform = `translate3d(${next.x}px, ${next.y}px, 0)`;
       }
       setFacing(dx < 0 ? -1 : 1);
+      frame = window.requestAnimationFrame(animate);
     };
 
     frame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(frame);
-  }, [pageVisible, place, reducedMotion, send]);
+  }, [pageVisible, place, reducedMotion, send, state]);
 
   function startDragging(event: ReactPointerEvent<HTMLButtonElement>) {
     const arena = arenaRef.current;
@@ -273,7 +330,7 @@ export function BippyPlayground() {
 
     const arenaRect = arena.getBoundingClientRect();
     const current = positionRef.current;
-    const next = resolveTarget({
+    const next = constrainToArena({
       x: event.clientX - arenaRect.left - drag.offsetX,
       y: event.clientY - arenaRect.top - drag.offsetY,
     });
@@ -307,82 +364,199 @@ export function BippyPlayground() {
     placeAtStart();
   }
 
+  const ratingCopy = performanceCheck.result
+    ? {
+        good: "Good",
+        fair: "Fair",
+        "needs-attention": "Needs attention",
+      }[performanceCheck.result.rating]
+    : "Not tested";
+
   return (
-    <section aria-labelledby="playground-heading" className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" aria-label={`Current state: ${state}`}>
-            {state}
-          </Badge>
-          {reducedMotion ? (
-            <Badge variant="outline">Reduced motion</Badge>
-          ) : null}
+    <section aria-labelledby="playground-heading">
+      <Card className="gap-0 overflow-hidden rounded-md py-0 shadow-none">
+        <CardHeader className="border-b px-4 py-4 sm:px-5">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <CardTitle id="playground-heading">Bippy playground</CardTitle>
+              <CardDescription>
+                Test his states, movement, and runtime health.
+              </CardDescription>
+            </div>
+            <Badge variant="secondary" aria-label={`Current state: ${state}`}>
+              {state}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <div
+          ref={arenaRef}
+          className="relative h-[20rem] overflow-hidden bg-[#050505] sm:h-[24rem]"
+          onPointerMove={moveDraggedBippy}
+          onPointerUp={stopDragging}
+          onPointerCancel={stopDragging}
+          onLostPointerCapture={stopDragging}
+          data-testid="bippy-arena"
+        >
+          <div
+            data-bippy-safe-zone
+            className="pointer-events-none absolute top-4 left-4 max-w-48 border border-white/10 bg-black/70 px-3 py-2 text-xs leading-5 text-muted-foreground"
+          >
+            Hold and drag Bippy. He avoids this area while moving by himself.
+          </div>
+
+          <div ref={actorRef} className={styles.actor}>
+            <BippySprite
+              state={state}
+              facing={facing}
+              reducedMotion={reducedMotion}
+              pageVisible={pageVisible}
+              onActivate={activate}
+              onPointerDown={startDragging}
+            />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2" aria-label="Bippy controls">
+
+        <div
+          className="grid grid-cols-2 gap-2 border-t p-3 sm:grid-cols-4 sm:p-4"
+          aria-label="Bippy states"
+        >
           <Button
             type="button"
-            size="sm"
             variant="outline"
+            className={cn(
+              "h-16 flex-col gap-1.5 rounded-md",
+              state === "excited" && "border-primary/60 bg-primary/5",
+            )}
+            aria-pressed={state === "excited"}
             onClick={() => send({ type: "ACTIVATE" })}
           >
+            <Sparkles aria-hidden="true" />
             Celebrate
           </Button>
           <Button
             type="button"
-            size="sm"
             variant="outline"
+            className={cn(
+              "h-16 flex-col gap-1.5 rounded-md",
+              state === "working" && "border-primary/60 bg-primary/5",
+            )}
+            aria-pressed={state === "working"}
             onClick={() => send({ type: "START_WORK" })}
           >
+            <Laptop aria-hidden="true" />
             Work
           </Button>
           <Button
             type="button"
-            size="sm"
             variant="outline"
+            className={cn(
+              "h-16 flex-col gap-1.5 rounded-md",
+              state === "sleep" && "border-primary/60 bg-primary/5",
+            )}
+            aria-pressed={state === "sleep"}
             onClick={() => send({ type: "INACTIVITY" })}
           >
+            <Moon aria-hidden="true" />
             Nap
           </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={reset}>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-16 flex-col gap-1.5 rounded-md"
+            onClick={reset}
+          >
+            <RotateCcw aria-hidden="true" />
             Reset
           </Button>
         </div>
-      </div>
 
-      <div
-        ref={arenaRef}
-        className="relative min-h-[32rem] overflow-hidden rounded-lg border border-white/10 bg-[#050505] sm:min-h-[38rem]"
-        onPointerMove={moveDraggedBippy}
-        onPointerUp={stopDragging}
-        onPointerCancel={stopDragging}
-        data-testid="bippy-arena"
-      >
-        <div
-          data-bippy-safe-zone
-          className="pointer-events-none absolute top-5 left-5 max-w-52 rounded-md border border-dashed border-white/10 bg-black/60 p-3 text-xs leading-5 text-muted-foreground"
-        >
-          <h2 id="playground-heading" className="font-medium text-foreground">
-            Bippy playground
-          </h2>
-          Hold and drag Bippy to reposition him. This panel is a protected safe
-          zone.
-        </div>
+        <Separator />
 
-        <div ref={actorRef} className={styles.actor}>
-          <BippySprite
-            state={state}
-            facing={facing}
-            reducedMotion={reducedMotion}
-            pageVisible={pageVisible}
-            onActivate={activate}
-            onPointerDown={startDragging}
-          />
-        </div>
-      </div>
+        <CardContent className="space-y-4 px-4 py-4 sm:px-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Gauge className="size-4 text-muted-foreground" aria-hidden />
+              <div>
+                <h3 className="text-sm font-medium">Performance</h3>
+                <p className="text-xs text-muted-foreground">
+                  A local check. No metrics are stored.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={performanceCheck.isRunning || !pageVisible}
+              onClick={performanceCheck.runTest}
+            >
+              <Activity aria-hidden="true" />
+              {performanceCheck.isRunning
+                ? `Testing · ${performanceCheck.remainingSeconds}s`
+                : "Run 10s check"}
+            </Button>
+          </div>
 
-      <p className="sr-only" aria-live="polite">
-        Bippy is now {state}.
-      </p>
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-4">
+            <PerformanceMetric
+              label="Live FPS"
+              value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
+            />
+            <PerformanceMetric
+              label="Frame time"
+              value={
+                performanceCheck.frameTime
+                  ? `${performanceCheck.frameTime.toFixed(1)} ms`
+                  : "—"
+              }
+            />
+            <PerformanceMetric
+              label="Sprites"
+              value={
+                spriteStatus === "ready"
+                  ? "Ready"
+                  : spriteStatus === "error"
+                    ? "Load error"
+                    : "Loading"
+              }
+            />
+            <PerformanceMetric label="Result" value={ratingCopy} />
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
+            <span>Loop: {state === "moving" ? "active" : "resting"}</span>
+            <span>Tab: {pageVisible ? "visible" : "paused"}</span>
+            <span>Motion: {reducedMotion ? "reduced" : "full"}</span>
+            {performanceCheck.result ? (
+              <>
+                <span>
+                  Average: {performanceCheck.result.averageFps.toFixed(0)} FPS
+                </span>
+                <span>
+                  Slow frames:{" "}
+                  {performanceCheck.result.slowFramePercentage.toFixed(1)}%
+                </span>
+              </>
+            ) : null}
+          </div>
+        </CardContent>
+
+        <p className="sr-only" aria-live="polite">
+          Bippy is now {state}.
+        </p>
+      </Card>
     </section>
+  );
+}
+
+function PerformanceMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="bg-card px-3 py-3">
+      <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
+        {label}
+      </p>
+      <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+    </div>
   );
 }
