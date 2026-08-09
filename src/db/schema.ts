@@ -165,7 +165,15 @@ export const statsSnapshot = pgTable(
     id: integer("id").primaryKey().default(1),
     contributions: integer("contributions").notNull().default(0),
     currentStreak: integer("current_streak").notNull().default(0),
+    currentStreakStart: timestamp("current_streak_start", {
+      withTimezone: true,
+    }),
+    currentStreakEnd: timestamp("current_streak_end", { withTimezone: true }),
     longestStreak: integer("longest_streak").notNull().default(0),
+    longestStreakStart: timestamp("longest_streak_start", {
+      withTimezone: true,
+    }),
+    longestStreakEnd: timestamp("longest_streak_end", { withTimezone: true }),
     firstContributionAt: timestamp("first_contribution_at", {
       withTimezone: true,
     }),

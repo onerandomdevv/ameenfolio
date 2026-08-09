@@ -54,13 +54,34 @@ export function mergeContributionDays(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+const asDate = (day: string | null) =>
+  day ? new Date(`${day}T00:00:00.000Z`) : null;
+
 export function computeStreaks(days: ContributionDay[]) {
   let longestStreak = 0;
+  let longestStart: string | null = null;
+  let longestEnd: string | null = null;
   let run = 0;
+  let runStart: string | null = null;
 
   for (const day of days) {
-    run = day.count > 0 ? run + 1 : 0;
-    if (run > longestStreak) longestStreak = run;
+    if (day.count === 0) {
+      run = 0;
+      runStart = null;
+      continue;
+    }
+
+    if (run === 0) runStart = day.date;
+    run += 1;
+
+    // Strictly greater, so a tie keeps the earlier run. Re-dating the record
+    // every time it is merely equalled would make the "best" range jump around
+    // for no reason a reader could see.
+    if (run > longestStreak) {
+      longestStreak = run;
+      longestStart = runStart;
+      longestEnd = day.date;
+    }
   }
 
   // A quiet today does not end the streak — the day is not over yet. Any
@@ -68,10 +89,24 @@ export function computeStreaks(days: ContributionDay[]) {
   let index = days.length - 1;
   if (index >= 0 && days[index].count === 0) index -= 1;
 
+  const currentEnd =
+    index >= 0 && days[index].count > 0 ? days[index].date : null;
   let currentStreak = 0;
-  for (; index >= 0 && days[index].count > 0; index -= 1) currentStreak += 1;
+  let currentStart: string | null = null;
 
-  return { currentStreak, longestStreak };
+  for (; index >= 0 && days[index].count > 0; index -= 1) {
+    currentStreak += 1;
+    currentStart = days[index].date;
+  }
+
+  return {
+    currentStreak,
+    currentStreakStart: asDate(currentStart),
+    currentStreakEnd: asDate(currentEnd),
+    longestStreak,
+    longestStreakStart: asDate(longestStart),
+    longestStreakEnd: asDate(longestEnd),
+  };
 }
 
 export function summarizeContributions(days: ContributionDay[]) {

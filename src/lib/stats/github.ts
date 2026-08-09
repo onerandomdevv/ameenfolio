@@ -13,7 +13,11 @@ const REQUEST_TIMEOUT_MS = 10_000;
 export type GithubStats = {
   contributions: number;
   currentStreak: number;
+  currentStreakStart: Date | null;
+  currentStreakEnd: Date | null;
   longestStreak: number;
+  longestStreakStart: Date | null;
+  longestStreakEnd: Date | null;
   firstContributionAt: Date | null;
 };
 

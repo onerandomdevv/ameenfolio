@@ -104,7 +104,56 @@ describe("computeStreaks", () => {
   });
 
   it("handles an empty calendar", () => {
-    expect(computeStreaks([])).toEqual({ currentStreak: 0, longestStreak: 0 });
+    expect(computeStreaks([])).toEqual({
+      currentStreak: 0,
+      currentStreakStart: null,
+      currentStreakEnd: null,
+      longestStreak: 0,
+      longestStreakStart: null,
+      longestStreakEnd: null,
+    });
+  });
+
+  it("dates the current streak from its first to its last day", () => {
+    const streaks = computeStreaks(days([0, 1, 1, 1], "2026-08-06"));
+
+    expect(streaks.currentStreak).toBe(3);
+    expect(streaks.currentStreakStart?.toISOString().slice(0, 10)).toBe(
+      "2026-08-07",
+    );
+    expect(streaks.currentStreakEnd?.toISOString().slice(0, 10)).toBe(
+      "2026-08-09",
+    );
+  });
+
+  it("dates the longest streak even when it is not the current one", () => {
+    // Four-day run in May, then a shorter run at the end of the window.
+    const streaks = computeStreaks(days([1, 1, 1, 1, 0, 1, 1], "2026-05-01"));
+
+    expect(streaks.longestStreak).toBe(4);
+    expect(streaks.longestStreakStart?.toISOString().slice(0, 10)).toBe(
+      "2026-05-01",
+    );
+    expect(streaks.longestStreakEnd?.toISOString().slice(0, 10)).toBe(
+      "2026-05-04",
+    );
+  });
+
+  it("keeps the earlier range when a later run ties the record", () => {
+    const streaks = computeStreaks(days([1, 1, 0, 1, 1], "2026-05-01"));
+
+    expect(streaks.longestStreak).toBe(2);
+    expect(streaks.longestStreakStart?.toISOString().slice(0, 10)).toBe(
+      "2026-05-01",
+    );
+  });
+
+  it("leaves the current range empty when the streak is broken", () => {
+    const streaks = computeStreaks(days([1, 1, 0, 0]));
+
+    expect(streaks.currentStreak).toBe(0);
+    expect(streaks.currentStreakStart).toBeNull();
+    expect(streaks.currentStreakEnd).toBeNull();
   });
 });
 
