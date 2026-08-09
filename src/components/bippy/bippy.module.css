@@ -26,6 +26,12 @@
   transform-origin: top left;
 }
 
+.companionActor[data-coding="true"][data-state="working"] .companionScale {
+  filter: drop-shadow(0 0 5px rgb(165 239 48 / 38%))
+    drop-shadow(0 0 12px rgb(165 239 48 / 18%));
+  animation: coding-glow 2.4s ease-in-out infinite alternate;
+}
+
 .companionMessage {
   position: absolute;
   bottom: calc(100% + 36px);
@@ -268,6 +274,13 @@
   }
 }
 
+@keyframes coding-glow {
+  to {
+    filter: drop-shadow(0 0 8px rgb(165 239 48 / 56%))
+      drop-shadow(0 0 18px rgb(165 239 48 / 26%));
+  }
+}
+
 @keyframes sleeping {
   to {
     transform: translateY(2px) scale(0.99);
@@ -351,6 +364,10 @@
 
   .workingEye::after,
   .typingHand {
+    animation: none;
+  }
+
+  .companionActor[data-coding="true"][data-state="working"] .companionScale {
     animation: none;
   }
 

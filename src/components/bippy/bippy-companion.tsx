@@ -19,6 +19,7 @@ import {
   type BippyState,
 } from "@/components/bippy/bippy-machine";
 import {
+  hasMeaningfulBippyTravel,
   resolveBippyPosition,
   type BippyMovementOptions,
   type BippyPoint,
@@ -37,6 +38,8 @@ const EDGE_GAP = 16;
 const ARRIVAL_DISTANCE = 3;
 const DRAG_THRESHOLD = 4;
 const INACTIVITY_MS = 25_000;
+const CODING_WORK_DURATION_MS = 15_000;
+const AUTONOMOUS_TARGET_ATTEMPTS = 8;
 const MOBILE_VIEWPORT_QUERY = "(max-width: 480px)";
 const MOBILE_SAFE_ZONE_PADDING = 8;
 const DESKTOP_MOVEMENT_OPTIONS: BippyMovementOptions = {
@@ -147,7 +150,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   const previousPathRef = useRef(pathname);
   const messageTimeoutRef = useRef<number | null>(null);
   const codingActiveRef = useRef(false);
-  const codingMessageShownRef = useRef(false);
+  const codingWorkStartedAtRef = useRef(0);
   const welcomeShownRef = useRef(false);
   const [state, setState] = useState<BippyState>("idle");
   const [facing, setFacing] = useState<1 | -1>(1);
@@ -170,8 +173,20 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     );
   }, []);
 
+  const stopMovement = useCallback(() => {
+    movingRef.current = false;
+    setState((current) =>
+      current === "moving"
+        ? codingActiveRef.current
+          ? "working"
+          : "idle"
+        : current,
+    );
+  }, []);
+
   useEffect(() => {
     stateRef.current = state;
+    if (state === "working") codingWorkStartedAtRef.current = Date.now();
   }, [state]);
 
   const resolveTarget = useCallback((requested: BippyPoint) => {
@@ -257,13 +272,36 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       window.localStorage.getItem(POSITION_STORAGE_KEY),
     );
     lastActivityRef.current = Date.now();
-    movingRef.current = false;
+    stopMovement();
     if (hasCustomPositionRef.current && persisted) {
       placeFromSavedPosition(persisted);
     } else {
       placeAtDefault();
     }
-  }, [placeAtDefault, placeFromSavedPosition]);
+  }, [placeAtDefault, placeFromSavedPosition, stopMovement]);
+
+  const startAutonomousMovement = useCallback(() => {
+    const size = companionSize();
+    const bounds = viewportBounds();
+    const current = positionRef.current;
+    const minimumDistance = isMobileViewport() ? 48 : 64;
+
+    for (let attempt = 0; attempt < AUTONOMOUS_TARGET_ATTEMPTS; attempt += 1) {
+      const target = resolveTarget({
+        x: Math.random() * Math.max(bounds.width - size, 0),
+        y: Math.random() * Math.max(bounds.height - size, 0),
+      });
+      if (!hasMeaningfulBippyTravel(current, target, minimumDistance)) continue;
+
+      targetRef.current = target;
+      movingRef.current = true;
+      send({ type: "WANDER" });
+      return true;
+    }
+
+    stopMovement();
+    return false;
+  }, [resolveTarget, send, stopMovement]);
 
   useEffect(() => {
     lastActivityRef.current = Date.now();
@@ -313,26 +351,10 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         reconcileBippyRestingState(current, nextRestingState),
       );
 
-      if (wakaTimeStatus.isCoding && !codingMessageShownRef.current) {
-        codingMessageShownRef.current = true;
-        const text = wakaTimeStatus.todayText
-          ? `Ameen is coding right now — ${wakaTimeStatus.todayText} today.`
-          : BIPPY_COPY.coding;
-        showMessage(
-          {
-            text,
-            kind: "coding",
-            action: { label: "See what he’s building", href: "/projects" },
-          },
-          9_000,
-        );
-      } else if (!wakaTimeStatus.isCoding) {
-        codingMessageShownRef.current = false;
-        setMessage((current) => (current?.kind === "coding" ? null : current));
-      }
+      if (wakaTimeStatus.isCoding) codingWorkStartedAtRef.current = Date.now();
     }, 0);
     return () => window.clearTimeout(statusUpdate);
-  }, [showMessage, wakaTimeStatus]);
+  }, [wakaTimeStatus]);
 
   useEffect(() => {
     if (welcomeShownRef.current || wakaTimeStatus?.isCoding) return;
@@ -427,6 +449,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     const autonomous = window.setInterval(() => {
       if (
         !pageVisible ||
+        codingActiveRef.current ||
         stateRef.current !== restingState() ||
         Date.now() - lastActivityRef.current < 4_000
       ) {
@@ -439,17 +462,33 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         return;
       }
 
-      const size = companionSize();
-      const bounds = viewportBounds();
-      targetRef.current = resolveTarget({
-        x: Math.random() * Math.max(bounds.width - size, 0),
-        y: Math.random() * Math.max(bounds.height - size, 0),
-      });
-      movingRef.current = true;
-      send({ type: "WANDER" });
+      startAutonomousMovement();
     }, 7_000);
     return () => window.clearInterval(autonomous);
-  }, [pageVisible, reducedMotion, resolveTarget, restingState, send]);
+  }, [pageVisible, reducedMotion, restingState, send, startAutonomousMovement]);
+
+  useEffect(() => {
+    if (reducedMotion || !wakaTimeStatus?.isCoding) return;
+
+    const codingCycle = window.setInterval(() => {
+      if (
+        !pageVisible ||
+        stateRef.current !== "working" ||
+        Date.now() - codingWorkStartedAtRef.current < CODING_WORK_DURATION_MS
+      ) {
+        return;
+      }
+
+      startAutonomousMovement();
+    }, 500);
+
+    return () => window.clearInterval(codingCycle);
+  }, [
+    pageVisible,
+    reducedMotion,
+    startAutonomousMovement,
+    wakaTimeStatus?.isCoding,
+  ]);
 
   useEffect(() => {
     let frame = 0;
@@ -457,6 +496,16 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
 
     const animate = (now: number) => {
       frame = window.requestAnimationFrame(animate);
+      if (
+        stateRef.current === "moving" &&
+        !movingRef.current &&
+        dragRef.current === null
+      ) {
+        send({ type: "ARRIVED" });
+        previous = now;
+        return;
+      }
+
       if (
         !pageVisible ||
         reducedMotion ||
@@ -500,7 +549,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   useEffect(() => {
     const reactTo = (element: HTMLElement) => {
       lastActivityRef.current = Date.now();
-      movingRef.current = false;
+      stopMovement();
       if (element.dataset.bippyReaction === "working") {
         send({ type: "START_WORK" });
       } else {
@@ -535,7 +584,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       );
       if (target) {
         lastActivityRef.current = Date.now();
-        movingRef.current = false;
+        stopMovement();
         if (target.hasAttribute("data-bippy-project")) {
           send({ type: "RESET" });
           showMessage(
@@ -555,7 +604,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       document.removeEventListener("focusin", focusIn);
       document.removeEventListener("click", click);
     };
-  }, [send, showMessage]);
+  }, [send, showMessage, stopMovement]);
 
   useEffect(() => {
     if (pathname !== "/") return;
@@ -570,7 +619,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
 
           seenSectionsRef.current.add(section);
           lastActivityRef.current = Date.now();
-          movingRef.current = false;
+          stopMovement();
           if (section === "recognitions") {
             send({ type: "ACTIVATE" });
           } else if (section === "stack") {
@@ -611,12 +660,12 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       mutations.disconnect();
       observer.disconnect();
     };
-  }, [pathname, send]);
+  }, [pathname, send, stopMovement]);
 
   useEffect(() => {
     const routeChanged = previousPathRef.current !== pathname;
     let routeUpdateDelay: number | undefined;
-    movingRef.current = false;
+    stopMovement();
 
     if (pathname === "/projects") {
       lastActivityRef.current = Date.now();
@@ -633,14 +682,14 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
 
     previousPathRef.current = pathname;
     return () => window.clearTimeout(routeUpdateDelay);
-  }, [pathname, send, showMessage]);
+  }, [pathname, send, showMessage, stopMovement]);
 
   function startDragging(event: ReactPointerEvent<HTMLButtonElement>) {
     const actor = actorRef.current;
     if (!actor) return;
     const rect = actor.getBoundingClientRect();
     lastActivityRef.current = Date.now();
-    movingRef.current = false;
+    stopMovement();
     dragRef.current = {
       pointerId: event.pointerId,
       offsetX: event.clientX - rect.left,
@@ -706,13 +755,13 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   function activate() {
     if (suppressActivationRef.current) return;
     lastActivityRef.current = Date.now();
-    movingRef.current = false;
+    stopMovement();
     send({ type: "ACTIVATE" });
   }
 
   function celebrateOnHover() {
     lastActivityRef.current = Date.now();
-    movingRef.current = false;
+    stopMovement();
     send({ type: "ACTIVATE" });
   }
 
@@ -720,10 +769,21 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     window.localStorage.removeItem(POSITION_STORAGE_KEY);
     hasCustomPositionRef.current = false;
     lastActivityRef.current = Date.now();
-    movingRef.current = false;
+    stopMovement();
     placeAtDefault();
     send({ type: "RESET" });
   }
+
+  const codingMessage: CompanionMessage | null = wakaTimeStatus?.isCoding
+    ? {
+        text: wakaTimeStatus.todayText
+          ? `Ameen is coding right now — ${wakaTimeStatus.todayText} today.`
+          : BIPPY_COPY.coding,
+        kind: "coding",
+        action: { label: "See what he’s building", href: "/projects" },
+      }
+    : null;
+  const visibleMessage = codingMessage ?? message;
 
   return (
     <div
@@ -733,6 +793,8 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       onPointerUp={stopDragging}
       onPointerCancel={stopDragging}
       onPointerEnter={celebrateOnHover}
+      data-coding={wakaTimeStatus?.isCoding ? "true" : "false"}
+      data-state={state}
       data-testid="bippy-companion"
     >
       <div className={styles.companionScale}>
@@ -745,7 +807,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           onPointerDown={startDragging}
         />
       </div>
-      {message ? (
+      {visibleMessage ? (
         <div
           className={styles.companionMessage}
           role="status"
@@ -753,27 +815,29 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           data-testid="bippy-message"
         >
           <div className={styles.companionMessageBody}>
-            <p>{message.text}</p>
-            {message.action ? (
+            <p>{visibleMessage.text}</p>
+            {visibleMessage.action ? (
               <Link
-                href={message.action.href}
+                href={visibleMessage.action.href}
                 className={styles.companionMessageAction}
               >
-                {message.action.label}
+                {visibleMessage.action.label}
                 <ArrowUpRight aria-hidden="true" />
               </Link>
             ) : null}
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className={styles.companionMessageDismiss}
-            aria-label="Dismiss Bippy message"
-            onClick={dismissMessage}
-          >
-            <X aria-hidden="true" />
-          </Button>
+          {visibleMessage.kind !== "coding" ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className={styles.companionMessageDismiss}
+              aria-label="Dismiss Bippy message"
+              onClick={dismissMessage}
+            >
+              <X aria-hidden="true" />
+            </Button>
+          ) : null}
         </div>
       ) : null}
       <div
