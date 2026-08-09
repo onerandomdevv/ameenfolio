@@ -9,7 +9,9 @@ import {
   recognitions,
   siteSettings,
   statsSnapshot,
+  techStackItems,
   type SiteSettings,
+  type TechStackItem,
 } from "@/db/schema";
 import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
@@ -55,6 +57,7 @@ export async function getPublicPortfolio() {
       now: null,
       projects: [],
       recognitions: [],
+      techStack: [] as TechStackItem[],
       publishedProjectCount: 0,
       statsSnapshot: null,
     };
@@ -67,6 +70,7 @@ export async function getPublicPortfolio() {
     nowLinkRows,
     projectRows,
     recognitionRows,
+    techStackRows,
     publishedProjectRows,
     snapshotRows,
   ] = await Promise.all([
@@ -90,6 +94,11 @@ export async function getPublicPortfolio() {
       .from(recognitions)
       .where(eq(recognitions.published, true))
       .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
+    db
+      .select()
+      .from(techStackItems)
+      .where(eq(techStackItems.visible, true))
+      .orderBy(asc(techStackItems.displayOrder), asc(techStackItems.createdAt)),
     // Every project row counts, not just the eight the homepage shows.
     db
       .select({ value: count() })
@@ -117,6 +126,7 @@ export async function getPublicPortfolio() {
     now: toPublicNow(nowSectionRows[0], nowLinkRows),
     projects: projectRows,
     recognitions: recognitionRows,
+    techStack: techStackRows,
     publishedProjectCount: publishedProjectRows[0]?.value ?? 0,
     statsSnapshot: snapshotRows[0] ?? null,
   };
@@ -160,6 +170,13 @@ export async function getAdminNow() {
       .orderBy(asc(nowLinks.displayOrder), asc(nowLinks.createdAt)),
   ]);
   return { section: sectionRows[0] ?? defaultNowSection, links };
+}
+
+export async function getAdminTechStack() {
+  return getDb()
+    .select()
+    .from(techStackItems)
+    .orderBy(asc(techStackItems.displayOrder), asc(techStackItems.createdAt));
 }
 
 export async function getAdminSettings() {

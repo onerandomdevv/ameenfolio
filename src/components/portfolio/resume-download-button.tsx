@@ -4,15 +4,21 @@ import { useState } from "react";
 import { Download, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type ResumeDownloadButtonProps = {
   hasResume: boolean;
   filename: string | null;
+  // The caller positions it. This used to hard-code the absolute placement it
+  // needed beside the old footer separator, which is exactly what made it
+  // unusable anywhere else.
+  className?: string;
 };
 
 export function ResumeDownloadButton({
   hasResume,
   filename,
+  className,
 }: ResumeDownloadButtonProps) {
   const [downloading, setDownloading] = useState(false);
 
@@ -62,7 +68,10 @@ export function ResumeDownloadButton({
       variant="link"
       onClick={downloadResume}
       aria-busy={downloading}
-      className="absolute right-0 bg-background pl-4 pr-0 font-bold text-foreground underline hover:text-primary"
+      className={cn(
+        "px-0 font-bold text-foreground underline hover:text-primary",
+        className,
+      )}
       data-bippy-reaction="working"
       data-bippy-safe-zone
     >

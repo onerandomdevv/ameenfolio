@@ -1,4 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+
+// The test runner is a separate process from the dev server, so it does not
+// see .env.local on its own. Tests that gate on configuration — a database, a
+// set of auth credentials — need the same view of the environment the app has,
+// or they skip locally for the wrong reason.
+loadEnvConfig(process.cwd());
 
 export default defineConfig({
   testDir: "./tests/e2e",

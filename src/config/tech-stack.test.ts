@@ -1,67 +1,62 @@
 import { describe, expect, it } from "vitest";
-import { techStackGroups } from "@/config/tech-stack";
+import {
+  techStackGroupLabel,
+  techStackGroupValues,
+  techStackGroups,
+} from "@/config/tech-stack";
+import { techStackItemSchema } from "@/lib/validation";
 
+// The item list used to live here and was asserted verbatim. It is database
+// content now, so what is worth pinning is the group contract the schema, the
+// database check constraint and the public grouping all share.
 describe("techStackGroups", () => {
-  it("keeps the approved groups and technology order", () => {
-    expect(
-      techStackGroups.map((group) => ({
-        name: group.name,
-        items: group.items.map(({ name, abbreviation }) => ({
-          name,
-          abbreviation,
-        })),
-      })),
-    ).toEqual([
-      {
-        name: "Core Stack",
-        items: [
-          { name: "JavaScript", abbreviation: "JS" },
-          { name: "TypeScript", abbreviation: "TS" },
-          { name: "React", abbreviation: "R" },
-          { name: "Next.js", abbreviation: "N" },
-          { name: "Tailwind CSS", abbreviation: "TW" },
-          { name: "Node.js", abbreviation: "N" },
-          { name: "NestJS", abbreviation: "N" },
-          { name: "PostgreSQL", abbreviation: "PG" },
-          { name: "MongoDB", abbreviation: "M" },
-          { name: "Redis", abbreviation: "R" },
-          { name: "Prisma", abbreviation: "P" },
-          { name: "Zustand", abbreviation: "Z" },
-        ],
-      },
-      {
-        name: "Tools & Infrastructure",
-        items: [
-          { name: "Docker", abbreviation: "D" },
-          { name: "GitHub Actions", abbreviation: "GH" },
-          { name: "Cloudflare", abbreviation: "CF" },
-          { name: "AWS", abbreviation: "AWS" },
-          { name: "GCP", abbreviation: "G" },
-          { name: "VPS", abbreviation: "VPS" },
-          { name: "Nginx", abbreviation: "N" },
-        ],
-      },
+  it("exposes exactly the two supported groups", () => {
+    expect(techStackGroups.map((group) => group.value)).toEqual([
+      "core",
+      "tools",
+    ]);
+    expect(techStackGroups.map((group) => group.label)).toEqual([
+      "Core Stack",
+      "Tools & Infrastructure",
     ]);
   });
 
-  it("does not include the deliberately excluded entries", () => {
-    const names = techStackGroups.flatMap((group) =>
-      group.items.map((item) => item.name),
+  it("derives its values list from the groups themselves", () => {
+    expect([...techStackGroupValues]).toEqual(
+      techStackGroups.map((group) => group.value),
     );
+  });
 
-    expect(names).not.toEqual(
-      expect.arrayContaining([
-        "Auth.js",
-        "NextAuth",
-        "Passport.js",
-        "JWT",
-        "OAuth",
-        "NoSQL",
-        "Claude",
-        "Codex",
-        "Gemini",
-        "CodeRabbit",
-      ]),
+  it("falls back to the first group for an unknown value", () => {
+    expect(techStackGroupLabel("tools")).toBe("Tools & Infrastructure");
+    expect(techStackGroupLabel("nonsense")).toBe("Core Stack");
+  });
+});
+
+describe("techStackItemSchema", () => {
+  const item = {
+    name: "Rust",
+    groupKey: "core",
+    displayOrder: 0,
+    visible: true,
+  };
+
+  it("accepts a technology in either group", () => {
+    expect(techStackItemSchema.safeParse(item).success).toBe(true);
+    expect(
+      techStackItemSchema.safeParse({ ...item, groupKey: "tools" }).success,
+    ).toBe(true);
+  });
+
+  it("rejects a group the database constraint would refuse", () => {
+    expect(
+      techStackItemSchema.safeParse({ ...item, groupKey: "languages" }).success,
+    ).toBe(false);
+  });
+
+  it("requires a name", () => {
+    expect(techStackItemSchema.safeParse({ ...item, name: "  " }).success).toBe(
+      false,
     );
   });
 });
