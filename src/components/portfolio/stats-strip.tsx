@@ -56,20 +56,19 @@ export function StatsStrip({
         : undefined,
     },
     {
-      label: "Hackathons",
+      label: "Hackathons won",
       value: hackathonWins ? plural(hackathonWins, "win") : null,
     },
     {
-      label: "Projects",
+      label: "Projects (prod)",
       value: publishedProjectCount
         ? publishedProjectCount.toLocaleString("en-US")
         : null,
-      sub: "in production",
     },
   ];
 
   return (
-    <section className="mt-10" aria-labelledby="stats-heading">
+    <section className="mt-6" aria-labelledby="stats-heading">
       <h2 id="stats-heading" className="sr-only">
         Portfolio stats
       </h2>
