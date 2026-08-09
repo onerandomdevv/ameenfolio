@@ -12,7 +12,11 @@ const links = [
 
 export function PortfolioNav({ current }: PortfolioNavProps) {
   return (
-    <nav className="flex justify-end" aria-label="Primary navigation">
+    <nav
+      className="flex justify-end"
+      aria-label="Primary navigation"
+      data-bippy-safe-zone
+    >
       <ul className="flex items-center text-sm">
         {links.map((link, index) => (
           <li key={link.id} className="flex items-center">
@@ -27,6 +31,7 @@ export function PortfolioNav({ current }: PortfolioNavProps) {
             <Link
               href={link.href}
               aria-current={current === link.id ? "page" : undefined}
+              data-bippy-reaction="curious"
               className={cn(
                 "inline-flex min-h-11 items-center transition-colors hover:text-primary focus-visible:text-primary",
                 current === link.id

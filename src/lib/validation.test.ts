@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  bippyVisibilitySchema,
   nowLinkSchema,
   nowSectionSchema,
   projectSchema,
@@ -8,6 +9,15 @@ import {
 } from "@/lib/validation";
 
 describe("portfolio validation", () => {
+  it("accepts only a boolean public Bippy visibility setting", () => {
+    expect(bippyVisibilitySchema.safeParse({ enabled: true }).success).toBe(
+      true,
+    );
+    expect(bippyVisibilitySchema.safeParse({ enabled: "true" }).success).toBe(
+      false,
+    );
+  });
+
   it("accepts a concise recognition without long-form fields", () => {
     expect(
       recognitionSchema.safeParse({

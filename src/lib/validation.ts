@@ -92,6 +92,10 @@ export const siteSettingsSchema = z.object({
   seoDescription: z.string().trim().min(40).max(170),
 });
 
+export const bippyVisibilitySchema = z.object({
+  enabled: z.boolean(),
+});
+
 export const uploadRequestSchema = z.object({
   resourceType: z.enum(["icon", "profile", "resume"]),
   filename: z.string().trim().min(1).max(180),
@@ -104,3 +108,4 @@ export type RecognitionInput = z.infer<typeof recognitionSchema>;
 export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
+export type BippyVisibilityInput = z.infer<typeof bippyVisibilitySchema>;

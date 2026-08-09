@@ -20,6 +20,8 @@ export function SectionHeading({ id, title, action }: SectionHeadingProps) {
         <Link
           href={action.href}
           aria-label={action.label}
+          data-bippy-reaction="curious"
+          data-bippy-safe-zone
           className="-my-3.5 ml-1 inline-flex size-11 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary"
         >
           <ArrowRight className="size-4" aria-hidden="true" />

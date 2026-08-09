@@ -1,0 +1,1 @@
+ALTER TABLE "site_settings" ADD COLUMN "public_bippy_enabled" boolean DEFAULT true NOT NULL;

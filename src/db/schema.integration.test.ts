@@ -4,7 +4,7 @@ import { getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { recognitionIconNames } from "@/config/recognition-icons";
 import * as schema from "@/db/schema";
-import { nowLinks, nowSection, recognitions } from "@/db/schema";
+import { nowLinks, nowSection, recognitions, siteSettings } from "@/db/schema";
 
 const testUrl = process.env.TEST_DATABASE_URL;
 
@@ -18,6 +18,10 @@ describe("Now section schema", () => {
 describe("active application schema", () => {
   it("does not define a technologies table", () => {
     expect(schema).not.toHaveProperty("technologies");
+  });
+
+  it("stores the public Bippy visibility in site settings", () => {
+    expect(siteSettings).toHaveProperty("publicBippyEnabled");
   });
 
   it("keeps recognitions concise and icon-led", () => {

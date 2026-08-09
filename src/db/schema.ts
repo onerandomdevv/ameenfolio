@@ -132,6 +132,7 @@ export const siteSettings = pgTable(
     profileImageKey: text("profile_image_key"),
     resumeKey: text("resume_key"),
     resumeFilename: text("resume_filename"),
+    publicBippyEnabled: boolean("public_bippy_enabled").notNull().default(true),
     seoTitle: text("seo_title").notNull(),
     seoDescription: text("seo_description").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })

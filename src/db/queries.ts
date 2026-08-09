@@ -19,6 +19,7 @@ const defaultSiteSettings: SiteSettings = {
   profileImageKey: null,
   resumeKey: null,
   resumeFilename: null,
+  publicBippyEnabled: true,
   seoTitle: "Aliameen Kareem — Full-Stack Engineer",
   seoDescription:
     "Selected projects, recognition, and the technologies behind Aliameen Kareem's work.",
@@ -136,6 +137,17 @@ export async function getAdminSettings() {
     .from(siteSettings)
     .where(eq(siteSettings.id, 1));
   return rows[0] ?? defaultSiteSettings;
+}
+
+export async function getPublicBippyEnabled() {
+  if (!canQueryDatabase()) return true;
+
+  const rows = await getDb()
+    .select({ enabled: siteSettings.publicBippyEnabled })
+    .from(siteSettings)
+    .where(eq(siteSettings.id, 1))
+    .limit(1);
+  return rows[0]?.enabled ?? true;
 }
 
 export async function isReferencedPublicMedia(key: string) {
