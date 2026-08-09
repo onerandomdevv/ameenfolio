@@ -49,9 +49,35 @@
   animation: message-in 160ms ease-out;
 }
 
-.companionMessage p {
+.companionMessageBody {
   flex: 1;
+  min-width: 0;
+}
+
+.companionMessage p {
   margin: 0;
+}
+
+.companionMessageAction {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 3px;
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.companionMessageAction svg {
+  width: 13px;
+  height: 13px;
+}
+
+.companionMessageAction:hover,
+.companionMessageAction:focus-visible {
+  color: var(--primary);
 }
 
 .companionMessageDismiss {

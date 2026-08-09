@@ -14,6 +14,8 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
+`WAKATIME_API_KEY` is optional. When configured, keep it server-only; the public application receives only a cached live-coding boolean and today’s human-readable total. Without it, Bippy retains his normal idle behavior.
+
 ## Admin host
 
 The admin app has two mountings, both always live. A host whose first label is `admin.` serves it at the root — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Every other host serves it under `/admin`. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.

@@ -8,11 +8,14 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { usePathname } from "next/navigation";
-import { RotateCcw, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowUpRight, RotateCcw, X } from "lucide-react";
 import {
   bippyStateTimeouts,
+  reconcileBippyRestingState,
   transitionBippy,
   type BippyEvent,
+  type BippyRestingState,
   type BippyState,
 } from "@/components/bippy/bippy-machine";
 import {
@@ -22,6 +25,7 @@ import {
   type BippySafeZone,
 } from "@/components/bippy/bippy-movement";
 import { BippySprite } from "@/components/bippy/bippy-sprite";
+import { useWakaTimeStatus } from "@/components/bippy/use-wakatime-status";
 import styles from "@/components/bippy/bippy.module.css";
 import { useReducedMotion } from "@/components/bippy/use-reduced-motion";
 import { Button } from "@/components/ui/button";
@@ -47,6 +51,7 @@ const BIPPY_COPY = {
   welcome: "Hi, I’m Bippy. Welcome.",
   projects: "Let’s explore the projects.",
   projectOpened: "Nice choice!",
+  coding: "Ameen is coding right now.",
 } as const;
 
 type DragSession = {
@@ -61,6 +66,8 @@ type DragSession = {
 type SavedPosition = { x: number; y: number };
 type CompanionMessage = {
   text: string;
+  kind?: "coding" | "reaction";
+  action?: { label: string; href: string };
 };
 
 function isMobileViewport() {
@@ -139,14 +146,28 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   const seenSectionsRef = useRef(new Set<string>());
   const previousPathRef = useRef(pathname);
   const messageTimeoutRef = useRef<number | null>(null);
+  const codingActiveRef = useRef(false);
+  const codingMessageShownRef = useRef(false);
+  const welcomeShownRef = useRef(false);
   const [state, setState] = useState<BippyState>("idle");
   const [facing, setFacing] = useState<1 | -1>(1);
   const [pageVisible, setPageVisible] = useState(true);
   const [message, setMessage] = useState<CompanionMessage | null>(null);
   const reducedMotion = useReducedMotion();
+  const wakaTimeStatus = useWakaTimeStatus();
+
+  const restingState = useCallback((): BippyRestingState => {
+    return codingActiveRef.current ? "working" : "idle";
+  }, []);
 
   const send = useCallback((event: BippyEvent) => {
-    setState((current) => transitionBippy(current, event));
+    setState((current) =>
+      transitionBippy(
+        current,
+        event,
+        codingActiveRef.current ? "working" : "idle",
+      ),
+    );
   }, []);
 
   useEffect(() => {
@@ -194,11 +215,11 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   }, []);
 
   const showMessage = useCallback(
-    (text: string, duration: number) => {
+    (nextMessage: CompanionMessage, duration: number) => {
       if (messageTimeoutRef.current !== null) {
         window.clearTimeout(messageTimeoutRef.current);
       }
-      setMessage({ text });
+      setMessage(nextMessage);
       messageTimeoutRef.current = window.setTimeout(() => {
         dismissMessage();
       }, duration);
@@ -281,11 +302,46 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   }, []);
 
   useEffect(() => {
+    if (!wakaTimeStatus) return;
+
+    codingActiveRef.current = wakaTimeStatus.isCoding;
+    const nextRestingState: BippyRestingState = wakaTimeStatus.isCoding
+      ? "working"
+      : "idle";
+    const statusUpdate = window.setTimeout(() => {
+      setState((current) =>
+        reconcileBippyRestingState(current, nextRestingState),
+      );
+
+      if (wakaTimeStatus.isCoding && !codingMessageShownRef.current) {
+        codingMessageShownRef.current = true;
+        const text = wakaTimeStatus.todayText
+          ? `Ameen is coding right now — ${wakaTimeStatus.todayText} today.`
+          : BIPPY_COPY.coding;
+        showMessage(
+          {
+            text,
+            kind: "coding",
+            action: { label: "See what he’s building", href: "/projects" },
+          },
+          9_000,
+        );
+      } else if (!wakaTimeStatus.isCoding) {
+        codingMessageShownRef.current = false;
+        setMessage((current) => (current?.kind === "coding" ? null : current));
+      }
+    }, 0);
+    return () => window.clearTimeout(statusUpdate);
+  }, [showMessage, wakaTimeStatus]);
+
+  useEffect(() => {
+    if (welcomeShownRef.current || wakaTimeStatus?.isCoding) return;
+    welcomeShownRef.current = true;
     const welcomeDelay = window.setTimeout(() => {
-      showMessage(BIPPY_COPY.welcome, 4_500);
+      showMessage({ text: BIPPY_COPY.welcome, kind: "reaction" }, 4_500);
     }, 600);
     return () => window.clearTimeout(welcomeDelay);
-  }, [showMessage]);
+  }, [showMessage, wakaTimeStatus?.isCoding]);
 
   useEffect(() => {
     const activity = () => {
@@ -353,6 +409,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     const inactivity = window.setInterval(() => {
       if (
         pageVisible &&
+        !codingActiveRef.current &&
         stateRef.current !== "sleep" &&
         stateRef.current !== "dragging" &&
         stateRef.current !== "moving" &&
@@ -370,13 +427,13 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     const autonomous = window.setInterval(() => {
       if (
         !pageVisible ||
-        stateRef.current !== "idle" ||
+        stateRef.current !== restingState() ||
         Date.now() - lastActivityRef.current < 4_000
       ) {
         return;
       }
 
-      if (Math.random() < 0.3) {
+      if (!codingActiveRef.current && Math.random() < 0.3) {
         movingRef.current = false;
         send({ type: "START_WORK" });
         return;
@@ -392,7 +449,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       send({ type: "WANDER" });
     }, 7_000);
     return () => window.clearInterval(autonomous);
-  }, [pageVisible, reducedMotion, resolveTarget, send]);
+  }, [pageVisible, reducedMotion, resolveTarget, restingState, send]);
 
   useEffect(() => {
     let frame = 0;
@@ -481,7 +538,10 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         movingRef.current = false;
         if (target.hasAttribute("data-bippy-project")) {
           send({ type: "RESET" });
-          showMessage(BIPPY_COPY.projectOpened, 2_000);
+          showMessage(
+            { text: BIPPY_COPY.projectOpened, kind: "reaction" },
+            2_000,
+          );
         }
         send({ type: "ACTIVATE" });
       }
@@ -563,7 +623,9 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       routeUpdateDelay = window.setTimeout(() => {
         send({ type: "RESET" });
         send({ type: "NOTICE" });
-        if (routeChanged) showMessage(BIPPY_COPY.projects, 2_800);
+        if (routeChanged) {
+          showMessage({ text: BIPPY_COPY.projects, kind: "reaction" }, 2_800);
+        }
       }, 0);
     } else if (routeChanged) {
       routeUpdateDelay = window.setTimeout(() => send({ type: "RESET" }), 0);
@@ -690,7 +752,18 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           aria-live="polite"
           data-testid="bippy-message"
         >
-          <p>{message.text}</p>
+          <div className={styles.companionMessageBody}>
+            <p>{message.text}</p>
+            {message.action ? (
+              <Link
+                href={message.action.href}
+                className={styles.companionMessageAction}
+              >
+                {message.action.label}
+                <ArrowUpRight aria-hidden="true" />
+              </Link>
+            ) : null}
+          </div>
           <Button
             type="button"
             variant="ghost"

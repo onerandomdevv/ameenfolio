@@ -10,6 +10,7 @@ export const bippyStates = [
 ] as const;
 
 export type BippyState = (typeof bippyStates)[number];
+export type BippyRestingState = "idle" | "working";
 
 export type BippyEvent =
   | { type: "ACTIVITY" }
@@ -35,19 +36,22 @@ export const bippyStateTimeouts: Partial<Record<BippyState, number>> = {
 export function transitionBippy(
   state: BippyState,
   event: BippyEvent,
+  restingState: BippyRestingState = "idle",
 ): BippyState {
-  if (event.type === "RESET") return "idle";
+  if (event.type === "RESET") return restingState;
   if (event.type === "DRAG_START") return "dragging";
   if (state === "dragging") {
     if (event.type === "DRAG_MOVE") return "moving";
-    return event.type === "DRAG_END" ? "idle" : state;
+    return event.type === "DRAG_END" ? restingState : state;
   }
   if (state === "moving") {
     return event.type === "DRAG_END" || event.type === "ARRIVED"
-      ? "idle"
+      ? restingState
       : state;
   }
-  if (event.type === "INACTIVITY") return "sleep";
+  if (event.type === "INACTIVITY") {
+    return restingState === "working" ? "working" : "sleep";
+  }
 
   if (state === "sleep") {
     return event.type === "ACTIVITY" || event.type === "ACTIVATE"
@@ -63,17 +67,31 @@ export function transitionBippy(
   ) {
     return "curious";
   }
+  if (event.type === "WANDER" && state === restingState) return "moving";
 
   if (state === "wake") {
-    return event.type === "STATE_TIMEOUT" ? "idle" : state;
+    return event.type === "STATE_TIMEOUT" ? restingState : state;
   }
 
   if (state === "excited" || state === "working") {
-    return event.type === "STATE_TIMEOUT" ? "idle" : state;
+    return event.type === "STATE_TIMEOUT" ? restingState : state;
   }
 
-  if (event.type === "WANDER" && state === "idle") return "moving";
-  if (event.type === "STATE_TIMEOUT" && state === "curious") return "idle";
+  if (event.type === "STATE_TIMEOUT" && state === "curious") {
+    return restingState;
+  }
 
   return state;
+}
+
+export function reconcileBippyRestingState(
+  state: BippyState,
+  restingState: BippyRestingState,
+): BippyState {
+  return state === "idle" ||
+    state === "working" ||
+    state === "sleep" ||
+    state === "wake"
+    ? restingState
+    : state;
 }

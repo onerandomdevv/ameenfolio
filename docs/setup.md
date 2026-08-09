@@ -7,6 +7,7 @@
 5. Run `npm run db:migrate`, then `npm run db:seed`.
 6. Create private `ameenfolio-media-dev` and `ameenfolio-media-prod` R2 buckets. Create narrowly scoped S3 API credentials per environment and apply `config/r2-cors.json` after replacing its placeholder origins.
 7. Run `npm run dev` and open `/admin/login`.
+8. Optional: install the WakaTime plugin in your editor and put the secret key from `https://wakatime.com/api-key` in `WAKATIME_API_KEY`. Bippy treats a heartbeat from the last five minutes as active coding.
 
 No Sanity data is migrated. Enter development content in the admin, then repeat against production before cutover.
 

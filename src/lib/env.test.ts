@@ -19,6 +19,7 @@ describe("server environment", () => {
     "R2_PUBLIC_BASE_URL",
     "GITHUB_STATS_USERNAME",
     "GITHUB_STATS_TOKEN",
+    "WAKATIME_API_KEY",
   ])("treats a blank %s as absent rather than invalid", (key) => {
     const parsed = serverEnvSchema.parse({ ...base, [key]: "" });
 
@@ -38,6 +39,7 @@ describe("server environment", () => {
         R2_PUBLIC_BASE_URL: "",
         GITHUB_STATS_USERNAME: "",
         GITHUB_STATS_TOKEN: "",
+        WAKATIME_API_KEY: "",
       }),
     ).not.toThrow();
   });
@@ -64,9 +66,11 @@ describe("server environment", () => {
       ...base,
       GITHUB_STATS_USERNAME: "onerandomdevv",
       GITHUB_STATS_TOKEN: "ghp_example",
+      WAKATIME_API_KEY: "waka_example",
     });
 
     expect(parsed.GITHUB_STATS_USERNAME).toBe("onerandomdevv");
     expect(parsed.GITHUB_STATS_TOKEN).toBe("ghp_example");
+    expect(parsed.WAKATIME_API_KEY).toBe("waka_example");
   });
 });
