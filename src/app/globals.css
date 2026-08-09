@@ -94,6 +94,40 @@
   }
 }
 
+/* The admin is a control surface, not a second portfolio. Redefining the theme
+   tokens on a wrapper rather than restyling each component means every input,
+   card and badge inside inherits the change for free.
+
+   Grey rather than the public site's pure black, for two reasons: it separates
+   the two at a glance, and it gives panels and fields somewhere to sit — on
+   black they can only be outlined, never lifted.
+
+   The --color-* names are the ones that matter. @theme resolves
+   `--color-background: var(--background)` against :root, and descendants
+   inherit that already-computed value, so redefining --background further down
+   the tree changes nothing. Both sets are set here: --color-* drives the
+   Tailwind utilities, and the bare names drive the rules that read them
+   directly, such as the base border-color above. */
+.admin-theme {
+  --background: #151519;
+  --card: #1e1e23;
+  --border: rgba(255, 255, 255, 0.1);
+
+  --color-background: #151519;
+  --color-card: #1e1e23;
+  --color-card-foreground: #ffffff;
+  --color-popover: #1a1a1e;
+  --color-popover-foreground: #ffffff;
+  --color-secondary: #27272d;
+  --color-secondary-foreground: #fafafa;
+  --color-muted: #27272d;
+  --color-muted-foreground: #a3a3ad;
+  --color-accent: #303038;
+  --color-accent-foreground: #ffffff;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-input: rgba(255, 255, 255, 0.14);
+}
+
 @layer utilities {
   .glass {
     background: rgba(15, 15, 15, 0.7);

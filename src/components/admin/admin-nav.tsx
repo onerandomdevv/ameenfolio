@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ArrowUpRight } from "lucide-react";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { useAdminBase } from "@/lib/use-admin-base";
 import { cn } from "@/lib/utils";
@@ -26,49 +27,55 @@ export function AdminNav() {
   const base = useAdminBase();
 
   return (
-    <header className="flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-      <nav aria-label="Admin navigation">
-        <ul className="flex flex-wrap items-center text-sm">
-          {links.map((link, index) => {
-            const href = `${base}${link.href}`;
-            const active = pathname.startsWith(href);
+    <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+      <div className="mx-auto w-full max-w-3xl px-5 sm:px-6">
+        <div className="flex h-14 items-center justify-between gap-4">
+          <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Admin
+          </span>
+          <div className="flex items-center gap-1">
+            <a
+              href={publicSiteHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-8 items-center gap-1 rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              View site
+              <ArrowUpRight className="size-3.5" aria-hidden="true" />
+            </a>
+            <SignOutButton />
+          </div>
+        </div>
 
-            return (
-              <li key={link.href} className="flex items-center">
-                {index > 0 ? (
-                  <span
-                    className="mx-2 text-muted-foreground/50"
-                    aria-hidden="true"
+        {/* Scrolls rather than wraps on a narrow screen: five tabs plus the
+            actions cannot fit at 360px, and a wrapped second row pushes the
+            page content down on every view. */}
+        <nav aria-label="Admin sections" className="-mx-5 sm:mx-0">
+          <ul className="scrollbar-hide flex items-center gap-1 overflow-x-auto px-5 pb-2 sm:px-0">
+            {links.map((link) => {
+              const href = `${base}${link.href}`;
+              const active =
+                pathname === href || pathname.startsWith(`${href}/`);
+
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={href}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "inline-flex h-8 shrink-0 items-center whitespace-nowrap rounded-md px-3 text-sm transition-colors",
+                      active
+                        ? "bg-secondary font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                    )}
                   >
-                    /
-                  </span>
-                ) : null}
-                <Link
-                  href={href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "inline-flex min-h-11 items-center transition-colors hover:text-foreground",
-                    active ? "text-foreground" : "text-muted-foreground",
-                  )}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      <div className="flex items-center gap-4 text-sm">
-        <a
-          href={publicSiteHref}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
-        >
-          View site
-        </a>
-        <SignOutButton />
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </div>
     </header>
   );
