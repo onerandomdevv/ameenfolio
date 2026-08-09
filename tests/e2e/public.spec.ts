@@ -77,9 +77,14 @@ test("resume is not presented as a standalone homepage section", async ({
     0,
   );
   await expect(page.getByRole("link", { name: "Email me" })).toHaveCount(0);
+  // A button, not a link: the résumé is fetched and downloaded in place rather
+  // than navigated to, so there is deliberately no href to follow.
+  await expect(
+    page.locator("footer").getByRole("button", { name: "View Resume" }),
+  ).toBeVisible();
   await expect(
     page.locator("footer").getByRole("link", { name: "View Resume" }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });
 
 test("projects archive has no internal detail links", async ({ page }) => {

@@ -49,9 +49,13 @@ export function NowSection({ section }: { section: PublicNow | null }) {
 
           {/* Bare month and year, tucked bottom-right. It is a footnote about
               the section, not a labelled field, so the "last updated" wording
-              only competed with the content it describes. */}
+              only competed with the content it describes.
+
+              Muted at /80 rather than dimmer: at 10px this counts as small
+              text and needs 4.5:1 against the background. /70 measures 4.33:1
+              and fails the contrast check. */}
           {section.showLastUpdated && lastUpdated ? (
-            <p className="mt-4 text-right font-mono text-[10px] text-muted-foreground/70">
+            <p className="mt-4 text-right font-mono text-[10px] text-muted-foreground/80">
               {lastUpdated}
             </p>
           ) : null}
