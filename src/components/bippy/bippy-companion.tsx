@@ -146,12 +146,12 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
   const reducedMotion = useReducedMotion();
 
   const send = useCallback((event: BippyEvent) => {
-    setState((current) => {
-      const next = transitionBippy(current, event);
-      stateRef.current = next;
-      return next;
-    });
+    setState((current) => transitionBippy(current, event));
   }, []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const resolveTarget = useCallback((requested: BippyPoint) => {
     const mobile = isMobileViewport();
@@ -242,8 +242,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     } else {
       placeAtDefault();
     }
-    send({ type: "RESET" });
-  }, [placeAtDefault, placeFromSavedPosition, send]);
+  }, [placeAtDefault, placeFromSavedPosition]);
 
   useEffect(() => {
     lastActivityRef.current = Date.now();
@@ -534,10 +533,20 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         });
     };
 
+    let scanFrame = 0;
+    const scheduleScan = () => {
+      if (scanFrame) return;
+      scanFrame = window.requestAnimationFrame(() => {
+        scanFrame = 0;
+        observeSections();
+      });
+    };
+
     observeSections();
-    const mutations = new MutationObserver(observeSections);
+    const mutations = new MutationObserver(scheduleScan);
     mutations.observe(document.body, { childList: true, subtree: true });
     return () => {
+      window.cancelAnimationFrame(scanFrame);
       mutations.disconnect();
       observer.disconnect();
     };
@@ -545,25 +554,22 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
 
   useEffect(() => {
     const routeChanged = previousPathRef.current !== pathname;
-    let routeMessageDelay: number | undefined;
+    let routeUpdateDelay: number | undefined;
     movingRef.current = false;
 
     if (pathname === "/projects") {
       lastActivityRef.current = Date.now();
-      send({ type: "RESET" });
-      send({ type: "NOTICE" });
-      if (routeChanged) {
-        routeMessageDelay = window.setTimeout(
-          () => showMessage(BIPPY_COPY.projects, 2_800),
-          0,
-        );
-      }
+      routeUpdateDelay = window.setTimeout(() => {
+        send({ type: "RESET" });
+        send({ type: "NOTICE" });
+        if (routeChanged) showMessage(BIPPY_COPY.projects, 2_800);
+      }, 0);
     } else if (routeChanged) {
-      send({ type: "RESET" });
+      routeUpdateDelay = window.setTimeout(() => send({ type: "RESET" }), 0);
     }
 
     previousPathRef.current = pathname;
-    return () => window.clearTimeout(routeMessageDelay);
+    return () => window.clearTimeout(routeUpdateDelay);
   }, [pathname, send, showMessage]);
 
   function startDragging(event: ReactPointerEvent<HTMLButtonElement>) {
@@ -621,8 +627,12 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       x: Math.min(Math.max(positionRef.current.x / maxX, 0), 1),
       y: Math.min(Math.max(positionRef.current.y / maxY, 0), 1),
     };
-    window.localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(saved));
-    hasCustomPositionRef.current = true;
+    try {
+      window.localStorage.setItem(POSITION_STORAGE_KEY, JSON.stringify(saved));
+      hasCustomPositionRef.current = true;
+    } catch {
+      hasCustomPositionRef.current = false;
+    }
     window.setTimeout(() => {
       suppressActivationRef.current = false;
     }, 0);
@@ -708,9 +718,6 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           <RotateCcw aria-hidden="true" />
         </Button>
       </div>
-      <p className="sr-only" aria-live="polite">
-        Bippy is now {state}.
-      </p>
     </div>
   );
 }

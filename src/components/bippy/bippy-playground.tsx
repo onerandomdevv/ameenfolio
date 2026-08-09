@@ -76,12 +76,12 @@ export function BippyPlayground() {
   }, []);
 
   const send = useCallback((event: BippyEvent) => {
-    setState((current) => {
-      const next = transitionBippy(current, event);
-      stateRef.current = next;
-      return next;
-    });
+    setState((current) => transitionBippy(current, event));
   }, []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const place = useCallback((point: BippyPoint) => {
     positionRef.current = point;
@@ -124,7 +124,7 @@ export function BippyPlayground() {
   useEffect(() => {
     const activity = () => {
       lastActivityRef.current = Date.now();
-      send({ type: "ACTIVITY" });
+      if (stateRef.current === "sleep") send({ type: "ACTIVITY" });
     };
     window.addEventListener("pointermove", activity, { passive: true });
     window.addEventListener("keydown", activity);
@@ -194,14 +194,17 @@ export function BippyPlayground() {
   }, [pageVisible, reducedMotion, resolveTarget, send]);
 
   useEffect(() => {
+    if (reducedMotion) return;
     let frame = 0;
     let previous = performance.now();
 
     const animate = (now: number) => {
       frame = window.requestAnimationFrame(animate);
-      if (!pageVisible || reducedMotion) return;
       const activeState = stateRef.current;
-      if (activeState !== "curious") return;
+      if (!pageVisible || activeState !== "curious") {
+        previous = now;
+        return;
+      }
 
       const elapsed = Math.min((now - previous) / 16.67, 2);
       previous = now;
@@ -345,8 +348,6 @@ export function BippyPlayground() {
       <div
         ref={arenaRef}
         className="relative min-h-[32rem] overflow-hidden rounded-lg border border-white/10 bg-[#050505] sm:min-h-[38rem]"
-        role="region"
-        aria-labelledby="playground-heading"
         onPointerMove={moveDraggedBippy}
         onPointerUp={stopDragging}
         onPointerCancel={stopDragging}

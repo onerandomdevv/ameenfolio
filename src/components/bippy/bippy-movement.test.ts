@@ -63,10 +63,10 @@ describe("Bippy movement", () => {
     expect(
       zones.every(
         (zone) =>
-          resolved.x + 96 <= zone.x ||
-          resolved.x >= zone.x + zone.width ||
-          resolved.y + 96 <= zone.y ||
-          resolved.y >= zone.y + zone.height,
+          resolved.x + 96 <= zone.x - 16 ||
+          resolved.x >= zone.x + zone.width + 16 ||
+          resolved.y + 96 <= zone.y - 16 ||
+          resolved.y >= zone.y + zone.height + 16,
       ),
     ).toBe(true);
   });

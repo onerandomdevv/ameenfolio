@@ -6,7 +6,6 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { preload } from "react-dom";
 import idleManifest from "../../../public/bippy/idle/bippy-idle.json";
 import { Button } from "@/components/ui/button";
 import type { BippyState } from "@/components/bippy/bippy-machine";
@@ -60,25 +59,15 @@ export function BippySprite({
   onActivate: () => void;
   onPointerDown: (event: ReactPointerEvent<HTMLButtonElement>) => void;
 }) {
-  preload(idleSprite, { as: "image" });
-
   const [frame, setFrame] = useState(0);
 
   useEffect(() => {
-    const images = bippySpriteAssets.slice(1).map((asset) => {
+    bippySpriteAssets.forEach((asset, index) => {
       const image = new Image();
       image.decoding = "async";
-      image.fetchPriority = "low";
+      image.fetchPriority = index === 0 ? "high" : "low";
       image.src = asset;
-      return image;
     });
-
-    return () => {
-      for (const image of images) {
-        image.onload = null;
-        image.onerror = null;
-      }
-    };
   }, []);
 
   useEffect(() => {
@@ -121,7 +110,7 @@ export function BippySprite({
       type="button"
       variant="ghost"
       className={styles.button}
-      aria-label={`Bippy is ${state}. Activate Bippy`}
+      aria-label="Activate Bippy"
       onClick={onActivate}
       onPointerDown={onPointerDown}
       data-testid="bippy"

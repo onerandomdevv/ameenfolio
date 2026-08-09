@@ -1,7 +1,7 @@
 {
   "image": "/bippy/idle/bippy-idle.png",
-  "frameWidth": 64,
-  "frameHeight": 64,
+  "frameWidth": 128,
+  "frameHeight": 128,
   "frameCount": 6,
   "loop": true,
   "timeline": [

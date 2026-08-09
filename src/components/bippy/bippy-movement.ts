@@ -97,10 +97,16 @@ export function resolveBippyPosition(
   options: BippyMovementOptions = {},
 ): BippyPoint {
   const safeZoneGap = options.safeZoneGap ?? SAFE_ZONE_GAP;
+  const collisionZones = safeZones.map((zone) => ({
+    x: zone.x - safeZoneGap,
+    y: zone.y - safeZoneGap,
+    width: zone.width + safeZoneGap * 2,
+    height: zone.height + safeZoneGap * 2,
+  }));
   let point = clampBippyPosition(requested, bounds, actorSize, options.insets);
 
-  for (const zone of safeZones) {
-    if (!overlaps(point, actorSize, zone)) continue;
+  for (const [index, zone] of safeZones.entries()) {
+    if (!overlaps(point, actorSize, collisionZones[index])) continue;
 
     const candidates = [
       { x: zone.x - actorSize - safeZoneGap, y: point.y },
@@ -112,7 +118,7 @@ export function resolveBippyPosition(
         clampBippyPosition(candidate, bounds, actorSize, options.insets),
       )
       .filter((candidate) =>
-        safeZones.every(
+        collisionZones.every(
           (candidateZone) => !overlaps(candidate, actorSize, candidateZone),
         ),
       )
@@ -125,7 +131,7 @@ export function resolveBippyPosition(
     point = candidates[0] ?? point;
   }
 
-  if (safeZones.every((zone) => !overlaps(point, actorSize, zone))) {
+  if (collisionZones.every((zone) => !overlaps(point, actorSize, zone))) {
     return point;
   }
 
@@ -134,7 +140,7 @@ export function resolveBippyPosition(
       requested,
       bounds,
       actorSize,
-      safeZones,
+      collisionZones,
       options.insets,
     ) ?? point
   );
