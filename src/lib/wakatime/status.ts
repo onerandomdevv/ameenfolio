@@ -123,7 +123,8 @@ export function retainLastKnownWakaTimeStats(
   const fallbackWeekStart = fallback.todayDate
     ? getSundayWeekDates(fallback.todayDate)[0]
     : null;
-  const sameWeek = freshWeekStart === fallbackWeekStart;
+  const sameWeek =
+    freshWeekStart !== null && freshWeekStart === fallbackWeekStart;
 
   return {
     ...fresh,
@@ -254,7 +255,7 @@ export function toPublicWakaTimeStatus(
       : new Date(latestHeartbeat * 1_000).toISOString();
   const { available: weekAvailable, ...week } = summarizeWeek(summariesPayload);
 
-  return {
+  return publicWakaTimeStatusSchema.parse({
     isCoding: isRecentWakaTimeHeartbeat(heartbeatAt, now.getTime()),
     statsStale: !today.success || !weekAvailable,
     todayDate: getWakaTimeHeartbeatDate(userPayload, now),
@@ -265,15 +266,26 @@ export function toPublicWakaTimeStatus(
     ...week,
     lastActiveAt: normalizeHeartbeatAt(heartbeatAt),
     checkedAt: now.toISOString(),
-  };
+  });
+}
+
+export function getWakaTimeTimeZone(userPayload: unknown) {
+  const user = userResponseSchema.parse(userPayload);
+  const timeZone = user.data.timezone || "UTC";
+
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone }).format();
+    return timeZone;
+  } catch {
+    return "UTC";
+  }
 }
 
 export function getWakaTimeHeartbeatDate(
   userPayload: unknown,
   now = new Date(),
 ) {
-  const user = userResponseSchema.parse(userPayload);
-  const timeZone = user.data.timezone || "UTC";
+  const timeZone = getWakaTimeTimeZone(userPayload);
 
   try {
     const parts = new Intl.DateTimeFormat("en-US", {

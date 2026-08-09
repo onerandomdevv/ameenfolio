@@ -18,6 +18,9 @@ describe("WakaTime public status", () => {
     expect(
       isRecentWakaTimeHeartbeat("2026-08-09T11:54:59.000Z", now.getTime()),
     ).toBe(false);
+    expect(
+      isRecentWakaTimeHeartbeat("2026-08-09T11:55:00.000Z", now.getTime()),
+    ).toBe(true);
   });
 
   it("rejects invalid and implausibly future heartbeats", () => {

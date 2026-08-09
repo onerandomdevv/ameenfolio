@@ -5,6 +5,7 @@ import { logServer } from "@/lib/logger";
 import {
   getSundayWeekDates,
   getWakaTimeHeartbeatDate,
+  getWakaTimeTimeZone,
   inactiveWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
   retainLastKnownWakaTimeStats,
@@ -22,6 +23,7 @@ type CachedStatus = { value: PublicWakaTimeStatus; expiresAt: number };
 let cachedStatus: CachedStatus | null = null;
 let inFlight: Promise<PublicWakaTimeStatus> | null = null;
 let lastCompleteStatus: PublicWakaTimeStatus | null = null;
+let lastKnownTimeZone = "UTC";
 
 async function getJson(response: Response, endpoint: string) {
   if (!response.ok) {
@@ -44,6 +46,7 @@ export async function fetchWakaTimeStatus(
 
   const userResponse = await request(WAKATIME_API_URL);
   const userPayload = await getJson(userResponse, "user endpoint");
+  lastKnownTimeZone = getWakaTimeTimeZone(userPayload);
   const heartbeatDate = getWakaTimeHeartbeatDate(userPayload, now);
   const weekStartDate = getSundayWeekDates(heartbeatDate)[0] ?? heartbeatDate;
   const heartbeatsUrl = `${WAKATIME_API_URL}/heartbeats?date=${heartbeatDate}`;
@@ -53,13 +56,17 @@ export async function fetchWakaTimeStatus(
     request(heartbeatsUrl).catch(() => null),
     request(summariesUrl).catch(() => null),
   ]);
-  const todayPayload = todayResult?.ok ? await todayResult.json() : null;
-  const heartbeatsPayload = heartbeatsResult?.ok
-    ? await heartbeatsResult.json()
-    : null;
-  const summariesPayload = summariesResult?.ok
-    ? await summariesResult.json()
-    : null;
+  const readJson = async (result: Response | null) => {
+    if (!result?.ok) return null;
+    return result.json().catch(() => null) as Promise<unknown>;
+  };
+  const [todayPayload, heartbeatsPayload, summariesPayload] = await Promise.all(
+    [
+      readJson(todayResult),
+      readJson(heartbeatsResult),
+      readJson(summariesResult),
+    ],
+  );
 
   return toPublicWakaTimeStatus(
     userPayload,
@@ -88,17 +95,22 @@ async function refreshWakaTimeStatus() {
     logServer("warn", "wakatime.status_fetch_failed", {
       error: String(error),
     });
-    return lastCompleteStatus
-      ? {
-          ...lastCompleteStatus,
-          isCoding: isRecentWakaTimeHeartbeat(
-            lastCompleteStatus.lastActiveAt,
-            now.getTime(),
-          ),
-          statsStale: true,
-          checkedAt: now.toISOString(),
-        }
-      : inactiveWakaTimeStatus(now);
+    if (!lastCompleteStatus) return inactiveWakaTimeStatus(now);
+
+    const emptyCurrentStatus: PublicWakaTimeStatus = {
+      ...inactiveWakaTimeStatus(now),
+      isCoding: isRecentWakaTimeHeartbeat(
+        lastCompleteStatus.lastActiveAt,
+        now.getTime(),
+      ),
+      todayDate: getWakaTimeHeartbeatDate(
+        { data: { timezone: lastKnownTimeZone } },
+        now,
+      ),
+      lastActiveAt: lastCompleteStatus.lastActiveAt,
+    };
+
+    return retainLastKnownWakaTimeStats(emptyCurrentStatus, lastCompleteStatus);
   }
 }
 

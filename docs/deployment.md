@@ -14,7 +14,7 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
-`WAKATIME_API_KEY` is optional. When configured, keep it server-only; the public application receives only a cached live-coding boolean and today’s human-readable total. Without it, Bippy retains his normal idle behavior.
+`WAKATIME_API_KEY` is optional. When configured, keep it server-only; the public application receives only a cached, privacy-safe coding status, today and weekly totals, daily average, top language, seven-day breakdown, and timestamps. Project and branch names are excluded. Without the key, Bippy retains his normal idle behavior and the projects-page activity strip renders offline with empty totals.
 
 ## Admin host
 

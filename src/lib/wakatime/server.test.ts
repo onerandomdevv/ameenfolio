@@ -24,6 +24,8 @@ function jsonResponse(value: unknown, status = 200) {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
+  vi.useRealTimers();
 });
 
 describe("WakaTime server client", () => {
@@ -128,6 +130,35 @@ describe("WakaTime server client", () => {
     });
   });
 
+  it("keeps live presence when a secondary endpoint returns malformed JSON", async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            last_heartbeat_at: "2026-08-09T11:59:00.000Z",
+            timezone: "Africa/Lagos",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(new Response("<html>Service unavailable</html>"))
+      .mockResolvedValueOnce(
+        jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
+      )
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchWakaTimeStatus("waka_secret", now),
+    ).resolves.toMatchObject({
+      isCoding: true,
+      statsStale: true,
+      todayDate: "2026-08-09",
+      todayText: null,
+      lastActiveAt: "2026-08-09T11:59:30.000Z",
+    });
+  });
+
   it("rejects an unavailable authenticated user response", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
@@ -165,6 +196,111 @@ describe("WakaTime server client", () => {
       ...emptyActivity,
       lastActiveAt: "2026-08-09T11:59:00.000Z",
       checkedAt: now.toISOString(),
+    });
+  });
+});
+
+describe("WakaTime public status cache", () => {
+  it("coalesces concurrent refreshes and reuses the cached result", async () => {
+    vi.resetModules();
+    vi.stubEnv("WAKATIME_API_KEY", "waka_secret");
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            last_heartbeat_at: "2026-08-09T11:59:00.000Z",
+            timezone: "Africa/Lagos",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({ data: { grand_total: { text: "1 min" } } }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getPublicWakaTimeStatus } = await import("@/lib/wakatime/server");
+
+    const [first, concurrent] = await Promise.all([
+      getPublicWakaTimeStatus(),
+      getPublicWakaTimeStatus(),
+    ]);
+    const cached = await getPublicWakaTimeStatus();
+
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    expect(concurrent).toEqual(first);
+    expect(cached).toEqual(first);
+  });
+
+  it("keeps weekly stats but clears yesterday's total during an outage", async () => {
+    vi.resetModules();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-08-09T22:59:30.000Z"));
+    vi.stubEnv("WAKATIME_API_KEY", "waka_secret");
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            last_heartbeat_at: "2026-08-09T22:59:00.000Z",
+            timezone: "Africa/Lagos",
+          },
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: {
+            grand_total: { text: "2 hrs", total_seconds: 7_200 },
+          },
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          end: "2026-08-09T23:59:59Z",
+          data: [
+            {
+              range: { date: "2026-08-09" },
+              grand_total: { total_seconds: 7_200 },
+              languages: [{ name: "TypeScript", total_seconds: 7_200 }],
+            },
+          ],
+        }),
+      )
+      .mockRejectedValueOnce(new Error("WakaTime unavailable"));
+    vi.stubGlobal("fetch", fetchMock);
+    const { getPublicWakaTimeStatus } = await import("@/lib/wakatime/server");
+
+    await getPublicWakaTimeStatus();
+    vi.advanceTimersByTime(61_000);
+    const fallback = await getPublicWakaTimeStatus();
+
+    expect(fallback).toMatchObject({
+      isCoding: true,
+      statsStale: true,
+      todayDate: "2026-08-10",
+      todayText: null,
+      todaySeconds: null,
+      weekSeconds: 7_200,
+      dailyAverageSeconds: 7_200,
+      topLanguage: { name: "TypeScript", percent: 100 },
+      lastActiveAt: "2026-08-09T22:59:00.000Z",
+    });
+  });
+
+  it("returns an inactive status when WakaTime is not configured", async () => {
+    vi.resetModules();
+    vi.stubEnv("WAKATIME_API_KEY", "");
+    const { getPublicWakaTimeStatus } = await import("@/lib/wakatime/server");
+
+    await expect(getPublicWakaTimeStatus()).resolves.toMatchObject({
+      isCoding: false,
+      statsStale: true,
+      todayDate: null,
+      todaySeconds: null,
+      weekSeconds: null,
+      days: [],
     });
   });
 });
