@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import { Download, Github, Instagram, Linkedin, Mail } from "lucide-react";
 import { getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
+import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
@@ -19,6 +21,11 @@ import {
 } from "@/components/icons/brand-icons";
 import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
+import {
+  canFetchGithubStats,
+  isSnapshotStale,
+  refreshStatsSnapshot,
+} from "@/lib/stats/snapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +46,22 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const { settings, now, projects, recognitions } = await getPublicPortfolio();
+  const {
+    settings,
+    now,
+    projects,
+    recognitions,
+    publishedProjectCount,
+    statsSnapshot,
+  } = await getPublicPortfolio();
+
+  // Refreshed after the response is flushed rather than before it, so a slow
+  // or unreachable GitHub delays nobody's page load. Whoever asks next gets
+  // the newer numbers; this visitor still sees the strip immediately.
+  if (canFetchGithubStats() && isSnapshotStale(statsSnapshot)) {
+    after(refreshStatsSnapshot);
+  }
+
   const profileImageBase = process.env.R2_PUBLIC_BASE_URL?.replace(/\/$/, "");
   const contactLinks = settings.contactLinks ?? {};
   const profileImageSrc = settings.profileImageKey
@@ -170,6 +192,16 @@ export default async function HomePage() {
           </ul>
         </nav>
       </section>
+
+      {/* Hidden until a snapshot exists: half a row of dashes reads as broken,
+          and a deployment without GitHub credentials should just not have it. */}
+      {statsSnapshot ? (
+        <StatsStrip
+          snapshot={statsSnapshot}
+          hackathonWins={settings.hackathonWins}
+          publishedProjectCount={publishedProjectCount}
+        />
+      ) : null}
 
       <NowSection section={now} />
 

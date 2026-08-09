@@ -86,6 +86,7 @@ describe("portfolio validation", () => {
         linkedin: "https://linkedin.com/in/onerandomdevv",
         whatsapp: "https://wa.me/2348000000000",
       },
+      hackathonWins: 3,
       seoTitle: "Aliameen Kareem — Full-Stack Engineer",
       seoDescription:
         "Selected software projects, recognition, and the tools used by Aliameen.",
@@ -104,6 +105,26 @@ describe("portfolio validation", () => {
         "Selected software projects, recognition, and the tools used by Aliameen.",
     });
     expect(result.success).toBe(false);
+  });
+
+  it("rejects a hackathon win count outside the strip's one-line budget", () => {
+    const settings = {
+      email: "ameen@example.com",
+      contactLinks: {},
+      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
+      seoDescription:
+        "Selected software projects, recognition, and the tools used by Aliameen.",
+    };
+
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, hackathonWins: 100 }).success,
+    ).toBe(false);
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, hackathonWins: -1 }).success,
+    ).toBe(false);
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, hackathonWins: 2.5 }).success,
+    ).toBe(false);
   });
 
   it("accepts a concise Now section description", () => {

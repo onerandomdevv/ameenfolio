@@ -93,7 +93,21 @@ export async function getPublicPortfolio() {
       .select({ value: count() })
       .from(projects)
       .where(eq(projects.published, true)),
-    db.select().from(statsSnapshot).where(eq(statsSnapshot.id, 1)).limit(1),
+    // Tolerated rather than awaited plainly: if the build ships before the
+    // migration runs, this table does not exist yet, and a rejected query in
+    // this Promise.all would take the entire homepage down with it. The strip
+    // is decoration; the page is not.
+    db
+      .select()
+      .from(statsSnapshot)
+      .where(eq(statsSnapshot.id, 1))
+      .limit(1)
+      .catch((error) => {
+        logServer("error", "query.stats_snapshot_failed", {
+          error: String(error),
+        });
+        return [];
+      }),
   ]);
 
   return {
