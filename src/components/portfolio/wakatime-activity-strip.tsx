@@ -156,6 +156,7 @@ export function WakaTimeActivityStrip() {
                   status?.lastActiveAt,
                   status ? Date.parse(status.checkedAt) : 0,
                 )}
+            {status?.statsStale ? " · Stats delayed" : null}
           </p>
         </div>
       </div>

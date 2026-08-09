@@ -51,6 +51,7 @@ describe("WakaTime server client", () => {
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
+      statsStale: false,
       todayDate: "2026-08-09",
       todayText: "2 hrs 8 mins",
       ...emptyActivity,
@@ -89,6 +90,7 @@ describe("WakaTime server client", () => {
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
+      statsStale: true,
       todayDate: "2026-08-09",
       todayText: null,
       ...emptyActivity,
@@ -117,6 +119,7 @@ describe("WakaTime server client", () => {
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
+      statsStale: true,
       todayDate: "2026-08-09",
       todayText: null,
       ...emptyActivity,
@@ -156,6 +159,7 @@ describe("WakaTime server client", () => {
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
+      statsStale: false,
       todayDate: "2026-08-09",
       todayText: "1 min",
       ...emptyActivity,

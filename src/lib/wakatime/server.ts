@@ -6,6 +6,8 @@ import {
   getSundayWeekDates,
   getWakaTimeHeartbeatDate,
   inactiveWakaTimeStatus,
+  isRecentWakaTimeHeartbeat,
+  retainLastKnownWakaTimeStats,
   toPublicWakaTimeStatus,
   type PublicWakaTimeStatus,
 } from "@/lib/wakatime/status";
@@ -19,6 +21,7 @@ type CachedStatus = { value: PublicWakaTimeStatus; expiresAt: number };
 
 let cachedStatus: CachedStatus | null = null;
 let inFlight: Promise<PublicWakaTimeStatus> | null = null;
+let lastCompleteStatus: PublicWakaTimeStatus | null = null;
 
 async function getJson(response: Response, endpoint: string) {
   if (!response.ok) {
@@ -73,12 +76,29 @@ async function refreshWakaTimeStatus() {
   if (!env.WAKATIME_API_KEY) return inactiveWakaTimeStatus(now);
 
   try {
-    return await fetchWakaTimeStatus(env.WAKATIME_API_KEY, now);
+    const fresh = await fetchWakaTimeStatus(env.WAKATIME_API_KEY, now);
+    if (!fresh.statsStale) {
+      lastCompleteStatus = fresh;
+      return fresh;
+    }
+    return lastCompleteStatus
+      ? retainLastKnownWakaTimeStats(fresh, lastCompleteStatus)
+      : fresh;
   } catch (error) {
     logServer("warn", "wakatime.status_fetch_failed", {
       error: String(error),
     });
-    return inactiveWakaTimeStatus(now);
+    return lastCompleteStatus
+      ? {
+          ...lastCompleteStatus,
+          isCoding: isRecentWakaTimeHeartbeat(
+            lastCompleteStatus.lastActiveAt,
+            now.getTime(),
+          ),
+          statsStale: true,
+          checkedAt: now.toISOString(),
+        }
+      : inactiveWakaTimeStatus(now);
   }
 }
 

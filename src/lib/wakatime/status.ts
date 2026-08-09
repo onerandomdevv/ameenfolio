@@ -9,6 +9,7 @@ const publicWakaTimeDaySchema = z.object({
 
 const publicWakaTimeStatusSchema = z.object({
   isCoding: z.boolean(),
+  statsStale: z.boolean(),
   todayDate: z
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -29,6 +30,11 @@ const publicWakaTimeStatusSchema = z.object({
 });
 
 export type PublicWakaTimeStatus = z.infer<typeof publicWakaTimeStatusSchema>;
+
+type WeekSummary = Pick<
+  PublicWakaTimeStatus,
+  "days" | "weekSeconds" | "dailyAverageSeconds" | "topLanguage"
+> & { available: boolean };
 
 const userResponseSchema = z.object({
   data: z.object({
@@ -106,6 +112,34 @@ export function getSundayWeekDates(value: string) {
   });
 }
 
+export function retainLastKnownWakaTimeStats(
+  fresh: PublicWakaTimeStatus,
+  fallback: PublicWakaTimeStatus,
+): PublicWakaTimeStatus {
+  const sameDay = fresh.todayDate === fallback.todayDate;
+  const freshWeekStart = fresh.todayDate
+    ? getSundayWeekDates(fresh.todayDate)[0]
+    : null;
+  const fallbackWeekStart = fallback.todayDate
+    ? getSundayWeekDates(fallback.todayDate)[0]
+    : null;
+  const sameWeek = freshWeekStart === fallbackWeekStart;
+
+  return {
+    ...fresh,
+    todayText: fresh.todayText ?? (sameDay ? fallback.todayText : null),
+    todaySeconds:
+      fresh.todaySeconds ?? (sameDay ? fallback.todaySeconds : null),
+    weekSeconds: fresh.weekSeconds ?? (sameWeek ? fallback.weekSeconds : null),
+    dailyAverageSeconds:
+      fresh.dailyAverageSeconds ??
+      (sameWeek ? fallback.dailyAverageSeconds : null),
+    topLanguage: fresh.topLanguage ?? (sameWeek ? fallback.topLanguage : null),
+    days: fresh.days.length ? fresh.days : sameWeek ? fallback.days : [],
+    statsStale: true,
+  };
+}
+
 function summarizeWeek(payload: unknown) {
   const summaries = summariesResponseSchema.safeParse(payload);
   if (!summaries.success) {
@@ -114,10 +148,8 @@ function summarizeWeek(payload: unknown) {
       weekSeconds: null,
       dailyAverageSeconds: null,
       topLanguage: null,
-    } satisfies Pick<
-      PublicWakaTimeStatus,
-      "days" | "weekSeconds" | "dailyAverageSeconds" | "topLanguage"
-    >;
+      available: false,
+    } satisfies WeekSummary;
   }
 
   const reportedDays = summaries.data.data
@@ -180,10 +212,8 @@ function summarizeWeek(payload: unknown) {
             percent: Math.round((topLanguageSeconds / languageSeconds) * 100),
           }
         : null,
-  } satisfies Pick<
-    PublicWakaTimeStatus,
-    "days" | "weekSeconds" | "dailyAverageSeconds" | "topLanguage"
-  >;
+    available: true,
+  } satisfies WeekSummary;
 }
 
 export function isRecentWakaTimeHeartbeat(
@@ -222,10 +252,11 @@ export function toPublicWakaTimeStatus(
     latestHeartbeat === null
       ? user.data.last_heartbeat_at
       : new Date(latestHeartbeat * 1_000).toISOString();
-  const week = summarizeWeek(summariesPayload);
+  const { available: weekAvailable, ...week } = summarizeWeek(summariesPayload);
 
   return {
     isCoding: isRecentWakaTimeHeartbeat(heartbeatAt, now.getTime()),
+    statsStale: !today.success || !weekAvailable,
     todayDate: getWakaTimeHeartbeatDate(userPayload, now),
     todayText,
     todaySeconds: today.success
@@ -262,6 +293,7 @@ export function getWakaTimeHeartbeatDate(
 export function inactiveWakaTimeStatus(now = new Date()): PublicWakaTimeStatus {
   return {
     isCoding: false,
+    statsStale: true,
     todayDate: null,
     todayText: null,
     todaySeconds: null,

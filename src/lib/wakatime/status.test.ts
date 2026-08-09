@@ -4,6 +4,7 @@ import {
   getSundayWeekDates,
   isPublicWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
+  retainLastKnownWakaTimeStats,
   toPublicWakaTimeStatus,
 } from "@/lib/wakatime/status";
 
@@ -37,6 +38,7 @@ describe("WakaTime public status", () => {
       ),
     ).toEqual({
       isCoding: true,
+      statsStale: true,
       todayDate: "2026-08-09",
       todayText: "3 hrs 24 mins",
       todaySeconds: null,
@@ -60,6 +62,7 @@ describe("WakaTime public status", () => {
       ),
     ).toEqual({
       isCoding: true,
+      statsStale: true,
       todayDate: "2026-08-09",
       todayText: null,
       todaySeconds: null,
@@ -109,6 +112,7 @@ describe("WakaTime public status", () => {
     expect(
       isPublicWakaTimeStatus({
         isCoding: false,
+        statsStale: false,
         todayDate: "2026-08-09",
         todayText: null,
         todaySeconds: 0,
@@ -156,6 +160,7 @@ describe("WakaTime public status", () => {
         now,
       ),
     ).toMatchObject({
+      statsStale: false,
       todaySeconds: 7_200,
       weekSeconds: 10_800,
       dailyAverageSeconds: 5_400,
@@ -169,6 +174,43 @@ describe("WakaTime public status", () => {
         { date: "2026-08-07", totalSeconds: 0 },
         { date: "2026-08-08", totalSeconds: 7_200 },
       ],
+    });
+  });
+
+  it("retains last-known totals when a same-week refresh is partial", () => {
+    const fallback = {
+      isCoding: true,
+      statsStale: false,
+      todayDate: "2026-08-09",
+      todayText: "2 hrs",
+      todaySeconds: 7_200,
+      weekSeconds: 18_000,
+      dailyAverageSeconds: 9_000,
+      topLanguage: { name: "TypeScript", percent: 80 },
+      days: [{ date: "2026-08-09", totalSeconds: 18_000 }],
+      lastActiveAt: "2026-08-09T11:59:00.000Z",
+      checkedAt: "2026-08-09T12:00:00.000Z",
+    };
+    const partial = {
+      ...fallback,
+      statsStale: true,
+      todayText: null,
+      todaySeconds: null,
+      weekSeconds: null,
+      dailyAverageSeconds: null,
+      topLanguage: null,
+      days: [],
+      checkedAt: "2026-08-09T12:01:00.000Z",
+    };
+
+    expect(retainLastKnownWakaTimeStats(partial, fallback)).toMatchObject({
+      statsStale: true,
+      todaySeconds: 7_200,
+      weekSeconds: 18_000,
+      dailyAverageSeconds: 9_000,
+      topLanguage: { name: "TypeScript", percent: 80 },
+      days: [{ date: "2026-08-09", totalSeconds: 18_000 }],
+      checkedAt: "2026-08-09T12:01:00.000Z",
     });
   });
 });
