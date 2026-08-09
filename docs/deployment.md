@@ -50,6 +50,7 @@ Add both the preview and production origins.
 - Inspect pending SQL. For destructive statements, verify the exact project and branch, record affected row counts, export removed values and storage-key manifests, create and test a restore point, and obtain explicit approval before applying.
 - After a destructive migration succeeds and its export is verified, delete only storage objects proven unreferenced, and retain a cleanup-failure log for retry.
 - Apply approved migrations and seed the settings and Now-section singletons.
+- Apply them **before** the build that needs them goes live. Drizzle selects every column its model declares, so a release that adds one starts asking for it on the very first request. When that column is on `site_settings`, the homepage cannot render without it and the whole public site returns an error page until the migration lands — not just the feature that added the column.
 - Sign in through GitHub as `onerandomdevv` and verify another account receives 403.
 - Populate required production content.
 - Verify icon upload and replacement, résumé download, CRUD, sign-out, `/`, and `/projects`.
