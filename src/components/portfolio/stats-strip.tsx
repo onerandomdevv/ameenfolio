@@ -8,7 +8,10 @@ type StatCell = {
 };
 
 type StatsStripProps = {
-  snapshot: StatsSnapshot;
+  // Null until a snapshot has been fetched, which needs GitHub credentials the
+  // deployment may not have. The strip still renders: the two cells it feeds
+  // fall back to a dash while the other two keep showing real numbers.
+  snapshot: StatsSnapshot | null;
   hackathonWins: number;
   publishedProjectCount: number;
 };
@@ -38,17 +41,17 @@ export function StatsStrip({
   const cells: StatCell[] = [
     {
       label: "Contributions",
-      value: snapshot.contributions
+      value: snapshot?.contributions
         ? snapshot.contributions.toLocaleString("en-US")
         : null,
-      sub: sinceLabel(snapshot.firstContributionAt),
+      sub: sinceLabel(snapshot?.firstContributionAt ?? null),
     },
     {
       label: "Workrate",
-      value: snapshot.currentStreak
+      value: snapshot?.currentStreak
         ? plural(snapshot.currentStreak, "day")
         : null,
-      sub: snapshot.longestStreak
+      sub: snapshot?.longestStreak
         ? `${snapshot.longestStreak}d best streak`
         : undefined,
     },

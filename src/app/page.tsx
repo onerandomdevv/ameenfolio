@@ -193,15 +193,14 @@ export default async function HomePage() {
         </nav>
       </section>
 
-      {/* Hidden until a snapshot exists: half a row of dashes reads as broken,
-          and a deployment without GitHub credentials should just not have it. */}
-      {statsSnapshot ? (
-        <StatsStrip
-          snapshot={statsSnapshot}
-          hackathonWins={settings.hackathonWins}
-          publishedProjectCount={publishedProjectCount}
-        />
-      ) : null}
+      {/* Always rendered. The layout is part of the page rather than something
+          that appears once a fetch succeeds, so the strip holds its place and
+          the cells fill in as their data becomes available. */}
+      <StatsStrip
+        snapshot={statsSnapshot}
+        hackathonWins={settings.hackathonWins}
+        publishedProjectCount={publishedProjectCount}
+      />
 
       <NowSection section={now} />
 
