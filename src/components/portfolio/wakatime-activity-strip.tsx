@@ -50,6 +50,7 @@ export function WakaTimeActivityStrip() {
   );
   const bars = status?.days.length
     ? status.days.map((day) => ({
+        date: day.date,
         label: dayLabel(day.date),
         seconds: day.totalSeconds,
         height:
@@ -58,7 +59,8 @@ export function WakaTimeActivityStrip() {
             : 3,
       }))
     : loadingBars.map((height, index) => ({
-        label: ["M", "T", "W", "T", "F", "S", "S"][index] ?? "—",
+        date: null,
+        label: ["S", "M", "T", "W", "T", "F", "S"][index] ?? "—",
         seconds: 0,
         height,
       }));
@@ -115,7 +117,7 @@ export function WakaTimeActivityStrip() {
                   className={cn(
                     styles.bar,
                     "block w-full rounded-[2px]",
-                    isOnline && index === bars.length - 1
+                    isOnline && bar.date === status?.todayDate
                       ? "bg-accent-lime"
                       : "bg-zinc-600",
                     !status && "opacity-30",

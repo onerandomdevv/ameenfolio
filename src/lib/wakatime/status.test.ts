@@ -37,6 +37,7 @@ describe("WakaTime public status", () => {
       ),
     ).toEqual({
       isCoding: true,
+      todayDate: "2026-08-09",
       todayText: "3 hrs 24 mins",
       todaySeconds: null,
       weekSeconds: null,
@@ -59,6 +60,7 @@ describe("WakaTime public status", () => {
       ),
     ).toEqual({
       isCoding: true,
+      todayDate: "2026-08-09",
       todayText: null,
       todaySeconds: null,
       weekSeconds: null,
@@ -107,6 +109,7 @@ describe("WakaTime public status", () => {
     expect(
       isPublicWakaTimeStatus({
         isCoding: false,
+        todayDate: "2026-08-09",
         todayText: null,
         todaySeconds: 0,
         weekSeconds: 0,

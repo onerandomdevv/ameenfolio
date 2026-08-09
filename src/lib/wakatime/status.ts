@@ -9,6 +9,10 @@ const publicWakaTimeDaySchema = z.object({
 
 const publicWakaTimeStatusSchema = z.object({
   isCoding: z.boolean(),
+  todayDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable(),
   todayText: z.string().max(48).nullable(),
   todaySeconds: z.number().finite().nonnegative().max(86_400).nullable(),
   weekSeconds: z.number().finite().nonnegative().max(604_800).nullable(),
@@ -222,6 +226,7 @@ export function toPublicWakaTimeStatus(
 
   return {
     isCoding: isRecentWakaTimeHeartbeat(heartbeatAt, now.getTime()),
+    todayDate: getWakaTimeHeartbeatDate(userPayload, now),
     todayText,
     todaySeconds: today.success
       ? (today.data.data.grand_total.total_seconds ?? null)
@@ -257,6 +262,7 @@ export function getWakaTimeHeartbeatDate(
 export function inactiveWakaTimeStatus(now = new Date()): PublicWakaTimeStatus {
   return {
     isCoding: false,
+    todayDate: null,
     todayText: null,
     todaySeconds: null,
     weekSeconds: null,
