@@ -1,7 +1,6 @@
 import "server-only";
 
 import { and, asc, desc, eq } from "drizzle-orm";
-import { unstable_cache } from "next/cache";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
@@ -38,58 +37,57 @@ function canQueryDatabase() {
   return Boolean(process.env.DATABASE_URL);
 }
 
-const cachedPublicPortfolio = unstable_cache(
-  async () => {
-    if (!canQueryDatabase()) {
-      return {
-        settings: defaultSiteSettings,
-        now: null,
-        projects: [],
-        recognitions: [],
-      };
-    }
-    const db = getDb();
-    const [
-      settingsRows,
-      nowSectionRows,
-      nowLinkRows,
-      projectRows,
-      recognitionRows,
-    ] = await Promise.all([
-      db.select().from(siteSettings).where(eq(siteSettings.id, 1)).limit(1),
-      db.select().from(nowSection).where(eq(nowSection.id, 1)).limit(1),
-      db
-        .select()
-        .from(nowLinks)
-        .where(eq(nowLinks.visible, true))
-        .orderBy(asc(nowLinks.displayOrder), asc(nowLinks.createdAt)),
-      db
-        .select()
-        .from(projects)
-        .where(
-          and(eq(projects.published, true), eq(projects.showOnHomepage, true)),
-        )
-        .orderBy(asc(projects.homepageOrder), desc(projects.createdAt))
-        .limit(8),
-      db
-        .select()
-        .from(recognitions)
-        .where(eq(recognitions.published, true))
-        .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
-    ]);
-    return {
-      settings: settingsRows[0] ?? defaultSiteSettings,
-      now: toPublicNow(nowSectionRows[0], nowLinkRows),
-      projects: projectRows,
-      recognitions: recognitionRows,
-    };
-  },
-  ["public-portfolio-v8"],
-  { tags: ["portfolio"] },
-);
-
+// Uncached, for the same reason as getAllPublishedProjects below. The version
+// suffix this key carried ("public-portfolio-v8") is the tell: bumping it is
+// how the cache was being busted, because tag invalidation was not reaching it.
+// The homepage is force-dynamic, so the wrapper only ever risked serving
+// content the owner had just changed.
 export async function getPublicPortfolio() {
-  return cachedPublicPortfolio();
+  if (!canQueryDatabase()) {
+    return {
+      settings: defaultSiteSettings,
+      now: null,
+      projects: [],
+      recognitions: [],
+    };
+  }
+
+  const db = getDb();
+  const [
+    settingsRows,
+    nowSectionRows,
+    nowLinkRows,
+    projectRows,
+    recognitionRows,
+  ] = await Promise.all([
+    db.select().from(siteSettings).where(eq(siteSettings.id, 1)).limit(1),
+    db.select().from(nowSection).where(eq(nowSection.id, 1)).limit(1),
+    db
+      .select()
+      .from(nowLinks)
+      .where(eq(nowLinks.visible, true))
+      .orderBy(asc(nowLinks.displayOrder), asc(nowLinks.createdAt)),
+    db
+      .select()
+      .from(projects)
+      .where(
+        and(eq(projects.published, true), eq(projects.showOnHomepage, true)),
+      )
+      .orderBy(asc(projects.homepageOrder), desc(projects.createdAt))
+      .limit(8),
+    db
+      .select()
+      .from(recognitions)
+      .where(eq(recognitions.published, true))
+      .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
+  ]);
+
+  return {
+    settings: settingsRows[0] ?? defaultSiteSettings,
+    now: toPublicNow(nowSectionRows[0], nowLinkRows),
+    projects: projectRows,
+    recognitions: recognitionRows,
+  };
 }
 
 // Deliberately uncached. /projects is force-dynamic, so the unstable_cache

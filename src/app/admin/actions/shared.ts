@@ -1,6 +1,6 @@
 import "server-only";
 
-import { revalidatePath, updateTag } from "next/cache";
+import { revalidatePath } from "next/cache";
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -16,13 +16,10 @@ export function validationFailure(error: {
   };
 }
 
-// Called only from Server Actions, so updateTag applies: it expires the tag
-// immediately and makes the next request wait for fresh data. revalidateTag
-// only marks the entry stale, which let /projects keep serving a cached empty
-// list after a project was published.
+// No tag invalidation: the public queries are no longer wrapped in a data
+// cache, so there is no tagged entry left to expire. Clearing the route cache
+// for the two public pages is what remains.
 export function refreshPublicContent() {
-  updateTag("portfolio");
-  updateTag("projects");
   revalidatePath("/");
   revalidatePath("/projects");
 }
