@@ -24,7 +24,7 @@ export function NowSection({ section }: { section: PublicNow | null }) {
                   <Badge
                     asChild
                     variant="secondary"
-                    className="min-h-9 px-3 hover:text-primary"
+                    className="min-h-9 gap-2 rounded-[4px] px-3 text-sm font-semibold hover:text-primary"
                   >
                     <a
                       href={item.url}
@@ -47,9 +47,12 @@ export function NowSection({ section }: { section: PublicNow | null }) {
             </ul>
           ) : null}
 
+          {/* Bare month and year, tucked bottom-right. It is a footnote about
+              the section, not a labelled field, so the "last updated" wording
+              only competed with the content it describes. */}
           {section.showLastUpdated && lastUpdated ? (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Last updated {lastUpdated}
+            <p className="mt-4 text-right font-mono text-[10px] text-muted-foreground/70">
+              {lastUpdated}
             </p>
           ) : null}
         </>

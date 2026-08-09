@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm, useWatch, type FieldPath } from "react-hook-form";
+import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { LoaderCircle, Save } from "lucide-react";
 import { toast } from "sonner";
 import { saveSettings } from "@/app/admin/actions/settings";
@@ -19,7 +19,15 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { availabilityOptions } from "@/config/availability";
 import type { SiteSettings } from "@/db/schema";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { siteSettingsSchema, type SiteSettingsInput } from "@/lib/validation";
@@ -40,6 +48,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       resumeKey: settings.resumeKey ?? undefined,
       resumeFilename: settings.resumeFilename ?? undefined,
       hackathonWins: settings.hackathonWins,
+      availability: settings.availability,
       seoTitle: settings.seoTitle,
       seoDescription: settings.seoDescription,
     },
@@ -131,6 +140,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             inputProps={register("contactLinks.tiktok")}
           />
           <FormTextField
+            label="YouTube URL"
+            type="url"
+            error={errors.contactLinks?.youtube?.message}
+            inputProps={register("contactLinks.youtube")}
+          />
+          <FormTextField
             label="LinkedIn URL"
             type="url"
             error={errors.contactLinks?.linkedin?.message}
@@ -173,6 +188,35 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             description="Shown on the homepage stats strip. Leave at 0 to show a dash."
             error={errors.hackathonWins?.message}
             inputProps={register("hackathonWins", { valueAsNumber: true })}
+          />
+          <Controller
+            control={control}
+            name="availability"
+            render={({ field }) => (
+              <Field data-invalid={Boolean(errors.availability)}>
+                <FieldLabel htmlFor="availability">Availability</FieldLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger
+                    id="availability"
+                    className="w-full"
+                    aria-invalid={Boolean(errors.availability)}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availabilityOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  Shown under your role in the homepage header.
+                </FieldDescription>
+                <FieldError>{errors.availability?.message}</FieldError>
+              </Field>
+            )}
           />
         </FieldGroup>
       </FieldSet>

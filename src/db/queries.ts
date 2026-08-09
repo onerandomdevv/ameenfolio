@@ -11,6 +11,7 @@ import {
   statsSnapshot,
   type SiteSettings,
 } from "@/db/schema";
+import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
 import { logServer } from "@/lib/logger";
 
@@ -23,6 +24,7 @@ const defaultSiteSettings: SiteSettings = {
   resumeFilename: null,
   publicBippyEnabled: true,
   hackathonWins: 0,
+  availability: defaultAvailability,
   seoTitle: "Aliameen Kareem — Full-Stack Engineer",
   seoDescription:
     "Selected projects, recognition, and the technologies behind Aliameen Kareem's work.",

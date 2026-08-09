@@ -57,7 +57,10 @@ export function StatsStrip({
     },
     {
       label: "Hackathons won",
-      value: hackathonWins ? plural(hackathonWins, "win") : null,
+      // "4x" rather than "4 wins": the label already says what was won, so the
+      // value only has to carry the count, and it keeps the cell to one short
+      // line at the four-across width.
+      value: hackathonWins ? `${hackathonWins}×` : null,
     },
     {
       label: "Projects (prod)",
@@ -79,27 +82,40 @@ export function StatsStrip({
           a rule on the first cell of every wrapped row. overflow-hidden is what
           lets the corner cells be clipped by the radius. */}
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-4">
-        {cells.map((cell) => (
-          <div key={cell.label} className="bg-card px-4 py-5">
-            <dt className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
-              {cell.label}
-            </dt>
-            <dd className="mt-2.5">
-              <span
+        {cells.map((cell) => {
+          const sub = cell.value ? cell.sub : null;
+
+          return (
+            <div key={cell.label} className="flex flex-col bg-card px-4 py-5">
+              <dt className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+                {cell.label}
+              </dt>
+              {/* A cell with a sub-line stacks under the label. One without has
+                  nothing to fill the space, so its value centres in what is
+                  left rather than hugging the label with a gap beneath it. */}
+              <dd
                 className={cn(
-                  "text-2xl font-medium tabular-nums",
-                  cell.value ? "text-accent-lime" : "text-muted-foreground",
+                  "flex flex-1 flex-col",
+                  sub ? "mt-2.5" : "items-center justify-center text-center",
                 )}
               >
-                {cell.value ?? "—"}
-              </span>
-              {/* Reserved even when empty so all four cells bottom out flat. */}
-              <span className="mt-1.5 block min-h-4 text-[11px] leading-4 text-muted-foreground">
-                {cell.value ? cell.sub : null}
-              </span>
-            </dd>
-          </div>
-        ))}
+                <span
+                  className={cn(
+                    "text-2xl font-medium tabular-nums",
+                    cell.value ? "text-accent-lime" : "text-muted-foreground",
+                  )}
+                >
+                  {cell.value ?? "—"}
+                </span>
+                {sub ? (
+                  <span className="mt-1.5 block text-[11px] leading-4 text-muted-foreground">
+                    {sub}
+                  </span>
+                ) : null}
+              </dd>
+            </div>
+          );
+        })}
       </dl>
     </section>
   );

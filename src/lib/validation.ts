@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { availabilityValues } from "@/config/availability";
 import { recognitionIconNames } from "@/config/recognition-icons";
+import { cardWordLimitMessage, withinCardWordLimit } from "@/lib/word-count";
 
 const optionalHttpsUrl = z
   .string()
@@ -30,7 +32,12 @@ const iconFields = {
 export const projectSchema = z
   .object({
     title: z.string().trim().min(2).max(120),
-    shortDescription: z.string().trim().min(10).max(500),
+    shortDescription: z
+      .string()
+      .trim()
+      .min(10)
+      .max(500)
+      .refine(withinCardWordLimit, cardWordLimitMessage),
     contribution: optionalText(500),
     statusLabel: optionalText(60),
     liveUrl: z.url().startsWith("https://"),
@@ -46,7 +53,12 @@ export const projectSchema = z
   });
 
 export const recognitionSchema = z.object({
-  title: z.string().trim().min(2).max(180),
+  title: z
+    .string()
+    .trim()
+    .min(2)
+    .max(180)
+    .refine(withinCardWordLimit, cardWordLimitMessage),
   iconName: z.enum(recognitionIconNames),
   verificationUrl: optionalHttpsUrl,
   displayOrder: z.number().int().min(0).max(999),
@@ -79,6 +91,7 @@ export const siteSettingsSchema = z.object({
     x: optionalHttpsUrl,
     instagram: optionalHttpsUrl,
     tiktok: optionalHttpsUrl,
+    youtube: optionalHttpsUrl,
     linkedin: optionalHttpsUrl,
     whatsapp: optionalHttpsUrl,
   }),
@@ -91,6 +104,7 @@ export const siteSettingsSchema = z.object({
   // Not derivable from anything the site stores, so the owner types it. Capped
   // at two digits because the strip gives the value one short line.
   hackathonWins: z.number().int().min(0).max(99),
+  availability: z.enum(availabilityValues),
   seoTitle: z.string().trim().min(10).max(70),
   seoDescription: z.string().trim().min(40).max(170),
 });

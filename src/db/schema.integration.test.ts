@@ -1,5 +1,5 @@
 import { neon } from "@neondatabase/serverless";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { recognitionIconNames } from "@/config/recognition-icons";
@@ -48,10 +48,19 @@ describe("active application schema", () => {
       new URL("./schema.ts", import.meta.url),
       "utf8",
     );
-    const migrationSource = readFileSync(
-      new URL("../../drizzle/0006_fixed_chat.sql", import.meta.url),
-      "utf8",
-    );
+    // The newest migration that touches the constraint is the one the database
+    // actually ends up with. Naming a specific file here would pass forever
+    // while a later migration quietly narrowed it back.
+    const migrationsDir = new URL("../../drizzle/", import.meta.url);
+    const latestConstraintMigration = readdirSync(migrationsDir)
+      .filter((file) => file.endsWith(".sql"))
+      .sort()
+      .reverse()
+      .map((file) => readFileSync(new URL(file, migrationsDir), "utf8"))
+      .find((source) => source.includes("recognitions_icon_name_valid"));
+
+    expect(latestConstraintMigration).toBeDefined();
+    const migrationSource = latestConstraintMigration!;
 
     expect(extractConstraintIcons(schemaSource)).toEqual(recognitionIconNames);
     expect(extractConstraintIcons(migrationSource)).toEqual(

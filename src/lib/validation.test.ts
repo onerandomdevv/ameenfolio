@@ -87,6 +87,7 @@ describe("portfolio validation", () => {
         whatsapp: "https://wa.me/2348000000000",
       },
       hackathonWins: 3,
+      availability: "open",
       seoTitle: "Aliameen Kareem — Full-Stack Engineer",
       seoDescription:
         "Selected software projects, recognition, and the tools used by Aliameen.",
@@ -107,10 +108,35 @@ describe("portfolio validation", () => {
     expect(result.success).toBe(false);
   });
 
+  it("accepts only the two availability states", () => {
+    const settings = {
+      email: "ameen@example.com",
+      contactLinks: {},
+      hackathonWins: 0,
+      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
+      seoDescription:
+        "Selected software projects, recognition, and the tools used by Aliameen.",
+    };
+
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, availability: "open" })
+        .success,
+    ).toBe(true);
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, availability: "booked" })
+        .success,
+    ).toBe(true);
+    expect(
+      siteSettingsSchema.safeParse({ ...settings, availability: "maybe" })
+        .success,
+    ).toBe(false);
+  });
+
   it("rejects a hackathon win count outside the strip's one-line budget", () => {
     const settings = {
       email: "ameen@example.com",
       contactLinks: {},
+      availability: "open",
       seoTitle: "Aliameen Kareem — Full-Stack Engineer",
       seoDescription:
         "Selected software projects, recognition, and the tools used by Aliameen.",

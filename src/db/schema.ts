@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { Availability } from "@/config/availability";
 import type { RecognitionIconName } from "@/config/recognition-icons";
 
 export type ContactLinks = {
@@ -17,6 +18,7 @@ export type ContactLinks = {
   x?: string;
   instagram?: string;
   tiktok?: string;
+  youtube?: string;
   linkedin?: string;
   whatsapp?: string;
 };
@@ -79,7 +81,7 @@ export const recognitions = pgTable(
     index("recognitions_public_idx").on(table.published, table.displayOrder),
     check(
       "recognitions_icon_name_valid",
-      sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles')`,
+      sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles', 'github', 'x', 'instagram', 'tiktok', 'linkedin', 'whatsapp', 'youtube', 'globe')`,
     ),
   ],
 );
@@ -134,13 +136,23 @@ export const siteSettings = pgTable(
     resumeFilename: text("resume_filename"),
     publicBippyEnabled: boolean("public_bippy_enabled").notNull().default(true),
     hackathonWins: integer("hackathon_wins").notNull().default(0),
+    availability: text("availability")
+      .$type<Availability>()
+      .notNull()
+      .default("open"),
     seoTitle: text("seo_title").notNull(),
     seoDescription: text("seo_description").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [check("site_settings_singleton", sql`${table.id} = 1`)],
+  (table) => [
+    check("site_settings_singleton", sql`${table.id} = 1`),
+    check(
+      "site_settings_availability_valid",
+      sql`${table.availability} in ('open', 'booked')`,
+    ),
+  ],
 );
 
 // A single cached row rather than a live fetch on render. The public pages are

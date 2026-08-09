@@ -1,26 +1,34 @@
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { after } from "next/server";
-import { Download, Github, Instagram, Linkedin, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import { getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
+import { ResumeDownloadButton } from "@/components/portfolio/resume-download-button";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
 import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { TechStackSection } from "@/components/portfolio/tech-stack-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
+  GitHubIcon,
+  GlobeIcon,
+  InstagramIcon,
+  LinkedInIcon,
   TikTokIcon,
   WhatsAppIcon,
   XIcon,
 } from "@/components/icons/brand-icons";
+import { BriefcaseGlyph } from "@/components/icons/glyph-icons";
+import { availabilityLabel } from "@/config/availability";
 import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
+import { splitEmphasis } from "@/lib/text-emphasis";
 import {
   canFetchGithubStats,
   isSnapshotStale,
@@ -79,27 +87,41 @@ export default async function HomePage() {
     {
       label: "GitHub",
       href: contactLinks.github,
-      icon: Github,
+      icon: GitHubIcon,
       external: true,
+      isStatic: false,
     },
     {
       label: "Mail",
       href: `mailto:${settings.email}`,
       icon: Mail,
       external: false,
+      isStatic: false,
     },
     {
-      label: "X (Twitter)",
+      label: "X",
       href: contactLinks.x,
       icon: XIcon,
       external: true,
+      isStatic: false,
+    },
+    // Hardcoded rather than a setting: where I am is not something that needs
+    // editing from the admin. isStatic marks it as information rather than a
+    // link whose URL happens to be missing, which is what the other items mean
+    // when they have no href — the two render alike but must not sound alike.
+    {
+      label: "Lagos, Nigeria",
+      href: undefined,
+      icon: GlobeIcon,
+      external: false,
+      isStatic: true,
     },
   ];
   const footerSocialItems = [
     {
       label: "Instagram",
       href: contactLinks.instagram,
-      icon: Instagram,
+      icon: InstagramIcon,
     },
     {
       label: "TikTok",
@@ -109,7 +131,7 @@ export default async function HomePage() {
     {
       label: "LinkedIn",
       href: contactLinks.linkedin,
-      icon: Linkedin,
+      icon: LinkedInIcon,
     },
     {
       label: "WhatsApp",
@@ -142,15 +164,33 @@ export default async function HomePage() {
             >
               {portfolioIdentity.name}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="mt-2 text-sm font-bold text-muted-foreground">
               {portfolioIdentity.role}
+            </p>
+            <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+              <BriefcaseGlyph className="size-3.5" aria-hidden="true" />
+              {availabilityLabel(settings.availability)}
             </p>
           </div>
         </div>
         <p className="mt-8 max-w-xl whitespace-pre-line text-pretty text-base leading-7 text-foreground/90">
-          {portfolioIdentity.introduction}
+          {splitEmphasis(
+            portfolioIdentity.introduction,
+            portfolioIdentity.introductionEmphasis,
+          ).map((segment, index) =>
+            segment.emphasized ? (
+              <strong
+                key={index}
+                className="font-bold text-accent-lime underline decoration-1 underline-offset-4"
+              >
+                {segment.text}
+              </strong>
+            ) : (
+              <Fragment key={index}>{segment.text}</Fragment>
+            ),
+          )}
         </p>
-        <nav className="mt-3" aria-label="Contact links">
+        <nav className="mt-3" aria-label="Contact links and location">
           <ul className="flex flex-wrap gap-x-5 gap-y-3">
             {contactItems.map((item) => {
               const Icon = item.icon;
@@ -177,7 +217,7 @@ export default async function HomePage() {
                   ) : (
                     <span
                       className="inline-flex min-h-11 items-center gap-2 text-sm text-muted-foreground"
-                      aria-disabled="true"
+                      aria-disabled={item.isStatic ? undefined : true}
                     >
                       <Icon
                         className="size-4 text-foreground"
@@ -255,20 +295,10 @@ export default async function HomePage() {
       <footer className="mt-24 font-mono text-xs text-muted-foreground">
         <div className="relative flex items-center justify-end">
           <Separator />
-          <Button
-            asChild
-            variant="link"
-            className="absolute right-0 bg-background pl-4 pr-0 font-bold text-foreground underline hover:text-primary"
-          >
-            <a
-              href="/resume"
-              data-bippy-reaction="working"
-              data-bippy-safe-zone
-            >
-              <Download aria-hidden="true" data-icon="inline-start" />
-              View Resume
-            </a>
-          </Button>
+          <ResumeDownloadButton
+            hasResume={Boolean(settings.resumeKey)}
+            filename={settings.resumeFilename}
+          />
         </div>
         <div className="mt-8 flex items-center justify-between gap-4">
           <p
