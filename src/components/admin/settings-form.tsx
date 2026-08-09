@@ -39,6 +39,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       profileImageKey: settings.profileImageKey ?? undefined,
       resumeKey: settings.resumeKey ?? undefined,
       resumeFilename: settings.resumeFilename ?? undefined,
+      hackathonWins: settings.hackathonWins,
       seoTitle: settings.seoTitle,
       seoDescription: settings.seoDescription,
     },
@@ -161,6 +162,19 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             Current filename: {resumeFilename}
           </FieldDescription>
         ) : null}
+      </FieldSet>
+
+      <FieldSet>
+        <FieldLegend>Homepage stats</FieldLegend>
+        <FieldGroup className="grid gap-6 sm:grid-cols-2">
+          <FormTextField
+            label="Hackathon wins"
+            type="number"
+            description="Shown on the homepage stats strip. Leave at 0 to show a dash."
+            error={errors.hackathonWins?.message}
+            inputProps={register("hackathonWins", { valueAsNumber: true })}
+          />
+        </FieldGroup>
       </FieldSet>
 
       <FieldSet>

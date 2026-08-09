@@ -88,6 +88,9 @@ export const siteSettingsSchema = z.object({
     .regex(/^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/)
     .optional(),
   resumeFilename: optionalText(180),
+  // Not derivable from anything the site stores, so the owner types it. Capped
+  // at two digits because the strip gives the value one short line.
+  hackathonWins: z.number().int().min(0).max(99),
   seoTitle: z.string().trim().min(10).max(70),
   seoDescription: z.string().trim().min(40).max(170),
 });
