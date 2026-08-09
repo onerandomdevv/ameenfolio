@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import { Plus, Trash2 } from "lucide-react";
@@ -218,10 +218,29 @@ function TechStackDialog({
   const {
     register,
     control,
+    reset,
     setError,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = form;
+
+  // defaultValues only initialise the form once, and the "new" dialog keeps the
+  // same key every time it opens, so it is never remounted. Without this reset
+  // a cancelled entry is still in the fields the next time it is opened, and
+  // saving would persist text the owner had already abandoned.
+  useEffect(() => {
+    if (!open) return;
+    reset(
+      item
+        ? {
+            name: item.name,
+            groupKey: item.groupKey,
+            displayOrder: item.displayOrder,
+            visible: item.visible,
+          }
+        : emptyItem,
+    );
+  }, [open, item, reset]);
 
   async function submit(values: TechStackItemInput) {
     const result = await saveTechStackItem(values, item?.id);

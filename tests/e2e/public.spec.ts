@@ -30,22 +30,28 @@ test("homepage keeps the fixed Now heading without published copy", async ({
 });
 
 test("homepage renders the Tech Stack groups", async ({ page }) => {
+  // The list is database content now, and an empty group renders nothing at
+  // all, so without a database there is no section to assert against. Gated
+  // the same way the admin specs gate on their Neon Auth credentials.
+  test.skip(
+    !process.env.DATABASE_URL,
+    "A database is required: the Tech Stack is content, not configuration.",
+  );
   await page.goto("/");
 
   const section = page.locator("section").filter({
     has: page.getByRole("heading", { name: "Tech Stack" }),
   });
-  await expect(
-    section.getByRole("heading", { name: "Core Stack" }),
-  ).toBeVisible();
-  await expect(
-    section.getByRole("heading", { name: "Tools & Infrastructure" }),
-  ).toBeVisible();
-  // The list is database content now, so the count cannot be asserted against
-  // a config array. What still has to hold is that both groups render with at
-  // least one chip each and nothing spills outside the viewport.
-  await expect(section.getByRole("listitem").first()).toBeVisible();
-  expect(await section.getByRole("listitem").count()).toBeGreaterThan(1);
+
+  // Scoped per group. Counting listitems across the whole section would pass
+  // with one group holding everything and the other rendering empty.
+  for (const name of ["Core Stack", "Tools & Infrastructure"]) {
+    const heading = section.getByRole("heading", { name, exact: true });
+    await expect(heading).toBeVisible();
+    const group = heading.locator("..");
+    expect(await group.getByRole("listitem").count()).toBeGreaterThan(0);
+  }
+
   expect(
     await page.evaluate(
       () =>
