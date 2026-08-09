@@ -5,6 +5,25 @@ import type { SVGProps } from "react";
 // same list. Cut-outs use fill-rule="evenodd" instead of a <mask>, because a
 // mask needs a document-unique id and these can repeat across recognitions.
 
+// Flap and body are separate <path> elements. As subpaths of one path the flap
+// would punch a hole in the body under the nonzero winding rule.
+export function MailGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>
+      <path d="M2.3 7.1 12 13.2l9.7-6.1A2 2 0 0 0 19.8 5.6H4.2a2 2 0 0 0-1.9 1.5z" />
+      <path d="M22 9.35 12.5 15.3a1 1 0 0 1-1 0L2 9.35v7.05a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2z" />
+    </svg>
+  );
+}
+
+export function ChatBubbleGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>
+      <path d="M4 3h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9.6L5 21.2a1 1 0 0 1-1.6-.8V17H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    </svg>
+  );
+}
+
 export function BriefcaseGlyph(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>

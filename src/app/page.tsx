@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { after } from "next/server";
-import { Mail } from "lucide-react";
 import { getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ResumeDownloadButton } from "@/components/portfolio/resume-download-button";
+import { SendMessageDialog } from "@/components/portfolio/send-message-dialog";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
 import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
@@ -21,10 +21,10 @@ import {
   InstagramIcon,
   LinkedInIcon,
   TikTokIcon,
-  WhatsAppIcon,
   XIcon,
+  YouTubeIcon,
 } from "@/components/icons/brand-icons";
-import { BriefcaseGlyph } from "@/components/icons/glyph-icons";
+import { BriefcaseGlyph, MailGlyph } from "@/components/icons/glyph-icons";
 import { availabilityLabel } from "@/config/availability";
 import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
@@ -59,6 +59,7 @@ export default async function HomePage() {
     now,
     projects,
     recognitions,
+    techStack,
     publishedProjectCount,
     statsSnapshot,
   } = await getPublicPortfolio();
@@ -92,17 +93,17 @@ export default async function HomePage() {
       isStatic: false,
     },
     {
-      label: "Mail",
-      href: `mailto:${settings.email}`,
-      icon: Mail,
-      external: false,
-      isStatic: false,
-    },
-    {
       label: "X",
       href: contactLinks.x,
       icon: XIcon,
       external: true,
+      isStatic: false,
+    },
+    {
+      label: "Mail",
+      href: `mailto:${settings.email}`,
+      icon: MailGlyph,
+      external: false,
       isStatic: false,
     },
     // Hardcoded rather than a setting: where I am is not something that needs
@@ -124,19 +125,19 @@ export default async function HomePage() {
       icon: InstagramIcon,
     },
     {
-      label: "TikTok",
-      href: contactLinks.tiktok,
-      icon: TikTokIcon,
-    },
-    {
       label: "LinkedIn",
       href: contactLinks.linkedin,
       icon: LinkedInIcon,
     },
     {
-      label: "WhatsApp",
-      href: contactLinks.whatsapp,
-      icon: WhatsAppIcon,
+      label: "YouTube",
+      href: contactLinks.youtube,
+      icon: YouTubeIcon,
+    },
+    {
+      label: "TikTok",
+      href: contactLinks.tiktok,
+      icon: TikTokIcon,
     },
   ];
 
@@ -290,16 +291,37 @@ export default async function HomePage() {
         )}
       </section>
 
-      <TechStackSection />
+      <TechStackSection items={techStack} />
 
-      <footer className="mt-24 font-mono text-xs text-muted-foreground">
-        <div className="relative flex items-center justify-end">
-          <Separator />
+      {/* The page closes on an invitation rather than trailing off after the
+          tech stack. The résumé lives here now: it was tucked against the
+          footer rule as a lone right-aligned link, which read as fine print
+          rather than as one of two ways to start a conversation. */}
+      <section className="mt-20 text-center" aria-labelledby="contact-heading">
+        <h2
+          id="contact-heading"
+          className="text-base leading-7 text-foreground/90"
+        >
+          Open to a nice conversation.
+        </h2>
+        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5">
+          <SendMessageDialog
+            email={settings.email}
+            whatsappUrl={contactLinks.whatsapp}
+          />
+          <span
+            aria-hidden="true"
+            className="h-4 w-px shrink-0 bg-border max-sm:hidden"
+          />
           <ResumeDownloadButton
             hasResume={Boolean(settings.resumeKey)}
             filename={settings.resumeFilename}
           />
         </div>
+      </section>
+
+      <footer className="mt-8 font-mono text-xs text-muted-foreground">
+        <Separator />
         <div className="mt-8 flex items-center justify-between gap-4">
           <p
             className={`${instrumentSerif.className} text-lg font-bold text-foreground`}
