@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getWakaTimeHeartbeatDate,
+  getSundayWeekDates,
   isPublicWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
   toPublicWakaTimeStatus,
@@ -90,6 +91,18 @@ describe("WakaTime public status", () => {
     ).toBe("2026-08-10");
   });
 
+  it("orders a calendar week from Sunday through Saturday", () => {
+    expect(getSundayWeekDates("2026-08-09")).toEqual([
+      "2026-08-09",
+      "2026-08-10",
+      "2026-08-11",
+      "2026-08-12",
+      "2026-08-13",
+      "2026-08-14",
+      "2026-08-15",
+    ]);
+  });
+
   it("validates the sanitized browser response shape", () => {
     expect(
       isPublicWakaTimeStatus({
@@ -118,9 +131,10 @@ describe("WakaTime public status", () => {
         },
         null,
         {
+          end: "2026-08-08T23:59:59Z",
           data: [
             {
-              range: { date: "2026-08-08" },
+              range: { date: "2026-08-02" },
               grand_total: { total_seconds: 3_600 },
               languages: [
                 { name: "TypeScript", total_seconds: 2_700 },
@@ -130,7 +144,7 @@ describe("WakaTime public status", () => {
               projects: [{ name: "private-project" }],
             },
             {
-              range: { date: "2026-08-09" },
+              range: { date: "2026-08-08" },
               grand_total: { total_seconds: 7_200 },
               languages: [{ name: "TypeScript", total_seconds: 7_200 }],
             },
@@ -144,8 +158,13 @@ describe("WakaTime public status", () => {
       dailyAverageSeconds: 5_400,
       topLanguage: { name: "TypeScript", percent: 100 },
       days: [
-        { date: "2026-08-08", totalSeconds: 3_600 },
-        { date: "2026-08-09", totalSeconds: 7_200 },
+        { date: "2026-08-02", totalSeconds: 3_600 },
+        { date: "2026-08-03", totalSeconds: 0 },
+        { date: "2026-08-04", totalSeconds: 0 },
+        { date: "2026-08-05", totalSeconds: 0 },
+        { date: "2026-08-06", totalSeconds: 0 },
+        { date: "2026-08-07", totalSeconds: 0 },
+        { date: "2026-08-08", totalSeconds: 7_200 },
       ],
     });
   });

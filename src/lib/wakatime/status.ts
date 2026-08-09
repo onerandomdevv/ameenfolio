@@ -47,6 +47,7 @@ const todayResponseSchema = z.object({
 });
 
 const summariesResponseSchema = z.object({
+  end: z.string().optional(),
   data: z.array(
     z.object({
       grand_total: z.object({
@@ -88,6 +89,19 @@ function normalizeHeartbeatAt(value: string | null | undefined) {
   return new Date(value).toISOString();
 }
 
+export function getSundayWeekDates(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return [];
+  const anchor = new Date(`${value}T12:00:00.000Z`);
+  if (!Number.isFinite(anchor.getTime())) return [];
+  anchor.setUTCDate(anchor.getUTCDate() - anchor.getUTCDay());
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(anchor);
+    date.setUTCDate(anchor.getUTCDate() + index);
+    return date.toISOString().slice(0, 10);
+  });
+}
+
 function summarizeWeek(payload: unknown) {
   const summaries = summariesResponseSchema.safeParse(payload);
   if (!summaries.success) {
@@ -102,7 +116,7 @@ function summarizeWeek(payload: unknown) {
     >;
   }
 
-  const days = summaries.data.data
+  const reportedDays = summaries.data.data
     .filter((summary) => /^\d{4}-\d{2}-\d{2}$/.test(summary.range.date))
     .map((summary) => ({
       date: summary.range.date,
@@ -111,8 +125,17 @@ function summarizeWeek(payload: unknown) {
         86_400,
       ),
     }))
-    .sort((left, right) => left.date.localeCompare(right.date))
-    .slice(-7);
+    .sort((left, right) => left.date.localeCompare(right.date));
+  const anchorDate =
+    summaries.data.end?.slice(0, 10) ?? reportedDays.at(-1)?.date ?? "";
+  const weekDates = getSundayWeekDates(anchorDate);
+  const reportedTotals = new Map(
+    reportedDays.map((day) => [day.date, day.totalSeconds]),
+  );
+  const days = weekDates.map((date) => ({
+    date,
+    totalSeconds: reportedTotals.get(date) ?? 0,
+  }));
   const weekSeconds = Math.min(
     days.reduce((total, day) => total + day.totalSeconds, 0),
     604_800,
@@ -121,6 +144,7 @@ function summarizeWeek(payload: unknown) {
   const languages = new Map<string, number>();
 
   for (const summary of summaries.data.data) {
+    if (!weekDates.includes(summary.range.date)) continue;
     for (const language of summary.languages ?? []) {
       const name = language.name.trim().slice(0, 48);
       if (!name || excludedTopLanguageNames.has(name.toLowerCase())) continue;

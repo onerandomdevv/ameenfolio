@@ -3,6 +3,7 @@ import "server-only";
 import { getServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import {
+  getSundayWeekDates,
   getWakaTimeHeartbeatDate,
   inactiveWakaTimeStatus,
   toPublicWakaTimeStatus,
@@ -11,7 +12,6 @@ import {
 
 const WAKATIME_API_URL = "https://wakatime.com/api/v1/users/current";
 const WAKATIME_TODAY_URL = `${WAKATIME_API_URL}/status_bar/today`;
-const WAKATIME_WEEK_URL = `${WAKATIME_API_URL}/summaries?range=Last%207%20Days`;
 const REQUEST_TIMEOUT_MS = 8_000;
 const STATUS_CACHE_MS = 60_000;
 
@@ -42,11 +42,13 @@ export async function fetchWakaTimeStatus(
   const userResponse = await request(WAKATIME_API_URL);
   const userPayload = await getJson(userResponse, "user endpoint");
   const heartbeatDate = getWakaTimeHeartbeatDate(userPayload, now);
+  const weekStartDate = getSundayWeekDates(heartbeatDate)[0] ?? heartbeatDate;
   const heartbeatsUrl = `${WAKATIME_API_URL}/heartbeats?date=${heartbeatDate}`;
+  const summariesUrl = `${WAKATIME_API_URL}/summaries?start=${weekStartDate}&end=${heartbeatDate}`;
   const [todayResult, heartbeatsResult, summariesResult] = await Promise.all([
     request(WAKATIME_TODAY_URL).catch(() => null),
     request(heartbeatsUrl).catch(() => null),
-    request(WAKATIME_WEEK_URL).catch(() => null),
+    request(summariesUrl).catch(() => null),
   ]);
   const todayPayload = todayResult?.ok ? await todayResult.json() : null;
   const heartbeatsPayload = heartbeatsResult?.ok
