@@ -11,6 +11,7 @@ import {
 } from "@/app/admin/actions/recognitions";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
 import { FormTextField } from "@/components/admin/form-text-field";
+import { AdminPageHeader } from "@/components/admin/page-header";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,6 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -72,44 +74,57 @@ export function RecognitionsManager({ items }: { items: Recognition[] }) {
 
   return (
     <>
-      <div className="mb-6 flex justify-end">
-        <Button onClick={() => launch()}>
-          <Plus data-icon="inline-start" />
-          Add recognition
-        </Button>
-      </div>
+      {/* The header lives here rather than in the page because the button that
+          belongs in it opens this component's dialog. Splitting them would mean
+          lifting the dialog state out just to hand it back down. */}
+      <AdminPageHeader
+        title="Recognitions"
+        description="Publish concise icon-led recognition rows with optional supporting links."
+        action={
+          <Button size="sm" onClick={() => launch()}>
+            <Plus data-icon="inline-start" />
+            Add recognition
+          </Button>
+        }
+      />
       {items.length ? (
-        <ul className="divide-y border-y">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
           {items.map((item) => {
             return (
               <li
                 key={item.id}
-                className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
               >
                 <div className="flex min-w-0 items-start gap-3">
                   {createElement(getRecognitionIcon(item.iconName), {
-                    className: "mt-0.5 size-4 shrink-0 text-muted-foreground",
+                    className: "mt-0.5 size-5 shrink-0 text-foreground",
                     "aria-hidden": true,
                   })}
                   <div className="min-w-0">
-                    <h2 className="text-sm text-foreground">{item.title}</h2>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {item.published ? "Published" : "Draft"}
-                      {item.verificationUrl
-                        ? " / Linked evidence"
-                        : " / Static recognition"}
-                      {` / Order ${item.displayOrder}`}
-                    </p>
+                    <h2 className="text-sm font-medium text-foreground">
+                      {item.title}
+                    </h2>
+                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                      <Badge variant={item.published ? "secondary" : "outline"}>
+                        {item.published ? "Published" : "Draft"}
+                      </Badge>
+                      {item.verificationUrl ? (
+                        <Badge variant="outline">Linked</Badge>
+                      ) : null}
+                      <span className="font-mono text-[11px] text-muted-foreground">
+                        #{item.displayOrder}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <div className="flex shrink-0 items-center gap-4 text-sm">
-                  <button
-                    type="button"
+                <div className="flex shrink-0 items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => launch(item)}
-                    className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
                   >
                     Edit
-                  </button>
+                  </Button>
                   <DeleteRecognition item={item} />
                 </div>
               </li>

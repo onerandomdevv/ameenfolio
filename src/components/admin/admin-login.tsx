@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createAuthClient } from "@neondatabase/auth/next";
 import { LoaderCircle } from "lucide-react";
-import { instrumentSerif } from "@/app/fonts";
+import { GitHubIcon } from "@/components/icons/brand-icons";
 import { Button } from "@/components/ui/button";
 import { useAdminBase } from "@/lib/use-admin-base";
 
@@ -32,26 +32,34 @@ export function AdminLogin() {
   }
 
   return (
-    <div className="w-full max-w-sm">
-      <h1
-        className={`${instrumentSerif.className} text-3xl leading-none tracking-[-0.02em] text-foreground`}
-      >
-        Portfolio admin
+    // A panel rather than bare text on the page: sign-in is the one screen
+    // that is only a form, and a card gives it an edge to sit against.
+    <div className="w-full max-w-sm rounded-xl border border-border bg-card p-6 sm:p-7">
+      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+        Admin
+      </p>
+      <h1 className="mt-3 text-lg font-semibold tracking-[-0.01em] text-foreground">
+        Sign in
       </h1>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Sign in with the authorized GitHub account to manage content.
+      <p className="mt-1 text-sm leading-6 text-muted-foreground">
+        Use the authorized GitHub account to manage content.
       </p>
 
       {error ? (
-        <p role="alert" className="mt-6 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-5 rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error}
         </p>
       ) : null}
 
-      <Button className="mt-8 w-full" onClick={signIn} disabled={pending}>
+      <Button className="mt-6 w-full" onClick={signIn} disabled={pending}>
         {pending ? (
           <LoaderCircle data-icon="inline-start" className="animate-spin" />
-        ) : null}
+        ) : (
+          <GitHubIcon data-icon="inline-start" aria-hidden="true" />
+        )}
         Continue with GitHub
       </Button>
     </div>
