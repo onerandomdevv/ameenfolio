@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const serverEnvSchema = z.object({
+export const serverEnvSchema = z.object({
   DATABASE_URL: z.string().url().optional(),
   NEON_AUTH_BASE_URL: z.string().url().optional(),
   NEON_AUTH_COOKIE_SECRET: z.string().min(32).optional(),
@@ -10,10 +10,12 @@ const serverEnvSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   R2_BUCKET_NAME: z.string().min(1).optional(),
   R2_PUBLIC_BASE_URL: z.string().url().optional().or(z.literal("")),
-  // Both optional: without them the stats strip simply does not render, so a
-  // deployment that never sets them still builds and serves the whole site.
-  GITHUB_STATS_USERNAME: z.string().trim().min(1).optional(),
-  GITHUB_STATS_TOKEN: z.string().trim().min(1).optional(),
+  // Optional, and an empty value is as valid as an absent one. A declared but
+  // blank key is the normal state of a fresh .env — and since every page calls
+  // getServerEnv(), rejecting "" here would take the whole site down over a
+  // credential the stats strip is happy to do without.
+  GITHUB_STATS_USERNAME: z.string().trim().optional(),
+  GITHUB_STATS_TOKEN: z.string().trim().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CANONICAL_SITE_URL: z.string().url().default("http://localhost:3000"),
 });
