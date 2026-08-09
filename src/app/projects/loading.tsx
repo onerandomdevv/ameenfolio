@@ -9,7 +9,13 @@ export default function ProjectsLoading() {
         <Skeleton className="h-4 w-32" />
       </div>
 
-      <Skeleton className="mt-7 h-44 rounded-xl" />
+      <div className="mt-7">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-5 w-14 rounded-[3px]" />
+        </div>
+        <Skeleton className="mt-4 h-28 w-full rounded-sm" />
+      </div>
 
       <header className="mt-7">
         <Skeleton className="h-4 w-full" />

@@ -66,7 +66,7 @@ export function WakaTimeActivityStrip() {
 
   return (
     <section className="mt-7" aria-labelledby="wakatime-heading">
-      <div className="overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-5">
+      <div>
         <div className="flex items-center justify-between gap-3">
           <h2
             id="wakatime-heading"
@@ -75,16 +75,13 @@ export function WakaTimeActivityStrip() {
             Coding activity
           </h2>
           <Badge
-            variant="outline"
-            className="gap-1.5 rounded-md px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground"
+            className={cn(
+              "rounded-[3px] border-0 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] shadow-none",
+              isOnline
+                ? "bg-accent-lime text-black"
+                : "bg-zinc-700 text-zinc-200",
+            )}
           >
-            <span
-              className={cn(
-                "size-1.5 rounded-full",
-                isOnline ? "bg-accent-lime" : "bg-zinc-600",
-              )}
-              aria-hidden="true"
-            />
             {statusLabel}
           </Badge>
         </div>
