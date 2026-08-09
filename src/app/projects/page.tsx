@@ -23,7 +23,7 @@ export default async function ProjectsPage() {
 
       <WakaTimeActivityStrip />
       <header className="mt-7">
-        <p className="max-w-xl text-sm leading-6 text-foreground">
+        <p className="mx-auto max-w-xl text-center text-sm font-semibold leading-6 text-foreground">
           A focused record of products I have built and made contributions.
         </p>
       </header>
