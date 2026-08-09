@@ -15,10 +15,7 @@ export default async function AdminBippyPage() {
 
   return (
     <>
-      <AdminPageHeader
-        title="Bippy"
-        description="Test Bippy's states, movement, interactions, and accessibility behavior."
-      />
+      <AdminPageHeader title="Bippy" description="Test the companion." />
       <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
       <BippyPlayground />
     </>

@@ -11,6 +11,7 @@ import {
   saveNowSection,
 } from "@/app/admin/actions/now";
 import { AdminEmptyState } from "@/components/admin/admin-empty-state";
+import { AdminSection } from "@/components/admin/admin-section";
 import { FormTextField } from "@/components/admin/form-text-field";
 import { UploadField } from "@/components/admin/upload-field";
 import {
@@ -105,14 +106,16 @@ export function NowManager({
         ) : null}
 
         {links.length ? (
-          <ul className="divide-y border-y">
+          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
             {links.map((item) => (
               <li
                 key={item.id}
-                className="flex flex-col gap-2 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
               >
                 <div className="min-w-0">
-                  <h3 className="text-sm text-foreground">{item.label}</h3>
+                  <h3 className="text-sm font-medium text-foreground">
+                    {item.label}
+                  </h3>
                   <p className="mt-1 truncate text-xs text-muted-foreground">
                     {item.url}
                   </p>
@@ -125,7 +128,7 @@ export function NowManager({
                   <button
                     type="button"
                     onClick={() => launch(item)}
-                    className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+                    className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm text-foreground transition-colors hover:bg-secondary"
                   >
                     Edit
                   </button>
@@ -184,11 +187,12 @@ function NowSectionForm({ section }: { section: NowSection }) {
   }
 
   return (
-    <section>
-      <h2 className="text-sm text-foreground">Current focus</h2>
-      <p className="mt-1 mb-6 text-sm text-muted-foreground">
-        This copy appears below the fixed “Now” heading on the homepage.
-      </p>
+    <AdminSection
+      title="Current focus"
+      description={
+        "This copy appears below the fixed “Now” heading on the homepage."
+      }
+    >
       <div>
         <form id="now-section-form" onSubmit={handleSubmit(submit)}>
           <FieldGroup>
@@ -243,7 +247,7 @@ function NowSectionForm({ section }: { section: NowSection }) {
           </FieldGroup>
         </form>
       </div>
-      <div className="mt-8 flex justify-end">
+      <div className="mt-6 flex justify-end">
         <Button type="submit" form="now-section-form" disabled={isSubmitting}>
           {isSubmitting ? (
             <LoaderCircle data-icon="inline-start" className="animate-spin" />
@@ -251,7 +255,7 @@ function NowSectionForm({ section }: { section: NowSection }) {
           {isSubmitting ? "Saving…" : "Save Now section"}
         </Button>
       </div>
-    </section>
+    </AdminSection>
   );
 }
 
