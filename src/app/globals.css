@@ -15,6 +15,12 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-highlight: rgba(255, 255, 255, 0.12);
 
+  /* The brand lime, matching the GitHub profile README. Carried by three
+     things: the stats strip values, the tech stack group headings, and a
+     project card's arrow on hover. Keeping the list short is what stops it
+     becoming general decoration. */
+  --color-accent-lime: #7fff00;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -75,6 +81,17 @@
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.1);
   --sidebar-ring: rgba(255, 255, 255, 0.45);
+}
+
+/* Tailwind v4 defaults border-color to currentColor, where v3 defaulted to a
+   grey. Without this every bare `border` utility paints in the element's text
+   colour — white on a dark card — instead of the subtle hairline intended. */
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--border);
+  }
 }
 
 @layer utilities {

@@ -1,13 +1,23 @@
 import { z } from "zod";
+import { availabilityValues } from "@/config/availability";
 import { recognitionIconNames } from "@/config/recognition-icons";
+import { cardWordLimitMessage, withinCardWordLimit } from "@/lib/word-count";
 
+// A prefix check alone accepts the bare string "https://", which passes
+// validation, saves, and renders as a link to nowhere. Parsing it means the
+// scheme and a real host both have to be there.
 const optionalHttpsUrl = z
   .string()
   .trim()
-  .refine(
-    (value) => !value || value.startsWith("https://"),
-    "URL must use HTTPS.",
-  )
+  .refine((value) => {
+    if (!value) return true;
+    try {
+      const url = new URL(value);
+      return url.protocol === "https:" && url.hostname.includes(".");
+    } catch {
+      return false;
+    }
+  }, "Enter a full HTTPS URL, for example https://example.com/you.")
   .optional();
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
@@ -30,7 +40,12 @@ const iconFields = {
 export const projectSchema = z
   .object({
     title: z.string().trim().min(2).max(120),
-    shortDescription: z.string().trim().min(10).max(500),
+    shortDescription: z
+      .string()
+      .trim()
+      .min(10)
+      .max(500)
+      .refine(withinCardWordLimit, cardWordLimitMessage),
     contribution: optionalText(500),
     statusLabel: optionalText(60),
     liveUrl: z.url().startsWith("https://"),
@@ -46,7 +61,12 @@ export const projectSchema = z
   });
 
 export const recognitionSchema = z.object({
-  title: z.string().trim().min(2).max(180),
+  title: z
+    .string()
+    .trim()
+    .min(2)
+    .max(180)
+    .refine(withinCardWordLimit, cardWordLimitMessage),
   iconName: z.enum(recognitionIconNames),
   verificationUrl: optionalHttpsUrl,
   displayOrder: z.number().int().min(0).max(999),
@@ -79,6 +99,7 @@ export const siteSettingsSchema = z.object({
     x: optionalHttpsUrl,
     instagram: optionalHttpsUrl,
     tiktok: optionalHttpsUrl,
+    youtube: optionalHttpsUrl,
     linkedin: optionalHttpsUrl,
     whatsapp: optionalHttpsUrl,
   }),
@@ -88,6 +109,10 @@ export const siteSettingsSchema = z.object({
     .regex(/^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/)
     .optional(),
   resumeFilename: optionalText(180),
+  // Not derivable from anything the site stores, so the owner types it. Capped
+  // at two digits because the strip gives the value one short line.
+  hackathonWins: z.number().int().min(0).max(99),
+  availability: z.enum(availabilityValues),
   seoTitle: z.string().trim().min(10).max(70),
   seoDescription: z.string().trim().min(40).max(170),
 });

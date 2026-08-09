@@ -52,6 +52,7 @@ import {
 } from "@/config/recognition-icons";
 import type { Recognition } from "@/db/schema";
 import { recognitionSchema, type RecognitionInput } from "@/lib/validation";
+import { MAX_CARD_WORDS } from "@/lib/word-count";
 
 const emptyRecognition: RecognitionInput = {
   title: "",
@@ -191,6 +192,7 @@ function RecognitionDialog({
             <FormTextField
               className="sm:col-span-2"
               label="Recognition"
+              description={`At most ${MAX_CARD_WORDS} words so the row stays on one line.`}
               error={errors.title?.message}
               inputProps={register("title")}
             />

@@ -6,6 +6,7 @@ export const bippyStates = [
   "sleep",
   "wake",
   "dragging",
+  "moving",
 ] as const;
 
 export type BippyState = (typeof bippyStates)[number];
@@ -16,6 +17,7 @@ export type BippyEvent =
   | { type: "NOTICE" }
   | { type: "START_WORK" }
   | { type: "DRAG_START" }
+  | { type: "DRAG_MOVE" }
   | { type: "DRAG_END" }
   | { type: "WANDER" }
   | { type: "INACTIVITY" }
@@ -37,7 +39,13 @@ export function transitionBippy(
   if (event.type === "RESET") return "idle";
   if (event.type === "DRAG_START") return "dragging";
   if (state === "dragging") {
+    if (event.type === "DRAG_MOVE") return "moving";
     return event.type === "DRAG_END" ? "idle" : state;
+  }
+  if (state === "moving") {
+    return event.type === "DRAG_END" || event.type === "ARRIVED"
+      ? "idle"
+      : state;
   }
   if (event.type === "INACTIVITY") return "sleep";
 
@@ -64,8 +72,7 @@ export function transitionBippy(
     return event.type === "STATE_TIMEOUT" ? "idle" : state;
   }
 
-  if (event.type === "WANDER" && state === "idle") return "curious";
-  if (event.type === "ARRIVED" && state === "curious") return "idle";
+  if (event.type === "WANDER" && state === "idle") return "moving";
   if (event.type === "STATE_TIMEOUT" && state === "curious") return "idle";
 
   return state;

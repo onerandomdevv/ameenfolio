@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { transitionBippy } from "@/components/bippy/bippy-machine";
 
 describe("Bippy state machine", () => {
-  it("only follows the pointer during an explicit drag", () => {
+  it("runs only after an explicit drag starts moving", () => {
     expect(transitionBippy("idle", { type: "ACTIVITY" })).toBe("idle");
     expect(transitionBippy("idle", { type: "DRAG_START" })).toBe("dragging");
-    expect(transitionBippy("dragging", { type: "DRAG_END" })).toBe("idle");
+    expect(transitionBippy("dragging", { type: "DRAG_MOVE" })).toBe("moving");
+    expect(transitionBippy("moving", { type: "DRAG_END" })).toBe("idle");
   });
 
   it("wakes before returning to idle after inactivity", () => {
@@ -31,8 +32,8 @@ describe("Bippy state machine", () => {
   });
 
   it("supports autonomous curiosity and an explicit reset", () => {
-    expect(transitionBippy("idle", { type: "WANDER" })).toBe("curious");
-    expect(transitionBippy("curious", { type: "ARRIVED" })).toBe("idle");
+    expect(transitionBippy("idle", { type: "WANDER" })).toBe("moving");
+    expect(transitionBippy("moving", { type: "ARRIVED" })).toBe("idle");
     expect(transitionBippy("sleep", { type: "RESET" })).toBe("idle");
   });
 });

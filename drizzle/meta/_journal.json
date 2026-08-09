@@ -71,6 +71,34 @@
       "when": 1786250767660,
       "tag": "0009_premium_jane_foster",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786261001465,
+      "tag": "0010_soft_masque",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786268041507,
+      "tag": "0011_outgoing_hammerhead",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786271097651,
+      "tag": "0012_cultured_roland_deschain",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786273562272,
+      "tag": "0013_foamy_nick_fury",
+      "breakpoints": true
     }
   ]
 }

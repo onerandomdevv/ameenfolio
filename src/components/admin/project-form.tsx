@@ -24,6 +24,7 @@ import type { Project } from "@/db/schema";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { useAdminBase } from "@/lib/use-admin-base";
 import { projectSchema, type ProjectInput } from "@/lib/validation";
+import { MAX_CARD_WORDS, countWords } from "@/lib/word-count";
 
 const emptyProject: ProjectInput = {
   title: "",
@@ -64,6 +65,8 @@ export function ProjectForm({ project }: { project?: Project }) {
     setValue,
   } = form;
   const iconKey = useWatch({ control, name: "iconKey" });
+  const shortDescription = useWatch({ control, name: "shortDescription" });
+  const descriptionWords = countWords(shortDescription ?? "");
 
   async function submit(values: ProjectInput) {
     const result = await saveProject(values, project?.id);
@@ -113,6 +116,14 @@ export function ProjectForm({ project }: { project?: Project }) {
               aria-invalid={Boolean(errors.shortDescription)}
               {...register("shortDescription")}
             />
+            <FieldDescription
+              className={
+                descriptionWords > MAX_CARD_WORDS ? "text-destructive" : ""
+              }
+            >
+              {descriptionWords} / {MAX_CARD_WORDS} words — the card is sized
+              for one tidy block.
+            </FieldDescription>
             <FieldError>{errors.shortDescription?.message}</FieldError>
           </Field>
           <Field

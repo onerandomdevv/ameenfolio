@@ -355,6 +355,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
         pageVisible &&
         stateRef.current !== "sleep" &&
         stateRef.current !== "dragging" &&
+        stateRef.current !== "moving" &&
         Date.now() - lastActivityRef.current >= INACTIVITY_MS
       ) {
         movingRef.current = false;
@@ -402,7 +403,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       if (
         !pageVisible ||
         reducedMotion ||
-        stateRef.current !== "curious" ||
+        stateRef.current !== "moving" ||
         !movingRef.current
       ) {
         previous = now;
@@ -594,10 +595,12 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     const drag = dragRef.current;
     if (!drag || event.pointerId !== drag.pointerId) return;
     if (
+      !drag.moved &&
       Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >=
-      DRAG_THRESHOLD
+        DRAG_THRESHOLD
     ) {
       drag.moved = true;
+      send({ type: "DRAG_MOVE" });
     }
 
     const current = positionRef.current;

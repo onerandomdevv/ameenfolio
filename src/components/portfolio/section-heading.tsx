@@ -13,7 +13,10 @@ type SectionHeadingProps = {
 export function SectionHeading({ id, title, action }: SectionHeadingProps) {
   return (
     <header className="flex items-center">
-      <h2 id={id} className="text-xs font-medium text-muted-foreground">
+      <h2
+        id={id}
+        className="font-mono text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground"
+      >
         {title}
       </h2>
       {action ? (

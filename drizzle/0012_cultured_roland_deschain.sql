@@ -1,0 +1,2 @@
+ALTER TABLE "site_settings" ADD COLUMN "availability" text DEFAULT 'open' NOT NULL;--> statement-breakpoint
+ALTER TABLE "site_settings" ADD CONSTRAINT "site_settings_availability_valid" CHECK ("site_settings"."availability" in ('open', 'booked'));
