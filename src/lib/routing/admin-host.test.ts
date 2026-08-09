@@ -10,4 +10,10 @@ describe("isAdminHostSharedPath", () => {
     expect(isAdminHostSharedPath("/bippy/idle/bippy-idle.png")).toBe(true);
     expect(isAdminHostSharedPath("/bippy/states/working.png")).toBe(true);
   });
+
+  it("allows only the generated admin icon through the hidden admin prefix", () => {
+    expect(isAdminHostSharedPath("/admin/icon.png")).toBe(true);
+    expect(isAdminHostSharedPath("/admin")).toBe(false);
+    expect(isAdminHostSharedPath("/admin/projects")).toBe(false);
+  });
 });
