@@ -125,6 +125,7 @@ describe("WakaTime public status", () => {
               languages: [
                 { name: "TypeScript", total_seconds: 2_700 },
                 { name: "CSS", total_seconds: 900 },
+                { name: "Markdown", total_seconds: 10_000 },
               ],
               projects: [{ name: "private-project" }],
             },
@@ -141,7 +142,7 @@ describe("WakaTime public status", () => {
       todaySeconds: 7_200,
       weekSeconds: 10_800,
       dailyAverageSeconds: 5_400,
-      topLanguage: { name: "TypeScript", percent: 92 },
+      topLanguage: { name: "TypeScript", percent: 100 },
       days: [
         { date: "2026-08-08", totalSeconds: 3_600 },
         { date: "2026-08-09", totalSeconds: 7_200 },

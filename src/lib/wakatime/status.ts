@@ -65,6 +65,24 @@ const summariesResponseSchema = z.object({
   ),
 });
 
+const excludedTopLanguageNames = new Set([
+  "css",
+  "csv",
+  "git config",
+  "html",
+  "ini",
+  "json",
+  "less",
+  "markdown",
+  "mdx",
+  "sass",
+  "scss",
+  "text",
+  "toml",
+  "xml",
+  "yaml",
+]);
+
 function normalizeHeartbeatAt(value: string | null | undefined) {
   if (!value || !Number.isFinite(Date.parse(value))) return null;
   return new Date(value).toISOString();
@@ -105,7 +123,7 @@ function summarizeWeek(payload: unknown) {
   for (const summary of summaries.data.data) {
     for (const language of summary.languages ?? []) {
       const name = language.name.trim().slice(0, 48);
-      if (!name) continue;
+      if (!name || excludedTopLanguageNames.has(name.toLowerCase())) continue;
       languages.set(
         name,
         (languages.get(name) ?? 0) + (language.total_seconds ?? 0),

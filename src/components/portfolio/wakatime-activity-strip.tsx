@@ -144,7 +144,7 @@ export function WakaTimeActivityStrip() {
 
         <div className="mt-2.5 flex flex-col gap-1 text-[10px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p className="truncate">
-            Most used: {status?.topLanguage?.name ?? "—"}
+            Top language: {status?.topLanguage?.name ?? "—"}
             {status?.topLanguage ? ` · ${status.topLanguage.percent}%` : null}
           </p>
           <p className="truncate">
