@@ -1,0 +1,341 @@
+.actor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 128px;
+  height: 128px;
+  will-change: transform;
+  touch-action: none;
+}
+
+.companionActor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  width: 128px;
+  height: 128px;
+  visibility: hidden;
+  touch-action: none;
+  will-change: transform;
+}
+
+.companionScale {
+  width: 128px;
+  height: 128px;
+  transform-origin: top left;
+}
+
+.companionMessage {
+  position: absolute;
+  bottom: calc(100% + 36px);
+  left: 50%;
+  z-index: 2;
+  display: flex;
+  width: 204px;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 7px 7px 12px;
+  color: var(--popover-foreground);
+  font-size: 12px;
+  line-height: 1.4;
+  pointer-events: auto;
+  background: var(--popover);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 35%);
+  transform: translateX(calc(-50% + var(--bippy-bubble-shift, 0px)));
+  animation: message-in 160ms ease-out;
+}
+
+.companionMessage p {
+  flex: 1;
+  margin: 0;
+}
+
+.companionMessageDismiss {
+  flex: none;
+  color: var(--muted-foreground);
+}
+
+.companionMessageDismiss:hover,
+.companionMessageDismiss:focus-visible {
+  color: var(--primary);
+}
+
+.companionControls {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% - 4px);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease,
+    visibility 150ms;
+}
+
+.companionActor:hover .companionControls,
+.companionActor:focus-within .companionControls {
+  pointer-events: auto;
+  visibility: visible;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.button {
+  width: 128px;
+  height: 128px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.button[data-state="dragging"] {
+  cursor: grabbing;
+}
+
+.button:hover,
+.button:focus-visible {
+  background: transparent;
+}
+
+.motion,
+.facing,
+.sprite {
+  display: block;
+  width: 128px;
+  height: 128px;
+}
+
+.stateSprite {
+  position: relative;
+  background-position: center;
+  background-size: contain;
+}
+
+.workingDetails {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.workingEye {
+  position: absolute;
+  top: 37px;
+  width: 10px;
+  height: 15px;
+  background: #1f2223;
+}
+
+.workingEye::after {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 4px;
+  height: 9px;
+  background: #a5ef30;
+  content: "";
+  animation: working-eyes 2.8s steps(1, end) infinite;
+}
+
+.workingEyeLeft {
+  left: 38px;
+}
+
+.workingEyeRight {
+  left: 65px;
+}
+
+.typingHand {
+  position: absolute;
+  top: 76px;
+  width: 10px;
+  height: 8px;
+  background: #f7f7f4;
+  box-shadow:
+    -2px 2px 0 #b8b9bf,
+    2px 1px 0 #d8d9d7;
+  animation: typing-left 360ms steps(2, end) infinite alternate;
+}
+
+.typingHandLeft {
+  left: 31px;
+}
+
+.typingHandRight {
+  left: 50px;
+  animation-name: typing-right;
+}
+
+.facing {
+  transform: scaleX(var(--bippy-facing, 1));
+}
+
+.sprite {
+  background-image: url("/bippy/idle/bippy-idle.png");
+  background-repeat: no-repeat;
+  background-size: 768px 128px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.motion.excited {
+  animation: excited 300ms steps(2, end) infinite;
+}
+
+.motion.curious {
+  animation: curious 900ms steps(3, end) infinite alternate;
+}
+
+.motion.working {
+  animation: working 900ms steps(2, end) infinite alternate;
+}
+
+.motion.sleep {
+  animation: sleeping 1.8s steps(2, end) infinite alternate;
+}
+
+.motion.wake {
+  animation: wake 350ms steps(2, end) 2;
+}
+
+.motion.dragging {
+  transform: translateY(-3px) scale(1.04);
+}
+
+@keyframes excited {
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes curious {
+  to {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes wake {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes working {
+  to {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes sleeping {
+  to {
+    transform: translateY(2px) scale(0.99);
+  }
+}
+
+@keyframes working-eyes {
+  0%,
+  24% {
+    transform: translateX(0) scaleY(1);
+  }
+
+  25%,
+  47% {
+    transform: translateX(2px) scaleY(1);
+  }
+
+  48%,
+  72% {
+    transform: translateX(-1px) scaleY(1);
+  }
+
+  73%,
+  77% {
+    transform: translateX(0) scaleY(0.22);
+  }
+
+  78%,
+  100% {
+    transform: translateX(0) scaleY(1);
+  }
+}
+
+@keyframes typing-left {
+  to {
+    transform: translateY(2px);
+  }
+}
+
+@keyframes typing-right {
+  from {
+    transform: translateY(2px);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes message-in {
+  from {
+    opacity: 0;
+    scale: 0.98;
+  }
+
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .actor {
+    will-change: auto;
+  }
+
+  .motion.excited,
+  .motion.curious,
+  .motion.working,
+  .motion.sleep,
+  .motion.wake {
+    animation: none;
+  }
+
+  .workingEye::after,
+  .typingHand {
+    animation: none;
+  }
+
+  .companionControls {
+    transition: none;
+  }
+
+  .companionMessage {
+    animation: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .companionActor {
+    width: 96px;
+    height: 96px;
+  }
+
+  .companionScale {
+    transform: scale(0.75);
+  }
+
+  .companionMessage {
+    width: 184px;
+  }
+}

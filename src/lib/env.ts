@@ -10,7 +10,6 @@ const serverEnvSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1).optional(),
   R2_BUCKET_NAME: z.string().min(1).optional(),
   R2_PUBLIC_BASE_URL: z.string().url().optional().or(z.literal("")),
-  R2_ALLOWED_ORIGINS: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CANONICAL_SITE_URL: z.string().url().default("http://localhost:3000"),
 });

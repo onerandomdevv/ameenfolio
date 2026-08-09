@@ -38,6 +38,8 @@ export function RecognitionRow({
         href={verificationUrl}
         target="_blank"
         rel="noreferrer"
+        data-bippy-reaction="curious"
+        data-bippy-safe-zone
         className="group flex min-h-11 w-full items-start gap-3 py-3 text-left text-foreground/90 transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline-none"
       >
         {content}
