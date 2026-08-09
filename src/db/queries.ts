@@ -11,6 +11,7 @@ import {
   type SiteSettings,
 } from "@/db/schema";
 import { toPublicNow } from "@/lib/now";
+import { logServer } from "@/lib/logger";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
@@ -19,6 +20,7 @@ const defaultSiteSettings: SiteSettings = {
   profileImageKey: null,
   resumeKey: null,
   resumeFilename: null,
+  publicBippyEnabled: true,
   seoTitle: "Aliameen Kareem — Full-Stack Engineer",
   seoDescription:
     "Selected projects, recognition, and the technologies behind Aliameen Kareem's work.",
@@ -136,6 +138,24 @@ export async function getAdminSettings() {
     .from(siteSettings)
     .where(eq(siteSettings.id, 1));
   return rows[0] ?? defaultSiteSettings;
+}
+
+export async function getPublicBippyEnabled() {
+  if (!canQueryDatabase()) return true;
+
+  try {
+    const rows = await getDb()
+      .select({ enabled: siteSettings.publicBippyEnabled })
+      .from(siteSettings)
+      .where(eq(siteSettings.id, 1))
+      .limit(1);
+    return rows[0]?.enabled ?? true;
+  } catch (error) {
+    logServer("error", "query.bippy_visibility_failed", {
+      error: String(error),
+    });
+    return true;
+  }
 }
 
 export async function isReferencedPublicMedia(key: string) {

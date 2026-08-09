@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
+import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { Toaster } from "@/components/ui/sonner";
 import { portfolioIdentity } from "@/config/portfolio";
+import { getPublicBippyEnabled } from "@/db/queries";
 import { inter } from "@/app/fonts";
 
 export const metadata: Metadata = {
@@ -39,15 +42,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const publicBippyEnabled = await getPublicBippyEnabled();
+
   return (
     <html lang="en">
       <body className={inter.className}>
         <div className="min-h-screen">{children}</div>
+        <Suspense fallback={null}>
+          <BippyCompanion enabled={publicBippyEnabled} />
+        </Suspense>
         <Toaster richColors position="bottom-center" />
       </body>
     </html>

@@ -26,7 +26,13 @@ export function NowSection({ section }: { section: PublicNow | null }) {
                     variant="secondary"
                     className="min-h-9 px-3 hover:text-primary"
                   >
-                    <a href={item.url} target="_blank" rel="noreferrer">
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      data-bippy-reaction="curious"
+                      data-bippy-safe-zone
+                    >
                       <AssetIcon
                         objectKey={item.iconKey}
                         alt={item.iconAlt ?? ""}

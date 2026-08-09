@@ -141,6 +141,10 @@ export default async function HomePage() {
                       href={item.href}
                       target={item.external ? "_blank" : undefined}
                       rel={item.external ? "noreferrer" : undefined}
+                      data-bippy-reaction={
+                        item.label === "GitHub" ? "working" : "curious"
+                      }
+                      data-bippy-safe-zone
                     >
                       <Icon
                         className="size-4 text-foreground"
@@ -169,7 +173,11 @@ export default async function HomePage() {
 
       <NowSection section={now} />
 
-      <section className="mt-14" aria-labelledby="projects-heading">
+      <section
+        className="mt-14"
+        aria-labelledby="projects-heading"
+        data-bippy-section="projects"
+      >
         <SectionHeading
           id="projects-heading"
           title="Recent Projects"
@@ -186,7 +194,11 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="mt-24" aria-labelledby="recognitions-heading">
+      <section
+        className="mt-24"
+        aria-labelledby="recognitions-heading"
+        data-bippy-section="recognitions"
+      >
         <SectionHeading id="recognitions-heading" title="Recognitions" />
         {recognitions.length ? (
           <ul className="mt-5 divide-y divide-solid divide-border">
@@ -217,7 +229,11 @@ export default async function HomePage() {
             variant="link"
             className="absolute right-0 bg-background pl-4 pr-0 font-bold text-foreground underline hover:text-primary"
           >
-            <a href="/resume">
+            <a
+              href="/resume"
+              data-bippy-reaction="working"
+              data-bippy-safe-zone
+            >
               <Download aria-hidden="true" data-icon="inline-start" />
               View Resume
             </a>
@@ -244,6 +260,8 @@ export default async function HomePage() {
                         target="_blank"
                         rel="noreferrer"
                         aria-label={item.label}
+                        data-bippy-reaction="curious"
+                        data-bippy-safe-zone
                         className={className}
                       >
                         <Icon className="size-[18px]" aria-hidden="true" />

@@ -15,6 +15,9 @@ export function ProjectCard({ project }: { project: Project }) {
       href={project.liveUrl}
       target="_blank"
       rel="noreferrer"
+      data-bippy-reaction="curious"
+      data-bippy-project
+      data-bippy-safe-zone
       className="group block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <Card className="h-full gap-0 py-5 text-left shadow-none transition-colors group-hover:border-foreground/30 group-hover:bg-accent/40 sm:py-6">

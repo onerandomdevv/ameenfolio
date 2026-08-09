@@ -1,0 +1,22 @@
+{
+  "image": "/bippy/idle/bippy-idle.png",
+  "frameWidth": 128,
+  "frameHeight": 128,
+  "frameCount": 6,
+  "loop": true,
+  "timeline": [
+    { "frame": 0, "durationMs": 420, "pose": "neutral" },
+    { "frame": 1, "durationMs": 180, "pose": "breathe-down" },
+    { "frame": 2, "durationMs": 220, "pose": "soft-focus" },
+    { "frame": 3, "durationMs": 180, "pose": "breathe-up" },
+    { "frame": 4, "durationMs": 110, "pose": "blink" },
+    { "frame": 5, "durationMs": 420, "pose": "neutral" }
+  ],
+  "palette": {
+    "ink": "#08090c",
+    "charcoal": "#1d2129",
+    "shadow": "#b8b9bf",
+    "shell": "#f7f7f4",
+    "lime": "#a5ef30"
+  }
+}

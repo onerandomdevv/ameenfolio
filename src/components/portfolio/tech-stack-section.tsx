@@ -4,7 +4,11 @@ import { techStackGroups } from "@/config/tech-stack";
 
 export function TechStackSection() {
   return (
-    <section className="mt-24" aria-labelledby="stack-heading">
+    <section
+      className="mt-24"
+      aria-labelledby="stack-heading"
+      data-bippy-section="stack"
+    >
       <SectionHeading id="stack-heading" title="Tech Stack" />
       <div className="mt-8 flex flex-col gap-8">
         {techStackGroups.map((group) => (
