@@ -66,17 +66,14 @@ export function WakaTimeActivityStrip() {
 
   return (
     <section className="mt-7" aria-labelledby="wakatime-heading">
-      <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 overflow-hidden rounded-xl border border-border bg-card p-3.5 sm:grid-cols-[88px_minmax(0,1fr)] sm:gap-5 sm:p-5">
-        <div className="flex min-w-0 flex-col items-center gap-2">
-          <div className="h-11 w-[68px] overflow-hidden rounded-lg border border-border bg-black">
-            <span
-              aria-hidden="true"
-              className={cn(
-                styles.face,
-                isOnline ? styles.online : styles.offline,
-              )}
-            />
-          </div>
+      <div className="overflow-hidden rounded-xl border border-border bg-card p-4 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2
+            id="wakatime-heading"
+            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
+          >
+            Coding activity
+          </h2>
           <Badge
             variant="outline"
             className="gap-1.5 rounded-md px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground"
@@ -92,87 +89,75 @@ export function WakaTimeActivityStrip() {
           </Badge>
         </div>
 
-        <div className="min-w-0">
-          <h2
-            id="wakatime-heading"
-            className="font-mono text-[10px] uppercase tracking-[0.08em] text-muted-foreground"
-          >
-            Coding activity
-          </h2>
+        <dl className="mt-3 grid grid-cols-3 gap-3 sm:gap-5">
+          {[
+            ["Today", formatDuration(status?.todaySeconds)],
+            ["This week", formatDuration(status?.weekSeconds)],
+            ["Daily avg", formatDuration(status?.dailyAverageSeconds)],
+          ].map(([label, value]) => (
+            <div key={label} className="min-w-0">
+              <dt className="truncate text-[9px] text-muted-foreground sm:text-[10px]">
+                {label}
+              </dt>
+              <dd className="mt-0.5 truncate text-sm font-medium tabular-nums text-foreground sm:text-base">
+                {value}
+              </dd>
+            </div>
+          ))}
+        </dl>
 
-          <dl className="mt-3 grid grid-cols-3 gap-2 sm:gap-4">
-            {[
-              ["Today", formatDuration(status?.todaySeconds)],
-              ["This week", formatDuration(status?.weekSeconds)],
-              ["Daily avg", formatDuration(status?.dailyAverageSeconds)],
-            ].map(([label, value]) => (
-              <div key={label} className="min-w-0">
-                <dt className="truncate text-[9px] text-muted-foreground sm:text-[10px]">
-                  {label}
-                </dt>
-                <dd className="mt-0.5 truncate text-sm font-medium tabular-nums text-foreground sm:text-base">
-                  {value}
-                </dd>
+        <div className="mt-3" aria-label="Coding time over the last seven days">
+          <div className="flex h-10 items-end gap-1.5 border-b border-border pb-1 sm:gap-2">
+            {bars.map((bar, index) => (
+              <div
+                key={`${bar.label}-${index}`}
+                className="flex h-full min-w-0 flex-1 items-end"
+                title={`${bar.label}: ${formatDuration(bar.seconds)}`}
+              >
+                <span
+                  className={cn(
+                    styles.bar,
+                    "block w-full rounded-[2px]",
+                    isOnline && index === bars.length - 1
+                      ? "bg-accent-lime"
+                      : "bg-zinc-600",
+                    !status && "opacity-30",
+                  )}
+                  style={
+                    {
+                      height: `${bar.height}%`,
+                      animationDelay: `${index * 40}ms`,
+                    } as CSSProperties
+                  }
+                />
               </div>
             ))}
-          </dl>
-
-          <div
-            className="mt-4"
-            aria-label="Coding time over the last seven days"
-          >
-            <div className="flex h-12 items-end gap-1.5 border-b border-border pb-1 sm:gap-2">
-              {bars.map((bar, index) => (
-                <div
-                  key={`${bar.label}-${index}`}
-                  className="flex h-full min-w-0 flex-1 items-end"
-                  title={`${bar.label}: ${formatDuration(bar.seconds)}`}
-                >
-                  <span
-                    className={cn(
-                      styles.bar,
-                      "block w-full rounded-[2px]",
-                      isOnline && index === bars.length - 1
-                        ? "bg-accent-lime"
-                        : "bg-zinc-600",
-                      !status && "opacity-30",
-                    )}
-                    style={
-                      {
-                        height: `${bar.height}%`,
-                        animationDelay: `${index * 40}ms`,
-                      } as CSSProperties
-                    }
-                  />
-                </div>
-              ))}
-            </div>
-            <div className="mt-1 flex gap-1.5 sm:gap-2" aria-hidden="true">
-              {bars.map((bar, index) => (
-                <span
-                  key={`${bar.label}-${index}`}
-                  className="min-w-0 flex-1 text-center font-mono text-[8px] text-muted-foreground"
-                >
-                  {bar.label}
-                </span>
-              ))}
-            </div>
           </div>
-
-          <div className="mt-3 flex flex-col gap-1 text-[10px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-            <p className="truncate">
-              Most used: {status?.topLanguage?.name ?? "—"}
-              {status?.topLanguage ? ` · ${status.topLanguage.percent}%` : null}
-            </p>
-            <p className="truncate">
-              {isOnline
-                ? "Active right now"
-                : lastActiveLabel(
-                    status?.lastActiveAt,
-                    status ? Date.parse(status.checkedAt) : 0,
-                  )}
-            </p>
+          <div className="mt-1 flex gap-1.5 sm:gap-2" aria-hidden="true">
+            {bars.map((bar, index) => (
+              <span
+                key={`${bar.label}-${index}`}
+                className="min-w-0 flex-1 text-center font-mono text-[8px] text-muted-foreground"
+              >
+                {bar.label}
+              </span>
+            ))}
           </div>
+        </div>
+
+        <div className="mt-2.5 flex flex-col gap-1 text-[10px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <p className="truncate">
+            Most used: {status?.topLanguage?.name ?? "—"}
+            {status?.topLanguage ? ` · ${status.topLanguage.percent}%` : null}
+          </p>
+          <p className="truncate">
+            {isOnline
+              ? "Active right now"
+              : lastActiveLabel(
+                  status?.lastActiveAt,
+                  status ? Date.parse(status.checkedAt) : 0,
+                )}
+          </p>
         </div>
       </div>
     </section>

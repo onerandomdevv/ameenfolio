@@ -21,12 +21,12 @@ export default async function ProjectsPage() {
     <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
       <PortfolioNav current="projects" />
 
-      <header className="mt-10">
-        <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
+      <WakaTimeActivityStrip />
+      <header className="mt-7">
+        <p className="max-w-xl text-sm leading-6 text-foreground">
           A focused record of products I have built and made contributions.
         </p>
       </header>
-      <WakaTimeActivityStrip />
       {projects.length ? (
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {projects.map((project) => (

@@ -9,13 +9,12 @@ export default function ProjectsLoading() {
         <Skeleton className="h-4 w-32" />
       </div>
 
-      <header className="mt-10">
-        <Skeleton className="h-8 w-48" />
-        <Skeleton className="mt-4 h-4 w-full" />
+      <Skeleton className="mt-7 h-44 rounded-xl" />
+
+      <header className="mt-7">
+        <Skeleton className="h-4 w-full" />
         <Skeleton className="mt-2 h-4 w-2/3" />
       </header>
-
-      <Skeleton className="mt-7 h-52 rounded-xl sm:h-48" />
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
         {Array.from({ length: 4 }, (_, index) => (
