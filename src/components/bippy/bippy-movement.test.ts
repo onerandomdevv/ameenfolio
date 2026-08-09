@@ -1,12 +1,22 @@
 import { describe, expect, it } from "vitest";
 import {
   clampBippyPosition,
+  hasMeaningfulBippyTravel,
   resolveBippyPosition,
 } from "@/components/bippy/bippy-movement";
 
 const bounds = { width: 500, height: 400 };
 
 describe("Bippy movement", () => {
+  it("starts a running state only for meaningful travel", () => {
+    expect(
+      hasMeaningfulBippyTravel({ x: 100, y: 100 }, { x: 102, y: 101 }, 48),
+    ).toBe(false);
+    expect(
+      hasMeaningfulBippyTravel({ x: 100, y: 100 }, { x: 180, y: 140 }, 48),
+    ).toBe(true);
+  });
+
   it("keeps Bippy inside the playground", () => {
     expect(clampBippyPosition({ x: -40, y: 390 }, bounds, 64)).toEqual({
       x: 0,
