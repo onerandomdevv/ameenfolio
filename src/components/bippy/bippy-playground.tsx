@@ -163,6 +163,8 @@ export function BippyPlayground() {
       if (
         pageVisible &&
         stateRef.current !== "sleep" &&
+        stateRef.current !== "dragging" &&
+        stateRef.current !== "moving" &&
         Date.now() - lastActivityRef.current >= INACTIVITY_MS
       ) {
         send({ type: "INACTIVITY" });
@@ -201,7 +203,7 @@ export function BippyPlayground() {
     const animate = (now: number) => {
       frame = window.requestAnimationFrame(animate);
       const activeState = stateRef.current;
-      if (!pageVisible || activeState !== "curious") {
+      if (!pageVisible || activeState !== "moving" || dragRef.current) {
         previous = now;
         return;
       }
@@ -215,7 +217,7 @@ export function BippyPlayground() {
       const distance = Math.hypot(dx, dy);
       if (distance <= ARRIVAL_DISTANCE) {
         place(target);
-        if (activeState === "curious") send({ type: "ARRIVED" });
+        if (activeState === "moving") send({ type: "ARRIVED" });
         return;
       }
 
@@ -261,10 +263,12 @@ export function BippyPlayground() {
     if (!drag || !arena || event.pointerId !== drag.pointerId) return;
 
     if (
+      !drag.moved &&
       Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY) >=
-      DRAG_THRESHOLD
+        DRAG_THRESHOLD
     ) {
       drag.moved = true;
+      send({ type: "DRAG_MOVE" });
     }
 
     const arenaRect = arena.getBoundingClientRect();

@@ -20,18 +20,21 @@ const idleSprite = "/bippy/idle/bippy-idle.png";
 const workingSprite = "/bippy/states/working.png";
 const sleepSprite = "/bippy/states/sleep.png";
 const excitedSprite = "/bippy/states/excited.png";
+const movingSprite = "/bippy/states/moving.png";
 
 export const bippySpriteAssets = [
   idleSprite,
   workingSprite,
   sleepSprite,
   excitedSprite,
+  movingSprite,
 ] as const;
 
 const stateSprites: Partial<Record<BippyState, string>> = {
   working: workingSprite,
   sleep: sleepSprite,
   excited: excitedSprite,
+  moving: movingSprite,
 };
 
 const stateSequences: Record<BippyState, readonly number[]> = {
@@ -42,6 +45,7 @@ const stateSequences: Record<BippyState, readonly number[]> = {
   sleep: [0],
   wake: [4, 2, 0],
   dragging: [0],
+  moving: [0, 1, 2, 3],
 };
 
 export function BippySprite({
@@ -87,7 +91,12 @@ export function BippySprite({
       const idleDuration = idleManifest.timeline.find(
         (entry) => entry.frame === nextFrame,
       )?.durationMs;
-      const duration = state === "idle" ? (idleDuration ?? 180) : 150;
+      const duration =
+        state === "idle"
+          ? (idleDuration ?? 180)
+          : state === "moving"
+            ? 90
+            : 150;
       index += 1;
       timeout = setTimeout(advance, duration);
     };
@@ -126,11 +135,17 @@ export function BippySprite({
             className={cn(styles.sprite, stateSprite && styles.stateSprite)}
             style={
               stateSprite
-                ? {
-                    backgroundImage: `url(${stateSprite})`,
-                    backgroundPosition: "center",
-                    backgroundSize: "contain",
-                  }
+                ? state === "moving"
+                  ? {
+                      backgroundImage: `url(${stateSprite})`,
+                      backgroundPosition: `${-renderedFrame * renderedSize}px 0`,
+                      backgroundSize: "512px 128px",
+                    }
+                  : {
+                      backgroundImage: `url(${stateSprite})`,
+                      backgroundPosition: "center",
+                      backgroundSize: "contain",
+                    }
                 : {
                     backgroundPosition: `${-renderedFrame * renderedSize}px 0`,
                   }
