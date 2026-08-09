@@ -5,6 +5,15 @@ vi.mock("server-only", () => ({}));
 import { fetchWakaTimeStatus } from "@/lib/wakatime/server";
 
 const now = new Date("2026-08-09T12:00:00.000Z");
+const emptyWeek = { data: [] };
+
+const emptyActivity = {
+  todaySeconds: null,
+  weekSeconds: 0,
+  dailyAverageSeconds: 0,
+  topLanguage: null,
+  days: [],
+};
 
 function jsonResponse(value: unknown, status = 200) {
   return new Response(JSON.stringify(value), {
@@ -36,16 +45,19 @@ describe("WakaTime server client", () => {
       )
       .mockResolvedValueOnce(
         jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
-      );
+      )
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
       todayText: "2 hrs 8 mins",
+      ...emptyActivity,
+      lastActiveAt: "2026-08-09T11:59:30.000Z",
       checkedAt: now.toISOString(),
     });
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
     for (const [, init] of fetchMock.mock.calls) {
       expect(init?.headers).toEqual(
         expect.objectContaining({
@@ -70,12 +82,15 @@ describe("WakaTime server client", () => {
       .mockResolvedValueOnce(jsonResponse({ error: "busy" }, 503))
       .mockResolvedValueOnce(
         jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
-      );
+      )
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
       todayText: null,
+      ...emptyActivity,
+      lastActiveAt: "2026-08-09T11:59:30.000Z",
       checkedAt: now.toISOString(),
     });
   });
@@ -94,12 +109,15 @@ describe("WakaTime server client", () => {
       .mockRejectedValueOnce(new Error("summary unavailable"))
       .mockResolvedValueOnce(
         jsonResponse({ data: [{ time: now.getTime() / 1_000 - 30 }] }),
-      );
+      )
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
       todayText: null,
+      ...emptyActivity,
+      lastActiveAt: "2026-08-09T11:59:30.000Z",
       checkedAt: now.toISOString(),
     });
   });
@@ -129,12 +147,15 @@ describe("WakaTime server client", () => {
       .mockResolvedValueOnce(
         jsonResponse({ data: { grand_total: { text: "1 min" } } }),
       )
-      .mockRejectedValueOnce(new Error("heartbeats unavailable"));
+      .mockRejectedValueOnce(new Error("heartbeats unavailable"))
+      .mockResolvedValueOnce(jsonResponse(emptyWeek));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(fetchWakaTimeStatus("waka_secret", now)).resolves.toEqual({
       isCoding: true,
       todayText: "1 min",
+      ...emptyActivity,
+      lastActiveAt: "2026-08-09T11:59:00.000Z",
       checkedAt: now.toISOString(),
     });
   });

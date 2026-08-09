@@ -25,17 +25,24 @@ describe("WakaTime public status", () => {
     ).toBe(false);
   });
 
-  it("returns only the public coding signal and today's total", () => {
+  it("returns a sanitized status when weekly activity is unavailable", () => {
     expect(
       toPublicWakaTimeStatus(
         { data: { last_heartbeat_at: "2026-08-09T11:58:00.000Z" } },
         { data: { grand_total: { text: "3 hrs 24 mins" } } },
+        null,
         null,
         now,
       ),
     ).toEqual({
       isCoding: true,
       todayText: "3 hrs 24 mins",
+      todaySeconds: null,
+      weekSeconds: null,
+      dailyAverageSeconds: null,
+      topLanguage: null,
+      days: [],
+      lastActiveAt: "2026-08-09T11:58:00.000Z",
       checkedAt: now.toISOString(),
     });
   });
@@ -46,11 +53,18 @@ describe("WakaTime public status", () => {
         { data: { last_heartbeat_at: "2026-08-09T11:58:00.000Z" } },
         null,
         null,
+        null,
         now,
       ),
     ).toEqual({
       isCoding: true,
       todayText: null,
+      todaySeconds: null,
+      weekSeconds: null,
+      dailyAverageSeconds: null,
+      topLanguage: null,
+      days: [],
+      lastActiveAt: "2026-08-09T11:58:00.000Z",
       checkedAt: now.toISOString(),
     });
   });
@@ -61,6 +75,7 @@ describe("WakaTime public status", () => {
         { data: { last_heartbeat_at: "2026-08-09T10:00:00.000Z" } },
         { data: { grand_total: { text: "18 mins" } } },
         { data: [{ time: now.getTime() / 1_000 - 30 }] },
+        null,
         now,
       ).isCoding,
     ).toBe(true);
@@ -80,9 +95,57 @@ describe("WakaTime public status", () => {
       isPublicWakaTimeStatus({
         isCoding: false,
         todayText: null,
+        todaySeconds: 0,
+        weekSeconds: 0,
+        dailyAverageSeconds: 0,
+        topLanguage: null,
+        days: [],
+        lastActiveAt: null,
         checkedAt: now.toISOString(),
       }),
     ).toBe(true);
     expect(isPublicWakaTimeStatus({ isCoding: "yes" })).toBe(false);
+  });
+
+  it("summarizes only privacy-safe weekly activity", () => {
+    expect(
+      toPublicWakaTimeStatus(
+        { data: { last_heartbeat_at: "2026-08-09T11:58:00.000Z" } },
+        {
+          data: {
+            grand_total: { text: "2 hrs", total_seconds: 7_200 },
+          },
+        },
+        null,
+        {
+          data: [
+            {
+              range: { date: "2026-08-08" },
+              grand_total: { total_seconds: 3_600 },
+              languages: [
+                { name: "TypeScript", total_seconds: 2_700 },
+                { name: "CSS", total_seconds: 900 },
+              ],
+              projects: [{ name: "private-project" }],
+            },
+            {
+              range: { date: "2026-08-09" },
+              grand_total: { total_seconds: 7_200 },
+              languages: [{ name: "TypeScript", total_seconds: 7_200 }],
+            },
+          ],
+        },
+        now,
+      ),
+    ).toMatchObject({
+      todaySeconds: 7_200,
+      weekSeconds: 10_800,
+      dailyAverageSeconds: 5_400,
+      topLanguage: { name: "TypeScript", percent: 92 },
+      days: [
+        { date: "2026-08-08", totalSeconds: 3_600 },
+        { date: "2026-08-09", totalSeconds: 7_200 },
+      ],
+    });
   });
 });

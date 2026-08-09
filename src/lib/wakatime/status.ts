@@ -2,11 +2,29 @@ import { z } from "zod";
 
 export const WAKATIME_ACTIVE_WINDOW_MS = 5 * 60 * 1000;
 
-export type PublicWakaTimeStatus = {
-  isCoding: boolean;
-  todayText: string | null;
-  checkedAt: string;
-};
+const publicWakaTimeDaySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  totalSeconds: z.number().finite().nonnegative().max(86_400),
+});
+
+const publicWakaTimeStatusSchema = z.object({
+  isCoding: z.boolean(),
+  todayText: z.string().max(48).nullable(),
+  todaySeconds: z.number().finite().nonnegative().max(86_400).nullable(),
+  weekSeconds: z.number().finite().nonnegative().max(604_800).nullable(),
+  dailyAverageSeconds: z.number().finite().nonnegative().max(86_400).nullable(),
+  topLanguage: z
+    .object({
+      name: z.string().min(1).max(48),
+      percent: z.number().finite().min(0).max(100),
+    })
+    .nullable(),
+  days: z.array(publicWakaTimeDaySchema).max(7),
+  lastActiveAt: z.iso.datetime().nullable(),
+  checkedAt: z.iso.datetime(),
+});
+
+export type PublicWakaTimeStatus = z.infer<typeof publicWakaTimeStatusSchema>;
 
 const userResponseSchema = z.object({
   data: z.object({
@@ -23,9 +41,104 @@ const todayResponseSchema = z.object({
   data: z.object({
     grand_total: z.object({
       text: z.string().optional(),
+      total_seconds: z.number().nonnegative().optional(),
     }),
   }),
 });
+
+const summariesResponseSchema = z.object({
+  data: z.array(
+    z.object({
+      grand_total: z.object({
+        total_seconds: z.number().nonnegative().optional(),
+      }),
+      languages: z
+        .array(
+          z.object({
+            name: z.string(),
+            total_seconds: z.number().nonnegative().optional(),
+          }),
+        )
+        .optional(),
+      range: z.object({ date: z.string() }),
+    }),
+  ),
+});
+
+function normalizeHeartbeatAt(value: string | null | undefined) {
+  if (!value || !Number.isFinite(Date.parse(value))) return null;
+  return new Date(value).toISOString();
+}
+
+function summarizeWeek(payload: unknown) {
+  const summaries = summariesResponseSchema.safeParse(payload);
+  if (!summaries.success) {
+    return {
+      days: [],
+      weekSeconds: null,
+      dailyAverageSeconds: null,
+      topLanguage: null,
+    } satisfies Pick<
+      PublicWakaTimeStatus,
+      "days" | "weekSeconds" | "dailyAverageSeconds" | "topLanguage"
+    >;
+  }
+
+  const days = summaries.data.data
+    .filter((summary) => /^\d{4}-\d{2}-\d{2}$/.test(summary.range.date))
+    .map((summary) => ({
+      date: summary.range.date,
+      totalSeconds: Math.min(
+        Math.max(summary.grand_total.total_seconds ?? 0, 0),
+        86_400,
+      ),
+    }))
+    .sort((left, right) => left.date.localeCompare(right.date))
+    .slice(-7);
+  const weekSeconds = Math.min(
+    days.reduce((total, day) => total + day.totalSeconds, 0),
+    604_800,
+  );
+  const activeDays = days.filter((day) => day.totalSeconds > 0);
+  const languages = new Map<string, number>();
+
+  for (const summary of summaries.data.data) {
+    for (const language of summary.languages ?? []) {
+      const name = language.name.trim().slice(0, 48);
+      if (!name) continue;
+      languages.set(
+        name,
+        (languages.get(name) ?? 0) + (language.total_seconds ?? 0),
+      );
+    }
+  }
+
+  const [topLanguageName, topLanguageSeconds] = [...languages.entries()].sort(
+    ([, left], [, right]) => right - left,
+  )[0] ?? [null, 0];
+  const languageSeconds = [...languages.values()].reduce(
+    (total, seconds) => total + seconds,
+    0,
+  );
+
+  return {
+    days,
+    weekSeconds,
+    dailyAverageSeconds: activeDays.length
+      ? weekSeconds / activeDays.length
+      : 0,
+    topLanguage:
+      topLanguageName && languageSeconds > 0
+        ? {
+            name: topLanguageName,
+            percent: Math.round((topLanguageSeconds / languageSeconds) * 100),
+          }
+        : null,
+  } satisfies Pick<
+    PublicWakaTimeStatus,
+    "days" | "weekSeconds" | "dailyAverageSeconds" | "topLanguage"
+  >;
+}
 
 export function isRecentWakaTimeHeartbeat(
   value: string | null | undefined,
@@ -43,6 +156,7 @@ export function toPublicWakaTimeStatus(
   userPayload: unknown,
   todayPayload: unknown,
   heartbeatsPayload: unknown,
+  summariesPayload: unknown,
   now = new Date(),
 ): PublicWakaTimeStatus {
   const user = userResponseSchema.parse(userPayload);
@@ -62,10 +176,16 @@ export function toPublicWakaTimeStatus(
     latestHeartbeat === null
       ? user.data.last_heartbeat_at
       : new Date(latestHeartbeat * 1_000).toISOString();
+  const week = summarizeWeek(summariesPayload);
 
   return {
     isCoding: isRecentWakaTimeHeartbeat(heartbeatAt, now.getTime()),
     todayText,
+    todaySeconds: today.success
+      ? (today.data.data.grand_total.total_seconds ?? null)
+      : null,
+    ...week,
+    lastActiveAt: normalizeHeartbeatAt(heartbeatAt),
     checkedAt: now.toISOString(),
   };
 }
@@ -93,20 +213,21 @@ export function getWakaTimeHeartbeatDate(
 }
 
 export function inactiveWakaTimeStatus(now = new Date()): PublicWakaTimeStatus {
-  return { isCoding: false, todayText: null, checkedAt: now.toISOString() };
+  return {
+    isCoding: false,
+    todayText: null,
+    todaySeconds: null,
+    weekSeconds: null,
+    dailyAverageSeconds: null,
+    topLanguage: null,
+    days: [],
+    lastActiveAt: null,
+    checkedAt: now.toISOString(),
+  };
 }
 
 export function isPublicWakaTimeStatus(
   value: unknown,
 ): value is PublicWakaTimeStatus {
-  if (!value || typeof value !== "object") return false;
-  const status = value as Partial<PublicWakaTimeStatus>;
-  return (
-    typeof status.isCoding === "boolean" &&
-    (status.todayText === null ||
-      (typeof status.todayText === "string" &&
-        status.todayText.length <= 48)) &&
-    typeof status.checkedAt === "string" &&
-    Number.isFinite(Date.parse(status.checkedAt))
-  );
+  return publicWakaTimeStatusSchema.safeParse(value).success;
 }

@@ -3,6 +3,7 @@ import { getAllPublishedProjects } from "@/db/queries";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
+import { WakaTimeActivityStrip } from "@/components/portfolio/wakatime-activity-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +26,7 @@ export default async function ProjectsPage() {
           A focused record of products I have built and made contributions.
         </p>
       </header>
+      <WakaTimeActivityStrip />
       {projects.length ? (
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {projects.map((project) => (
