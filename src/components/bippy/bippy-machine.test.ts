@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { transitionBippy } from "@/components/bippy/bippy-machine";
+import {
+  reconcileBippyRestingState,
+  transitionBippy,
+} from "@/components/bippy/bippy-machine";
 
 describe("Bippy state machine", () => {
   it("runs only after an explicit drag starts moving", () => {
@@ -35,5 +38,28 @@ describe("Bippy state machine", () => {
     expect(transitionBippy("idle", { type: "WANDER" })).toBe("moving");
     expect(transitionBippy("moving", { type: "ARRIVED" })).toBe("idle");
     expect(transitionBippy("sleep", { type: "RESET" })).toBe("idle");
+  });
+
+  it("returns temporary interactions to the live working baseline", () => {
+    expect(transitionBippy("working", { type: "WANDER" }, "working")).toBe(
+      "moving",
+    );
+    expect(transitionBippy("moving", { type: "ARRIVED" }, "working")).toBe(
+      "working",
+    );
+    expect(
+      transitionBippy("excited", { type: "STATE_TIMEOUT" }, "working"),
+    ).toBe("working");
+    expect(transitionBippy("working", { type: "INACTIVITY" }, "working")).toBe(
+      "working",
+    );
+  });
+
+  it("reconciles only resting states when live coding changes", () => {
+    expect(reconcileBippyRestingState("idle", "working")).toBe("working");
+    expect(reconcileBippyRestingState("sleep", "working")).toBe("working");
+    expect(reconcileBippyRestingState("working", "idle")).toBe("idle");
+    expect(reconcileBippyRestingState("moving", "working")).toBe("moving");
+    expect(reconcileBippyRestingState("excited", "working")).toBe("excited");
   });
 });

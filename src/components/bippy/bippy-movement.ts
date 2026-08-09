@@ -15,6 +15,14 @@ export type BippyMovementOptions = {
 const SAFE_ZONE_GAP = 12;
 const ZERO_INSETS: BippyInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 
+export function hasMeaningfulBippyTravel(
+  from: BippyPoint,
+  to: BippyPoint,
+  minimumDistance: number,
+) {
+  return Math.hypot(to.x - from.x, to.y - from.y) >= minimumDistance;
+}
+
 function normalizeInsets(insets?: Partial<BippyInsets>): BippyInsets {
   return { ...ZERO_INSETS, ...insets };
 }
