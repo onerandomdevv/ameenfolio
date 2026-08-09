@@ -16,7 +16,7 @@ export function formatNowLastUpdated(date: Date) {
   if (!Number.isFinite(time)) return null;
 
   return new Intl.DateTimeFormat("en", {
-    month: "long",
+    month: "short",
     year: "numeric",
     timeZone: "UTC",
   }).format(time);

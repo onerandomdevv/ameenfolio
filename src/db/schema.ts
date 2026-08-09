@@ -10,6 +10,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import type { Availability } from "@/config/availability";
 import type { RecognitionIconName } from "@/config/recognition-icons";
 
 export type ContactLinks = {
@@ -17,6 +18,7 @@ export type ContactLinks = {
   x?: string;
   instagram?: string;
   tiktok?: string;
+  youtube?: string;
   linkedin?: string;
   whatsapp?: string;
 };
@@ -79,7 +81,7 @@ export const recognitions = pgTable(
     index("recognitions_public_idx").on(table.published, table.displayOrder),
     check(
       "recognitions_icon_name_valid",
-      sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles')`,
+      sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles', 'github', 'x', 'instagram', 'tiktok', 'linkedin', 'whatsapp', 'youtube', 'globe')`,
     ),
   ],
 );
@@ -133,13 +135,53 @@ export const siteSettings = pgTable(
     resumeKey: text("resume_key"),
     resumeFilename: text("resume_filename"),
     publicBippyEnabled: boolean("public_bippy_enabled").notNull().default(true),
+    hackathonWins: integer("hackathon_wins").notNull().default(0),
+    availability: text("availability")
+      .$type<Availability>()
+      .notNull()
+      .default("open"),
     seoTitle: text("seo_title").notNull(),
     seoDescription: text("seo_description").notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [check("site_settings_singleton", sql`${table.id} = 1`)],
+  (table) => [
+    check("site_settings_singleton", sql`${table.id} = 1`),
+    check(
+      "site_settings_availability_valid",
+      sql`${table.availability} in ('open', 'booked')`,
+    ),
+  ],
+);
+
+// A single cached row rather than a live fetch on render. The public pages are
+// force-dynamic, so calling GitHub per request would put the homepage's speed
+// at the mercy of api.github.com and burn the hourly rate limit under any real
+// traffic. Readers serve whatever is here and refresh it out of band.
+export const statsSnapshot = pgTable(
+  "stats_snapshot",
+  {
+    id: integer("id").primaryKey().default(1),
+    contributions: integer("contributions").notNull().default(0),
+    currentStreak: integer("current_streak").notNull().default(0),
+    currentStreakStart: timestamp("current_streak_start", {
+      withTimezone: true,
+    }),
+    currentStreakEnd: timestamp("current_streak_end", { withTimezone: true }),
+    longestStreak: integer("longest_streak").notNull().default(0),
+    longestStreakStart: timestamp("longest_streak_start", {
+      withTimezone: true,
+    }),
+    longestStreakEnd: timestamp("longest_streak_end", { withTimezone: true }),
+    firstContributionAt: timestamp("first_contribution_at", {
+      withTimezone: true,
+    }),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [check("stats_snapshot_singleton", sql`${table.id} = 1`)],
 );
 
 export type Project = typeof projects.$inferSelect;
@@ -147,3 +189,4 @@ export type Recognition = typeof recognitions.$inferSelect;
 export type NowSection = typeof nowSection.$inferSelect;
 export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
+export type StatsSnapshot = typeof statsSnapshot.$inferSelect;

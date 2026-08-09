@@ -6,23 +6,48 @@ type AssetIconProps = {
   objectKey: string | null;
   alt: string;
   size?: "xs" | "sm" | "default";
+  // Rendered as a lettered tile when no icon has been uploaded. Callers that
+  // want a real placeholder pass one; the rest keep the generic mark.
+  fallbackLabel?: string;
 };
 
 export function AssetIcon({
   objectKey,
   alt,
   size = "default",
+  fallbackLabel,
 }: AssetIconProps) {
   const classes = cn(
-    "shrink-0 rounded-xl border bg-background object-contain p-2",
+    "shrink-0 object-contain",
+    // The larger sizes are framed tiles. xs is not: it sits inside a badge that
+    // already supplies the surface, so a border, an opaque backdrop and inset
+    // padding only box the artwork in with a black margin around it.
     size === "xs"
-      ? "size-5 rounded-md p-0.5"
+      ? "size-5 rounded-[3px]"
       : size === "sm"
-        ? "size-8"
-        : "size-11",
+        ? "size-8 rounded-xl border bg-background p-2"
+        : "size-11 rounded-xl border bg-background p-2",
   );
 
   if (!objectKey) {
+    if (fallbackLabel) {
+      // A solid lettered tile rather than a generic glyph, so an icon-less
+      // project still reads as a deliberate mark and is replaced the moment a
+      // real one is uploaded.
+      return (
+        <span
+          className={cn(
+            classes,
+            "grid place-items-center border-0 bg-foreground p-0 font-semibold leading-none text-background",
+            size === "xs" ? "text-[10px]" : "text-sm",
+          )}
+          aria-hidden="true"
+        >
+          {fallbackLabel}
+        </span>
+      );
+    }
+
     return (
       <span
         className={cn(classes, "grid place-items-center text-foreground")}

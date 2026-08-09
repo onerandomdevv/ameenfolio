@@ -19,6 +19,6 @@ describe("Now section public behavior", () => {
   });
 
   it("formats the update month in UTC", () => {
-    expect(formatNowLastUpdated(section.updatedAt)).toBe("August 2026");
+    expect(formatNowLastUpdated(section.updatedAt)).toBe("Aug 2026");
   });
 });

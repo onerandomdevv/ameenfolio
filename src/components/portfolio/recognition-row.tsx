@@ -18,8 +18,12 @@ export function RecognitionRow({
 }: RecognitionRowProps) {
   const content = (
     <>
+      {/* Deliberately larger than the 14px title beside it: the icon is what
+          identifies the recognition at a glance, so it leads and the text
+          reads as its caption. No top offset — a 24px mark and a 24px line
+          box already share a baseline. */}
       {createElement(getRecognitionIcon(iconName), {
-        className: "mt-1 size-4 shrink-0 text-foreground",
+        className: "size-6 shrink-0 text-foreground",
         "aria-hidden": true,
       })}
       <span className="min-w-0 flex-1 text-sm leading-6">{title}</span>

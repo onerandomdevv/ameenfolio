@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/db/schema";
+import { AssetIcon } from "@/components/portfolio/asset-icon";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -20,26 +21,43 @@ export function ProjectCard({ project }: { project: Project }) {
       data-bippy-safe-zone
       className="group block h-full rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
-      <Card className="h-full gap-0 py-5 text-left shadow-none transition-colors group-hover:border-foreground/30 group-hover:bg-accent/40 sm:py-6">
-        <CardHeader className="grid-cols-[1fr_auto] px-5 sm:px-6">
+      {/* The lifted surface is the resting state, not a hover effect — a card
+          should read as a raised panel all the time. Nothing changes on hover
+          except the arrow going lime, so contact does not restyle the card. */}
+      <Card className="h-full gap-0 border-border bg-accent/40 py-4 text-left shadow-none">
+        <CardHeader className="grid-cols-[1fr_auto] px-4">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
+            {/* The icon rides in the header beside the title rather than
+                sitting on its own row, which is what keeps the card to a
+                header-plus-description block instead of three stacked bands. */}
+            <AssetIcon
+              objectKey={project.iconKey}
+              alt={project.iconAlt ?? ""}
+              size="xs"
+              fallbackLabel="P"
+            />
             <CardTitle>
-              <h3 className="text-base font-medium">{project.title}</h3>
+              <h3 className="text-sm font-semibold">{project.title}</h3>
             </CardTitle>
             {project.statusLabel ? (
-              <Badge variant="outline">{project.statusLabel}</Badge>
+              <Badge
+                variant="default"
+                className="rounded-[4px] px-1.5 py-0 font-mono text-[10px] uppercase tracking-[0.08em]"
+              >
+                {project.statusLabel}
+              </Badge>
             ) : null}
           </div>
-          <CardAction className="text-muted-foreground transition-colors group-hover:text-primary">
+          <CardAction className="text-muted-foreground transition-colors group-hover:text-accent-lime group-focus-visible:text-accent-lime">
             <ArrowUpRight className="size-4" aria-hidden="true" />
           </CardAction>
         </CardHeader>
-        <CardContent className="flex flex-1 flex-col px-5 pt-3 sm:px-6">
-          <p className="text-sm leading-6 text-muted-foreground">
+        <CardContent className="flex flex-1 flex-col px-4 pt-2">
+          <p className="text-[13px] leading-6 text-muted-foreground">
             {project.shortDescription}
           </p>
           {project.contribution ? (
-            <p className="mt-4 text-xs leading-5 text-foreground/70">
+            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground/70">
               {project.contribution}
             </p>
           ) : null}
