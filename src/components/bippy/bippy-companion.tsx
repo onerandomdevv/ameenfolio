@@ -45,6 +45,7 @@ const ARRIVAL_DISTANCE = 3;
 const DRAG_THRESHOLD = 4;
 const INACTIVITY_MS = 25_000;
 const CODING_WORK_DURATION_MS = 15_000;
+const CODING_MESSAGE_DURATION_MS = 6_000;
 const DIALOGUE_COOLDOWN_MS = 6_500;
 const PROJECTS_DWELL_MS = 16_000;
 const AUTONOMOUS_TARGET_ATTEMPTS = 8;
@@ -310,6 +311,20 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     }
     dismissMessage();
   }, [dismissMessage]);
+
+  const showCodingMessage = useCallback(() => {
+    if (!wakaTimeStatus?.isCoding) return;
+    showMessage(
+      {
+        text: wakaTimeStatus.todayText
+          ? `Ameen is coding right now.\n${wakaTimeStatus.todayText} today`
+          : BIPPY_COPY.coding,
+        kind: "coding",
+        action: { label: "See what he’s building", href: "/projects" },
+      },
+      CODING_MESSAGE_DURATION_MS,
+    );
+  }, [showMessage, wakaTimeStatus]);
 
   const placeFromSavedPosition = useCallback(
     (saved: SavedPosition) => {
@@ -855,6 +870,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     if (suppressActivationRef.current) return;
     lastActivityRef.current = Date.now();
     stopMovement();
+    showCodingMessage();
     send({ type: "ACTIVATE" });
   }
 
@@ -876,17 +892,6 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
     placeAtDefault();
     send({ type: "RESET" });
   }
-
-  const codingMessage: CompanionMessage | null = wakaTimeStatus?.isCoding
-    ? {
-        text: wakaTimeStatus.todayText
-          ? `Ameen is coding right now.\n${wakaTimeStatus.todayText} today`
-          : BIPPY_COPY.coding,
-        kind: "coding",
-        action: { label: "See what he’s building", href: "/projects" },
-      }
-    : null;
-  const visibleMessage = codingMessage ?? message;
 
   return (
     <div
@@ -911,7 +916,7 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           onPointerDown={startDragging}
         />
       </div>
-      {visibleMessage ? (
+      {message ? (
         <div
           className={styles.companionMessage}
           role="status"
@@ -919,18 +924,18 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           data-testid="bippy-message"
         >
           <div className={styles.companionMessageBody}>
-            <p>{visibleMessage.text}</p>
-            {visibleMessage.action ? (
+            <p>{message.text}</p>
+            {message.action ? (
               <Link
-                href={visibleMessage.action.href}
+                href={message.action.href}
                 className={styles.companionMessageAction}
               >
-                {visibleMessage.action.label}
+                {message.action.label}
                 <ArrowUpRight aria-hidden="true" />
               </Link>
             ) : null}
           </div>
-          {visibleMessage.kind !== "coding" ? (
+          {message.kind !== "coding" ? (
             <Button
               type="button"
               variant="ghost"
