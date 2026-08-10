@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function AdminLoginPage() {
   return (
-    <main className="grid min-h-screen place-items-center px-5">
+    <main className="admin-theme grid min-h-dvh place-items-center bg-background px-5 py-10 text-foreground">
       <AdminLogin />
     </main>
   );

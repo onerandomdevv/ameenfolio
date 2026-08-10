@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AdminPageHeader } from "@/components/admin/page-header";
 import { BippyVisibilitySetting } from "@/components/admin/bippy-visibility-setting";
 import { BippyPlayground } from "@/components/bippy/bippy-playground";
 import { getAdminSettings } from "@/db/queries";
@@ -15,10 +14,6 @@ export default async function AdminBippyPage() {
 
   return (
     <>
-      <AdminPageHeader
-        title="Bippy"
-        description="Test Bippy's states, movement, interactions, and accessibility behavior."
-      />
       <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
       <BippyPlayground />
     </>

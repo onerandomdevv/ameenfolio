@@ -3,6 +3,7 @@ import { getAllPublishedProjects } from "@/db/queries";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
+import { WakaTimeActivityStrip } from "@/components/portfolio/wakatime-activity-strip";
 
 export const dynamic = "force-dynamic";
 
@@ -20,9 +21,10 @@ export default async function ProjectsPage() {
     <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
       <PortfolioNav current="projects" />
 
-      <header className="mt-10">
-        <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground">
-          A focused record of products I have built and made contributions.
+      <WakaTimeActivityStrip />
+      <header className="mt-7">
+        <p className="mx-auto max-w-xl text-center text-sm font-semibold leading-6 text-foreground">
+          Record of products I have built and made contributions to.
         </p>
       </header>
       {projects.length ? (

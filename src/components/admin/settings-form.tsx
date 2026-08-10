@@ -6,6 +6,7 @@ import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
 import { LoaderCircle, Save } from "lucide-react";
 import { toast } from "sonner";
 import { saveSettings } from "@/app/admin/actions/settings";
+import { AdminSection } from "@/components/admin/admin-section";
 import { FormTextField } from "@/components/admin/form-text-field";
 import { ProfileImageField } from "@/components/admin/profile-image-field";
 import { UploadField } from "@/components/admin/upload-field";
@@ -16,8 +17,6 @@ import {
   FieldError,
   FieldGroup,
   FieldLabel,
-  FieldLegend,
-  FieldSet,
 } from "@/components/ui/field";
 import {
   Select,
@@ -96,9 +95,11 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-9">
-      <FieldSet>
-        <FieldLegend>Profile and contacts</FieldLegend>
+    <form onSubmit={handleSubmit(submit)} className="grid gap-6">
+      <AdminSection
+        title="Profile and contacts"
+        description="Your photo, email, and the links shown on the homepage."
+      >
         <FieldGroup className="grid gap-6 sm:grid-cols-2">
           <ProfileImageField
             className="sm:col-span-2"
@@ -159,10 +160,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             inputProps={register("contactLinks.whatsapp")}
           />
         </FieldGroup>
-      </FieldSet>
+      </AdminSection>
 
-      <FieldSet>
-        <FieldLegend>Résumé</FieldLegend>
+      <AdminSection
+        title="Résumé"
+        description="The file the homepage download button serves."
+      >
         <UploadField
           resourceType="resume"
           value={resumeKey}
@@ -177,10 +180,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             Current filename: {resumeFilename}
           </FieldDescription>
         ) : null}
-      </FieldSet>
+      </AdminSection>
 
-      <FieldSet>
-        <FieldLegend>Homepage stats</FieldLegend>
+      <AdminSection
+        title="Homepage stats"
+        description="Values the stats strip cannot derive on its own."
+      >
         <FieldGroup className="grid gap-6 sm:grid-cols-2">
           <FormTextField
             label="Hackathon wins"
@@ -219,10 +224,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             )}
           />
         </FieldGroup>
-      </FieldSet>
+      </AdminSection>
 
-      <FieldSet>
-        <FieldLegend>Search metadata</FieldLegend>
+      <AdminSection
+        title="Search metadata"
+        description="Title and description used by search engines and link previews."
+      >
         <FieldGroup>
           <FormTextField
             label="Default SEO title"
@@ -243,7 +250,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
             <FieldError>{errors.seoDescription?.message}</FieldError>
           </Field>
         </FieldGroup>
-      </FieldSet>
+      </AdminSection>
 
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>

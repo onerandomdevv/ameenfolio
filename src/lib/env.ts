@@ -12,6 +12,7 @@ const serverEnvShape = z.object({
   R2_PUBLIC_BASE_URL: z.string().url().optional(),
   GITHUB_STATS_USERNAME: z.string().trim().optional(),
   GITHUB_STATS_TOKEN: z.string().trim().optional(),
+  WAKATIME_API_KEY: z.string().trim().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CANONICAL_SITE_URL: z.string().url().default("http://localhost:3000"),
 });

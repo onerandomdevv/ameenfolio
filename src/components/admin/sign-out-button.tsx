@@ -20,7 +20,7 @@ export function SignOutButton() {
     <button
       type="button"
       onClick={signOut}
-      className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-foreground"
+      className="inline-flex h-8 items-center rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
     >
       Sign out
     </button>

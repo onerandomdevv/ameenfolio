@@ -4,13 +4,7 @@ import { useState, useTransition } from "react";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { saveBippyVisibility } from "@/app/admin/actions/bippy";
-import {
-  Card,
-  CardAction,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
 export function BippyVisibilitySetting({ enabled }: { enabled: boolean }) {
@@ -38,29 +32,27 @@ export function BippyVisibilitySetting({ enabled }: { enabled: boolean }) {
   }
 
   return (
-    <Card className="mb-8">
-      <CardHeader>
-        <CardTitle>Public visibility</CardTitle>
-        <CardDescription>
-          Show Bippy on the public homepage and projects page. The playground
-          remains available here when Bippy is hidden.
-        </CardDescription>
-        <CardAction className="flex items-center gap-2">
-          {pending ? (
-            <LoaderCircle
-              className="size-4 animate-spin text-muted-foreground"
-              aria-hidden="true"
-            />
-          ) : null}
-          <Switch
-            id="public-bippy-enabled"
-            checked={checked}
-            disabled={pending}
-            onCheckedChange={updateVisibility}
-            aria-label="Show Bippy publicly"
+    // One row, one label, one switch. The previous copy explained where Bippy
+    // appears and what the playground still does when it is off — none of
+    // which the person flipping their own toggle needs told.
+    <div className="mb-8 flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 sm:px-5">
+      <Label htmlFor="public-bippy-enabled" className="text-sm font-medium">
+        Show Bippy on the portfolio
+      </Label>
+      <div className="flex shrink-0 items-center gap-2">
+        {pending ? (
+          <LoaderCircle
+            className="size-4 animate-spin text-muted-foreground"
+            aria-hidden="true"
           />
-        </CardAction>
-      </CardHeader>
-    </Card>
+        ) : null}
+        <Switch
+          id="public-bippy-enabled"
+          checked={checked}
+          disabled={pending}
+          onCheckedChange={updateVisibility}
+        />
+      </div>
+    </div>
   );
 }

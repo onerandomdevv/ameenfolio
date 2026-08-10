@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { availabilityValues } from "@/config/availability";
 import { recognitionIconNames } from "@/config/recognition-icons";
+import { techStackGroupValues } from "@/config/tech-stack";
 import { cardWordLimitMessage, withinCardWordLimit } from "@/lib/word-count";
 
 // A prefix check alone accepts the bare string "https://", which passes
@@ -73,6 +74,13 @@ export const recognitionSchema = z.object({
   published: z.boolean(),
 });
 
+export const techStackItemSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  groupKey: z.enum(techStackGroupValues),
+  displayOrder: z.number().int().min(0).max(999),
+  visible: z.boolean(),
+});
+
 export const nowSectionSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(600),
   published: z.boolean(),
@@ -130,6 +138,7 @@ export const uploadRequestSchema = z.object({
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 export type RecognitionInput = z.infer<typeof recognitionSchema>;
+export type TechStackItemInput = z.infer<typeof techStackItemSchema>;
 export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;

@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteProject } from "@/app/admin/actions/projects";
 import {
@@ -15,6 +16,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export function DeleteProjectButton({
   id,
@@ -41,12 +43,17 @@ export function DeleteProjectButton({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          className="inline-flex min-h-11 items-center text-muted-foreground transition-colors hover:text-destructive"
+        {/* A real button sized like the ones beside it. As bare text it read as
+            a caption rather than a control, and the destructive action was the
+            least button-like thing in the row. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
         >
+          <Trash2 aria-hidden="true" />
           Delete
-        </button>
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
