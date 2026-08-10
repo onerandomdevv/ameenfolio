@@ -25,7 +25,7 @@ export function TechStackSection({ items }: { items: TechStackItem[] }) {
       <div className="mt-8 flex flex-col gap-8">
         {groups.map((group) => (
           <div key={group.value}>
-            <h3 className="text-xs font-normal text-accent-lime">
+            <h3 className="text-xs font-normal text-foreground">
               {group.label}
             </h3>
             <ul className="mt-4 flex flex-wrap gap-2">
