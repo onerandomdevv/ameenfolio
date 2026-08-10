@@ -29,6 +29,63 @@ test("homepage keeps the fixed Now heading without published copy", async ({
   await expect(page.getByRole("heading", { name: "Now" })).toBeVisible();
 });
 
+test("live coding keeps Bippy glowing and reveals details only when tapped", async ({
+  page,
+}) => {
+  await page.route("**/api/wakatime/status", async (route) => {
+    await route.fulfill({
+      contentType: "application/json",
+      body: JSON.stringify({
+        isCoding: true,
+        statsStale: false,
+        todayDate: "2026-08-10",
+        todayText: "2 hrs 15 mins",
+        todaySeconds: 8_100,
+        weekSeconds: 18_000,
+        dailyAverageSeconds: 9_000,
+        topLanguage: { name: "TypeScript", percent: 72 },
+        days: [],
+        lastActiveAt: "2026-08-10T02:00:00.000Z",
+        checkedAt: "2026-08-10T02:00:00.000Z",
+      }),
+    });
+  });
+  await page.goto("/");
+
+  const companion = page.getByTestId("bippy-companion");
+  const companionAvailable = await companion
+    .waitFor({ state: "visible", timeout: 5_000 })
+    .then(() => true)
+    .catch(() => false);
+  test.skip(
+    !companionAvailable,
+    "Public Bippy is disabled in this environment.",
+  );
+  await expect(companion).toHaveAttribute("data-coding", "true");
+  await expect(page.getByTestId("bippy-message")).toHaveCount(0);
+
+  const glow = await companion.evaluate((element) => ({
+    halo: getComputedStyle(element, "::before").content,
+    outline: getComputedStyle(element.firstElementChild as Element).filter,
+  }));
+  expect(glow.halo).not.toBe("none");
+  expect(glow.outline).not.toBe("none");
+
+  await page.getByTestId("bippy").click();
+  await expect(page.getByTestId("bippy-message")).toContainText(
+    "Ameen is coding right now.",
+  );
+  await expect(page.getByTestId("bippy-message")).toContainText(
+    "2 hrs 15 mins today",
+  );
+  await expect(page.getByTestId("bippy-message")).toHaveCount(0, {
+    timeout: 7_000,
+  });
+
+  await page.getByTestId("bippy").click();
+  await expect(page.getByTestId("bippy-message")).toBeVisible();
+});
+
 test("homepage renders the Tech Stack groups", async ({ page }) => {
   // The list is database content now, and an empty group renders nothing at
   // all, so without a database there is no section to assert against. Gated
