@@ -51,6 +51,7 @@ export function SendMessageDialog({
         <button
           type="button"
           data-bippy-reaction="curious"
+          data-bippy-dialogue="contact"
           data-bippy-safe-zone
           className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-foreground underline underline-offset-4 transition-colors hover:text-primary focus-visible:text-primary"
         >
