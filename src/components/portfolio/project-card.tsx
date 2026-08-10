@@ -1,6 +1,8 @@
+import { createElement } from "react";
 import { ArrowUpRight } from "lucide-react";
 import type { Project } from "@/db/schema";
 import { AssetIcon } from "@/components/portfolio/asset-icon";
+import { getProjectIcon } from "@/config/project-icons";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -10,10 +12,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+// A stock mark stands in when the project has no logo of its own. It renders
+// as a bare glyph rather than inside the uploaded icon's tile, so a GitHub or
+// web mark reads like the brand icons elsewhere on the page instead of like a
+// picture someone uploaded.
+function ProjectIconMark({ project }: { project: Project }) {
+  const stockIcon = getProjectIcon(project.iconName);
+
+  // createElement rather than <StockIcon />: a capitalised render-scoped
+  // variable trips react-hooks/static-components, which cannot tell a Map
+  // lookup from a component defined inline. Same approach as RecognitionRow.
+  if (stockIcon) {
+    return createElement(stockIcon, {
+      className: "size-5 shrink-0 text-foreground",
+      "aria-hidden": true,
+    });
+  }
+
+  return (
+    <AssetIcon
+      objectKey={project.iconKey}
+      alt={project.iconAlt ?? ""}
+      size="xs"
+      fallbackLabel="P"
+    />
+  );
+}
+
 export function ProjectCard({ project }: { project: Project }) {
   return (
     <a
-      href={project.liveUrl}
+      href={project.url}
       target="_blank"
       rel="noreferrer"
       data-bippy-reaction="curious"
@@ -30,12 +59,7 @@ export function ProjectCard({ project }: { project: Project }) {
             {/* The icon rides in the header beside the title rather than
                 sitting on its own row, which is what keeps the card to a
                 header-plus-description block instead of three stacked bands. */}
-            <AssetIcon
-              objectKey={project.iconKey}
-              alt={project.iconAlt ?? ""}
-              size="xs"
-              fallbackLabel="P"
-            />
+            <ProjectIconMark project={project} />
             <CardTitle>
               <h3 className="text-sm font-semibold">{project.title}</h3>
             </CardTitle>

@@ -1,5 +1,6 @@
 "use client";
 
+import { createElement } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { LoaderCircle, Save } from "lucide-react";
@@ -18,8 +19,17 @@ import {
   FieldLegend,
   FieldSet,
 } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { projectIconOptions } from "@/config/project-icons";
 import type { Project } from "@/db/schema";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { useAdminBase } from "@/lib/use-admin-base";
@@ -29,7 +39,8 @@ import { MAX_CARD_WORDS, countWords } from "@/lib/word-count";
 const emptyProject: ProjectInput = {
   title: "",
   shortDescription: "",
-  liveUrl: "https://",
+  url: "https://",
+  iconName: "custom",
   homepageOrder: 0,
   showOnHomepage: false,
   published: false,
@@ -46,10 +57,10 @@ export function ProjectForm({ project }: { project?: Project }) {
           shortDescription: project.shortDescription,
           contribution: project.contribution ?? undefined,
           statusLabel: project.statusLabel ?? undefined,
-          liveUrl: project.liveUrl,
-          githubUrl: project.githubUrl ?? undefined,
+          url: project.url,
           iconKey: project.iconKey ?? undefined,
           iconAlt: project.iconAlt ?? undefined,
+          iconName: project.iconName,
           showOnHomepage: project.showOnHomepage,
           homepageOrder: project.homepageOrder,
           published: project.published,
@@ -65,6 +76,7 @@ export function ProjectForm({ project }: { project?: Project }) {
     setValue,
   } = form;
   const iconKey = useWatch({ control, name: "iconKey" });
+  const iconName = useWatch({ control, name: "iconName" });
   const shortDescription = useWatch({ control, name: "shortDescription" });
   const descriptionWords = countWords(shortDescription ?? "");
 
@@ -145,16 +157,12 @@ export function ProjectForm({ project }: { project?: Project }) {
             <FieldError>{errors.contribution?.message}</FieldError>
           </Field>
           <FormTextField
-            label="Live URL"
+            className="sm:col-span-2"
+            label="URL"
             type="url"
-            error={errors.liveUrl?.message}
-            inputProps={register("liveUrl")}
-          />
-          <FormTextField
-            label="GitHub URL"
-            type="url"
-            error={errors.githubUrl?.message}
-            inputProps={register("githubUrl")}
+            description="Where the card goes when clicked."
+            error={errors.url?.message}
+            inputProps={register("url")}
           />
         </FieldGroup>
       </FieldSet>
@@ -162,17 +170,68 @@ export function ProjectForm({ project }: { project?: Project }) {
       <FieldSet>
         <FieldLegend>Presentation</FieldLegend>
         <FieldGroup className="grid gap-6 sm:grid-cols-2">
-          <UploadField
-            resourceType="icon"
-            value={iconKey}
-            onChange={(key) => setValue("iconKey", key, { shouldDirty: true })}
-            error={errors.iconKey?.message}
+          <Controller
+            control={control}
+            name="iconName"
+            render={({ field }) => (
+              <Field
+                className="sm:col-span-2"
+                data-invalid={Boolean(errors.iconName)}
+              >
+                <FieldLabel htmlFor="project-icon">Icon source</FieldLabel>
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger
+                    id="project-icon"
+                    className="w-full"
+                    aria-invalid={Boolean(errors.iconName)}
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {projectIconOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.icon
+                            ? createElement(option.icon, {
+                                "aria-hidden": true,
+                              })
+                            : null}
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <FieldDescription>
+                  {
+                    projectIconOptions.find((o) => o.value === field.value)
+                      ?.hint
+                  }
+                </FieldDescription>
+                <FieldError>{errors.iconName?.message}</FieldError>
+              </Field>
+            )}
           />
-          <FormTextField
-            label="Icon alt text"
-            error={errors.iconAlt?.message}
-            inputProps={register("iconAlt")}
-          />
+          {/* The upload and its alt text only matter for the uploaded option.
+              Leaving them on screen for GitHub or Web invites filling in
+              fields that would then never be rendered. */}
+          {iconName === "custom" ? (
+            <>
+              <UploadField
+                resourceType="icon"
+                value={iconKey}
+                onChange={(key) =>
+                  setValue("iconKey", key, { shouldDirty: true })
+                }
+                error={errors.iconKey?.message}
+              />
+              <FormTextField
+                label="Icon alt text"
+                error={errors.iconAlt?.message}
+                inputProps={register("iconAlt")}
+              />
+            </>
+          ) : null}
           <FormTextField
             label="Homepage order"
             type="number"

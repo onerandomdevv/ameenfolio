@@ -37,7 +37,8 @@ describe("withinCardWordLimit", () => {
 describe("card copy limits", () => {
   const project = {
     title: "Twizrr",
-    liveUrl: "https://twizrr.com",
+    url: "https://twizrr.com",
+    iconName: "custom",
     showOnHomepage: true,
     homepageOrder: 0,
     published: true,

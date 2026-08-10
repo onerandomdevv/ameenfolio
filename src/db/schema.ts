@@ -11,6 +11,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { Availability } from "@/config/availability";
+import type { ProjectIconName } from "@/config/project-icons";
 import type { RecognitionIconName } from "@/config/recognition-icons";
 import type { TechStackGroupValue } from "@/config/tech-stack";
 
@@ -41,10 +42,16 @@ export const projects = pgTable(
     shortDescription: text("short_description").notNull(),
     contribution: text("contribution"),
     statusLabel: text("status_label"),
-    liveUrl: text("live_url").notNull(),
-    githubUrl: text("github_url"),
+    // One destination per project: clicking the card follows this. The
+    // physical column keeps its old name so the rename costs no migration,
+    // the same trade already made for contactLinks/social_links below.
+    url: text("live_url").notNull(),
     iconKey: text("icon_key"),
     iconAlt: text("icon_alt"),
+    iconName: text("icon_name")
+      .$type<ProjectIconName>()
+      .notNull()
+      .default("custom"),
     showOnHomepage: boolean("show_on_homepage").notNull().default(false),
     homepageOrder: integer("homepage_order").notNull().default(0),
     published: boolean("published").notNull().default(false),
@@ -56,6 +63,10 @@ export const projects = pgTable(
       table.published,
       table.showOnHomepage,
       table.homepageOrder,
+    ),
+    check(
+      "projects_icon_name_valid",
+      sql`${table.iconName} in ('custom', 'github', 'web')`,
     ),
     check(
       "projects_icon_alt_required",

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { availabilityValues } from "@/config/availability";
+import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
 import { techStackGroupValues } from "@/config/tech-stack";
 import { cardWordLimitMessage, withinCardWordLimit } from "@/lib/word-count";
@@ -49,9 +50,9 @@ export const projectSchema = z
       .refine(withinCardWordLimit, cardWordLimitMessage),
     contribution: optionalText(500),
     statusLabel: optionalText(60),
-    liveUrl: z.url().startsWith("https://"),
-    githubUrl: optionalHttpsUrl,
+    url: z.url().startsWith("https://"),
     ...iconFields,
+    iconName: z.enum(projectIconValues),
     showOnHomepage: z.boolean(),
     homepageOrder: z.number().int().min(0).max(999),
     published: z.boolean(),
