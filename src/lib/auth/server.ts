@@ -17,7 +17,22 @@ export function getAuth() {
     );
     authInstance = createNeonAuth({
       baseUrl: NEON_AUTH_BASE_URL,
-      cookies: { secret: NEON_AUTH_COOKIE_SECRET, sessionDataTtl: 300 },
+      cookies: {
+        secret: NEON_AUTH_COOKIE_SECRET,
+        sessionDataTtl: 300,
+        // The SDK defaults to "strict", which withholds the session cookie on
+        // top-level cross-site navigations — and returning from GitHub's OAuth
+        // consent screen is exactly that. The redirect back then arrives with
+        // no session and bounces straight to the login page, having signed in
+        // successfully a moment earlier.
+        //
+        // Browsers disagree about how strictly to apply this to the final hop
+        // of a redirect chain, which is why desktop got away with it and
+        // mobile did not. "lax" is what the SDK itself hard-coded before this
+        // option existed: sent on top-level GET navigations, withheld on
+        // cross-site subrequests, so the CSRF protection that matters stays.
+        sameSite: "lax",
+      },
       logger: {
         error: (message, meta) =>
           logServer("error", "auth.sdk", { message, ...meta }),

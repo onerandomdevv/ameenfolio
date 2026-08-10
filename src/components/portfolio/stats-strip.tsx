@@ -154,7 +154,7 @@ export function StatsStrip({
                   <span
                     className={cn(
                       "text-2xl font-medium tabular-nums",
-                      cell.value ? "text-accent-lime" : "text-muted-foreground",
+                      cell.value ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     {cell.value ?? "—"}

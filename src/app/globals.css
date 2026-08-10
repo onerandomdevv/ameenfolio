@@ -15,9 +15,10 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-highlight: rgba(255, 255, 255, 0.12);
 
-  /* The brand lime, matching the GitHub profile README. Reserved for live
-     activity, the stats strip values, tech stack group headings, and focused
-     interaction states so it never becomes general decoration. */
+  /* The brand lime, matching the GitHub profile README. Down to two uses: the
+     WakaTime activity heatmap, where it encodes how much was coded that day,
+     and a project card's arrow on hover. Keeping the list short is what stops
+     it becoming general decoration. */
   --color-accent-lime: #7fff00;
 
   --color-background: var(--background);
