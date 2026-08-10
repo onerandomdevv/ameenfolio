@@ -73,6 +73,7 @@ export function ResumeDownloadButton({
         className,
       )}
       data-bippy-reaction="working"
+      data-bippy-dialogue="resume"
       data-bippy-safe-zone
     >
       {downloading ? (

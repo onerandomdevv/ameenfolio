@@ -9,7 +9,11 @@ export function NowSection({ section }: { section: PublicNow | null }) {
   const lastUpdated = section ? formatNowLastUpdated(section.updatedAt) : null;
 
   return (
-    <section className="mt-8 max-w-xl" aria-labelledby="now-heading">
+    <section
+      className="mt-8 max-w-xl"
+      aria-labelledby="now-heading"
+      data-bippy-section="now"
+    >
       <SectionHeading id="now-heading" title="Now" />
       {section ? (
         <>

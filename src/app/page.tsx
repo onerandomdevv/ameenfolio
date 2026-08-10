@@ -297,7 +297,11 @@ export default async function HomePage() {
           tech stack. The résumé lives here now: it was tucked against the
           footer rule as a lone right-aligned link, which read as fine print
           rather than as one of two ways to start a conversation. */}
-      <section className="mt-20 text-center" aria-labelledby="contact-heading">
+      <section
+        id="contact"
+        className="mt-20 text-center"
+        aria-labelledby="contact-heading"
+      >
         <h2
           id="contact-heading"
           className="text-base leading-7 text-foreground/90"
