@@ -45,7 +45,8 @@ describe("portfolio validation", () => {
     const result = projectSchema.safeParse({
       title: "A project",
       shortDescription: "A sufficiently descriptive summary.",
-      liveUrl: "http://example.com",
+      url: "http://example.com",
+      iconName: "custom",
       homepageOrder: 0,
       showOnHomepage: false,
       published: true,
@@ -57,7 +58,8 @@ describe("portfolio validation", () => {
     const result = projectSchema.safeParse({
       title: "A project",
       shortDescription: "A sufficiently descriptive summary.",
-      liveUrl: "https://example.com",
+      url: "https://example.com",
+      iconName: "custom",
       iconKey: "icons/2026/example.webp",
       homepageOrder: 0,
       showOnHomepage: false,

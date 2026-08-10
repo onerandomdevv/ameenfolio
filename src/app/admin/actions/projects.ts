@@ -40,7 +40,6 @@ export async function saveProject(
     ...parsed.data,
     contribution: parsed.data.contribution || null,
     statusLabel: parsed.data.statusLabel || null,
-    githubUrl: parsed.data.githubUrl || null,
     iconKey: parsed.data.iconKey ?? null,
     iconAlt: parsed.data.iconAlt || null,
   };

@@ -48,25 +48,17 @@ export function AdminProjectList({
               ) : null}
             </div>
             <p className="mt-1 truncate text-xs text-muted-foreground">
-              {project.liveUrl}
+              {project.url}
             </p>
           </div>
 
           <div className="flex shrink-0 flex-wrap items-center gap-1">
             <Button asChild variant="ghost" size="sm">
-              <a href={project.liveUrl} target="_blank" rel="noreferrer">
-                Live
+              <a href={project.url} target="_blank" rel="noreferrer">
+                Open
                 <ArrowUpRight aria-hidden="true" />
               </a>
             </Button>
-            {project.githubUrl ? (
-              <Button asChild variant="ghost" size="sm">
-                <a href={project.githubUrl} target="_blank" rel="noreferrer">
-                  Code
-                  <ArrowUpRight aria-hidden="true" />
-                </a>
-              </Button>
-            ) : null}
             <Button asChild variant="outline" size="sm">
               <Link href={`${base}/projects/${project.id}/edit`}>Edit</Link>
             </Button>

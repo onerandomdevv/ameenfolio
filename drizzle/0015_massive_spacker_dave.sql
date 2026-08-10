@@ -1,0 +1,2 @@
+ALTER TABLE "projects" ADD COLUMN "icon_name" text DEFAULT 'custom' NOT NULL;--> statement-breakpoint
+ALTER TABLE "projects" ADD CONSTRAINT "projects_icon_name_valid" CHECK ("projects"."icon_name" in ('custom', 'github', 'web'));
