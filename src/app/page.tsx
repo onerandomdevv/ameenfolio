@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Fragment } from "react";
 import { after } from "next/server";
 import { getPublicPortfolio } from "@/db/queries";
@@ -6,6 +7,7 @@ import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
+import { ProjectRow } from "@/components/portfolio/project-row";
 import { ResumeDownloadButton } from "@/components/portfolio/resume-download-button";
 import { SendMessageDialog } from "@/components/portfolio/send-message-dialog";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
@@ -29,6 +31,7 @@ import { availabilityLabel } from "@/config/availability";
 import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
 import { splitEmphasis } from "@/lib/text-emphasis";
+import { splitHomepageProjects } from "@/lib/ordering";
 import {
   canFetchGithubStats,
   isSnapshotStale,
@@ -63,6 +66,9 @@ export default async function HomePage() {
     publishedProjectCount,
     statsSnapshot,
   } = await getPublicPortfolio();
+
+  const { cards: homepageCards, rows: homepageRows } =
+    splitHomepageProjects(projects);
 
   // Refreshed after the response is flushed rather than before it, so a slow
   // or unreachable GitHub delays nobody's page load. Whoever asks next gets
@@ -250,17 +256,37 @@ export default async function HomePage() {
         aria-labelledby="projects-heading"
         data-bippy-section="projects"
       >
-        <SectionHeading
-          id="projects-heading"
-          title="Recent Projects"
-          action={{ href: "/projects", label: "View all projects" }}
-        />
+        <SectionHeading id="projects-heading" title="Recent Projects" />
         {projects.length ? (
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {homepageCards.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+            {/* Everything past the eighth continues as a divided list rather
+                than more cards, so the section can hold twelve projects
+                without the grid dominating the page. */}
+            {homepageRows.length ? (
+              <div className="mt-6 divide-y divide-solid divide-border">
+                {homepageRows.map((project) => (
+                  <ProjectRow key={project.id} project={project} />
+                ))}
+              </div>
+            ) : null}
+            {/* Reads as the last line of the list rather than a control beside
+                the heading: the archive is where the section continues, so the
+                invitation belongs at the point the visitor runs out of
+                projects. */}
+            <Link
+              href="/projects"
+              data-bippy-reaction="curious"
+              data-bippy-safe-zone
+              className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
+            >
+              View all projects →
+            </Link>
+          </>
         ) : (
           <ProjectsEmptyState description="Fresh projects will be published here soon." />
         )}

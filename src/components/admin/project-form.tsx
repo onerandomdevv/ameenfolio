@@ -249,7 +249,7 @@ export function ProjectForm({ project }: { project?: Project }) {
                       Show on homepage
                     </FieldLabel>
                     <FieldDescription>
-                      Counts toward the eight-project limit when published.
+                      Counts toward the twelve-project homepage limit when published.
                     </FieldDescription>
                   </div>
                   <Switch
