@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { getTableName } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { recognitionIconNames } from "@/config/recognition-icons";
+import { MAX_NOW_LINKS } from "@/lib/ordering";
 import * as schema from "@/db/schema";
 import { nowLinks, nowSection, recognitions, siteSettings } from "@/db/schema";
 
@@ -103,7 +104,7 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
     expect(nowTriggers).toHaveLength(1);
   });
 
-  it("serializes concurrent Now-link inserts at the six-row limit", async () => {
+  it("serializes concurrent Now-link inserts at the four-row limit", async () => {
     const sql = neon(testUrl!);
     await sql`delete from now_links`;
     await sql`
@@ -113,7 +114,7 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
         'https://example.com/' || value,
         value,
         true
-      from generate_series(1, 5) as value
+      from generate_series(1, 3) as value
     `;
 
     const attempts = await Promise.allSettled([
@@ -125,7 +126,7 @@ describe.skipIf(!testUrl)("Drizzle migration integration", () => {
     expect(
       attempts.filter((attempt) => attempt.status === "fulfilled"),
     ).toHaveLength(1);
-    expect(rows[0].count).toBe(6);
+    expect(rows[0].count).toBe(MAX_NOW_LINKS);
     await sql`delete from now_links`;
   });
 });

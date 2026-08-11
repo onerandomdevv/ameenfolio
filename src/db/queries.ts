@@ -16,6 +16,7 @@ import {
 import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
 import { logServer } from "@/lib/logger";
+import { MAX_HOMEPAGE_PROJECTS } from "@/lib/ordering";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
@@ -88,7 +89,9 @@ export async function getPublicPortfolio() {
         and(eq(projects.published, true), eq(projects.showOnHomepage, true)),
       )
       .orderBy(asc(projects.homepageOrder), desc(projects.createdAt))
-      .limit(8),
+      // The page splits this list into cards and rows by position, so it has
+      // to arrive whole rather than clipped to the card tier.
+      .limit(MAX_HOMEPAGE_PROJECTS),
     db
       .select()
       .from(recognitions)
@@ -99,7 +102,7 @@ export async function getPublicPortfolio() {
       .from(techStackItems)
       .where(eq(techStackItems.visible, true))
       .orderBy(asc(techStackItems.displayOrder), asc(techStackItems.createdAt)),
-    // Every project row counts, not just the eight the homepage shows.
+    // Every project row counts, not just the twelve the homepage shows.
     db
       .select({ value: count() })
       .from(projects)

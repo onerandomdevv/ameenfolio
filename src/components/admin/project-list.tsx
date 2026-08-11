@@ -5,6 +5,7 @@ import { DeleteProjectButton } from "@/components/admin/delete-project-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { Project } from "@/db/schema";
+import { HOMEPAGE_CARD_PROJECTS } from "@/lib/ordering";
 
 export function AdminProjectList({
   projects,
@@ -21,6 +22,16 @@ export function AdminProjectList({
       />
     );
   }
+
+  // Which tier a project lands in is decided by its position among the
+  // homepage selections, not by anything stored on the project, so the badge
+  // has to be worked out here — otherwise the ninth highlight quietly renders
+  // as a row and the owner has no way to see why.
+  const homepageRank = new Map(
+    projects
+      .filter((project) => project.published && project.showOnHomepage)
+      .map((project, index) => [project.id, index]),
+  );
 
   return (
     <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
@@ -44,7 +55,15 @@ export function AdminProjectList({
                 {project.published ? "Published" : "Draft"}
               </Badge>
               {project.showOnHomepage ? (
-                <Badge variant="outline">Homepage</Badge>
+                <Badge variant="outline">
+                  {(() => {
+                    const rank = homepageRank.get(project.id);
+                    if (rank === undefined) return "Homepage";
+                    return rank < HOMEPAGE_CARD_PROJECTS
+                      ? "Homepage card"
+                      : "Homepage row";
+                  })()}
+                </Badge>
               ) : null}
             </div>
             <p className="mt-1 truncate text-xs text-muted-foreground">

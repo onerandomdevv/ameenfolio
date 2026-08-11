@@ -50,7 +50,7 @@ export async function saveProject(
   ) {
     return {
       ok: false,
-      message: "Only eight published projects can appear on the homepage.",
+      message: "Only twelve published projects can appear on the homepage.",
     };
   }
 

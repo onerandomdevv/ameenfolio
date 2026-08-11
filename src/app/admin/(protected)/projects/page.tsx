@@ -14,7 +14,7 @@ export default async function AdminProjectsPage() {
     <>
       <AdminPageHeader
         title="Projects"
-        description="Publish work and choose up to eight homepage highlights."
+        description="Publish work and choose up to twelve homepage highlights."
         action={
           <Button asChild size="sm">
             <Link href={`${base}/projects/new`}>

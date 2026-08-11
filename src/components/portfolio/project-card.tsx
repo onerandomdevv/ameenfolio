@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, User } from "lucide-react";
 import type { Project } from "@/db/schema";
 import { AssetIcon } from "@/components/portfolio/asset-icon";
 import { getProjectIcon } from "@/config/project-icons";
@@ -81,7 +81,11 @@ export function ProjectCard({ project }: { project: Project }) {
             {project.shortDescription}
           </p>
           {project.contribution ? (
-            <p className="mt-3 font-mono text-[11px] uppercase tracking-[0.08em] text-foreground/70">
+            // Rendered as typed. The uppercase transform decided the casing
+            // for the owner; the letter-spacing went with it, since it only
+            // existed to keep capitals legible.
+            <p className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] text-foreground/70">
+              <User className="size-3.5 shrink-0" aria-hidden="true" />
               {project.contribution}
             </p>
           ) : null}

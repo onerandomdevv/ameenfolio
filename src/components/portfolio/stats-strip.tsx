@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
+import { Github } from "lucide-react";
 import { StarGlyph } from "@/components/icons/glyph-icons";
 import type { StatsSnapshot } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 type StatCell = {
   label: string;
+  // Marks where the number comes from. Only the GitHub-sourced cells carry
+  // one, so the icon says something rather than decorating every label.
+  icon?: ReactNode;
   value: string | null;
   // Sits on the value's baseline rather than under it, for a qualifier that
   // belongs to the number itself — the dates the streak actually covers.
@@ -65,11 +69,13 @@ export function StatsStrip({
       // a real measurement — a broken streak or a quiet year — and rendering it
       // as a dash claims the data is missing when it is simply zero.
       label: "Contributions",
+      icon: <Github className="size-3 shrink-0" aria-hidden="true" />,
       value: snapshot ? snapshot.contributions.toLocaleString("en-US") : null,
       subs: [sinceLabel(snapshot?.firstContributionAt ?? null)],
     },
     {
       label: "Current streak",
+      icon: <Github className="size-3 shrink-0" aria-hidden="true" />,
       value: snapshot ? `${snapshot.currentStreak}d` : null,
       valueNote: dateRange(
         snapshot?.currentStreakStart ?? null,
@@ -136,7 +142,12 @@ export function StatsStrip({
 
           return (
             <div key={cell.label} className="flex flex-col bg-card px-4 py-5">
-              <dt className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+              {/* Tracking is tighter than the other mono-caps headings on the
+                  page: the icon costs 16px of a 98.6px cell, and without it
+                  "Current streak" wraps to a second line, which drops that one
+                  cell's value below the other three. */}
+              <dt className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.03em] text-muted-foreground">
+                {cell.icon}
                 {cell.label}
               </dt>
               {/* A cell with a sub-line stacks under the label. One without has
