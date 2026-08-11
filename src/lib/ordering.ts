@@ -1,5 +1,5 @@
 export const MAX_HOMEPAGE_PROJECTS = 8;
-export const MAX_NOW_LINKS = 6;
+export const MAX_NOW_LINKS = 4;
 
 export function canAddHomepageProject(existingPublishedSelections: number) {
   return existingPublishedSelections < MAX_HOMEPAGE_PROJECTS;
