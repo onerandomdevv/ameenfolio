@@ -2,6 +2,7 @@ import { ArrowUpRight } from "lucide-react";
 import { AssetIcon } from "@/components/portfolio/asset-icon";
 import { NowEmptyState } from "@/components/portfolio/now-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
+import { nowFont } from "@/app/fonts";
 import { Badge } from "@/components/ui/badge";
 import { formatNowLastUpdated, type PublicNow } from "@/lib/now";
 
@@ -17,7 +18,9 @@ export function NowSection({ section }: { section: PublicNow | null }) {
       <SectionHeading id="now-heading" title="Now" />
       {section ? (
         <>
-          <p className="mt-5 text-pretty text-[15px] leading-7 text-foreground/90">
+          <p
+            className={`${nowFont.className} mt-5 text-pretty text-[17px] font-semibold leading-8 text-foreground`}
+          >
             {section.description}
           </p>
 
