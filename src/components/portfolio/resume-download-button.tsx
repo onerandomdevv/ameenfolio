@@ -70,7 +70,7 @@ export function ResumeDownloadButton({
       onClick={downloadResume}
       aria-busy={downloading}
       className={cn(
-        "inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-accent-lime hover:decoration-accent-lime focus-visible:text-accent-lime",
+        "inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:decoration-foreground focus-visible:decoration-foreground",
         className,
       )}
       data-bippy-reaction="working"

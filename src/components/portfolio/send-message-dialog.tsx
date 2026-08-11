@@ -57,7 +57,7 @@ export function SendMessageDialog({
           data-bippy-reaction="curious"
           data-bippy-dialogue="contact"
           data-bippy-safe-zone
-          className="inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-accent-lime hover:decoration-accent-lime focus-visible:text-accent-lime"
+          className="inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:decoration-foreground focus-visible:decoration-foreground"
         >
           <ChatBubbleGlyph className="size-3.5 shrink-0" aria-hidden="true" />
           send a message

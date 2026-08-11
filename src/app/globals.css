@@ -15,10 +15,12 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-highlight: rgba(255, 255, 255, 0.12);
 
-  /* The brand lime, matching the GitHub profile README. Down to two uses: the
-     WakaTime activity heatmap, where it encodes how much was coded that day,
-     and a project card's arrow on hover. Keeping the list short is what stops
-     it becoming general decoration. */
+  /* The brand lime, matching the GitHub profile README. Two uses, and this
+     list is the whole of it: the WakaTime activity heatmap, where it encodes
+     how much was coded that day, and the arrow on a project card or row on
+     hover. Everything else — writing rows, post links, the closing
+     invitation — signals with weight or an underline instead. Keeping the
+     list this short is what stops it becoming general decoration. */
   --color-accent-lime: #7fff00;
 
   --color-background: var(--background);
@@ -228,7 +230,7 @@ button {
 }
 
 .post-body a:hover {
-  text-decoration-color: var(--color-accent-lime);
+  text-decoration-color: var(--foreground);
 }
 
 .post-body strong {
@@ -330,7 +332,7 @@ button {
 .post-body .hljs-selector-tag,
 .post-body .hljs-literal,
 .post-body .hljs-type {
-  color: var(--color-accent-lime);
+  color: #ff7b72;
 }
 
 .post-body .hljs-string,

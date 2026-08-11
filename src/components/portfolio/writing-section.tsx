@@ -23,7 +23,7 @@ export function WritingSection({ posts }: { posts: Post[] }) {
               data-bippy-safe-zone
               className="group flex items-baseline gap-3 rounded-md py-2.5"
             >
-              <span className="min-w-0 text-sm font-medium text-foreground transition-colors group-hover:text-accent-lime">
+              <span className="min-w-0 text-sm font-medium text-foreground transition-colors group-hover:text-muted-foreground">
                 {post.title}
               </span>
               {/* tabular-nums so the dates line up as a column rather than
