@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getPostCategories, getPublishedPostSummaries } from "@/db/queries";
 import { WritingIndexRow } from "@/components/portfolio/writing-index-row";
-import { portfolioIdentity } from "@/config/portfolio";
 
 export const dynamic = "force-dynamic";
 
@@ -48,7 +47,7 @@ export default async function WritingPage() {
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-3.5" aria-hidden="true" />
-        {portfolioIdentity.name}
+        Go back
       </Link>
 
       <header className="mt-8">

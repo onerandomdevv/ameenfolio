@@ -8,7 +8,10 @@ import { formatPostMonth, toDateAttribute } from "@/lib/writing/format";
 export function WritingSection({ posts }: { posts: Post[] }) {
   return (
     <section
-      className="mt-24"
+      // mt-14 like the rest of the page: mt-24 here left a gap twice the size
+      // of every other section break, which read as a missing section rather
+      // than as breathing room.
+      className="mt-14"
       aria-labelledby="writing-heading"
       data-bippy-section="writing"
     >
