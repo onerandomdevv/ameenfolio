@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { and, count, eq, ne } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import {
@@ -83,35 +84,57 @@ export async function savePost(
 
   try {
     const db = getDb();
-    let postId = id;
 
+    // Read first, for two reasons: an edit of a row that has since been
+    // deleted must not silently insert, and renaming a post leaves a cached
+    // page at the old address that has to be cleared too.
+    let previousSlug: string | undefined;
     if (id) {
-      const [row] = await db
-        .update(posts)
-        .set({ ...values, updatedAt: new Date() })
+      const [existing] = await db
+        .select({ slug: posts.slug })
+        .from(posts)
         .where(eq(posts.id, id))
-        .returning({ id: posts.id });
-      if (!row) return { ok: false, message: "That post no longer exists." };
-    } else {
-      const [row] = await db
-        .insert(posts)
-        .values(values)
-        .returning({ id: posts.id });
-      postId = row.id;
+        .limit(1);
+      if (!existing)
+        return { ok: false, message: "That post no longer exists." };
+      previousSlug = existing.slug;
     }
 
-    // Replaced wholesale rather than diffed: the form submits the list it
-    // wants, and a link carries no state worth preserving across a save.
-    await db.delete(postLinks).where(eq(postLinks.postId, postId!));
-    if (parsed.data.links.length) {
-      await db
-        .insert(postLinks)
-        .values(
-          parsed.data.links.map((link) => ({ ...link, postId: postId! })),
-        );
-    }
+    // Generated up front so the links can be written in the same batch as the
+    // post rather than waiting on a returned id.
+    const postId = id ?? randomUUID();
+    const updatedAt = new Date();
+    const postMutation = id
+      ? db
+          .update(posts)
+          .set({ ...values, updatedAt })
+          .where(eq(posts.id, id))
+      : db.insert(posts).values({ id: postId, ...values, updatedAt });
+
+    // Links are replaced wholesale rather than diffed: the form submits the
+    // list it wants, and a link carries no state worth preserving.
+    //
+    // Batched, not issued one after another. db.transaction() throws on the
+    // neon-http driver, but a batch is sent as a single transaction — so a
+    // failure part way through cannot leave the post saved with its links
+    // already deleted while the caller is told the save failed.
+    const linkRows = parsed.data.links.map((link) => ({ ...link, postId }));
+    const clearLinks = db.delete(postLinks).where(eq(postLinks.postId, postId));
+    // Two literal batches rather than one spread array: batch takes a
+    // non-empty tuple, and a conditional spread widens it to a plain array
+    // that no longer satisfies that.
+    await (linkRows.length
+      ? db.batch([
+          postMutation,
+          clearLinks,
+          db.insert(postLinks).values(linkRows),
+        ])
+      : db.batch([postMutation, clearLinks]));
 
     refreshWriting(parsed.data.slug);
+    if (previousSlug && previousSlug !== parsed.data.slug) {
+      refreshWriting(previousSlug);
+    }
     return { ok: true, id: postId };
   } catch (error) {
     logServer("error", "admin.post_save_failed", { error: String(error) });

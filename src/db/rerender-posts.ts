@@ -22,17 +22,31 @@ async function main() {
     SELECT id, title, body_markdown FROM posts ORDER BY created_at
   `) as { id: string; title: string; body_markdown: string }[];
 
+  let skipped = 0;
   for (const row of rows) {
     const { html, headings } = await renderMarkdown(row.body_markdown);
-    await sql`
+    // Matched on the markdown this HTML was generated from, not on the id
+    // alone. If the post was saved while the script was running, the row no
+    // longer matches and is left alone rather than having output from the
+    // older markdown written over the newer save.
+    const updated = await sql`
       UPDATE posts
       SET body_html = ${html}, headings = ${JSON.stringify(headings)}::jsonb
-      WHERE id = ${row.id}
+      WHERE id = ${row.id} AND body_markdown = ${row.body_markdown}
+      RETURNING id
     `;
-    console.log(`re-rendered  ${row.title}`);
+    if (updated.length) {
+      console.log(`re-rendered  ${row.title}`);
+    } else {
+      skipped += 1;
+      console.log(`skipped      ${row.title} (saved while this was running)`);
+    }
   }
 
-  console.log(`\n${rows.length} post(s) brought up to date.`);
+  console.log(`\n${rows.length - skipped} post(s) brought up to date.`);
+  if (skipped) {
+    console.log(`${skipped} skipped — run again to pick them up.`);
+  }
 }
 
 main().catch((error) => {

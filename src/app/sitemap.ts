@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const summaries = await getPublishedPostSummaries();
     posts = summaries.map((post) => ({
       url: `${base}/writing/${post.slug}`,
-      lastModified: post.publishedAt,
+      lastModified: post.updatedAt,
       changeFrequency: "yearly" as const,
       priority: 0.6,
     }));

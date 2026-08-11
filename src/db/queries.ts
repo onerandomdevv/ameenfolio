@@ -275,6 +275,10 @@ export type PublishedPostSummary = {
   title: string;
   slug: string;
   publishedAt: Date;
+  // Distinct from publishedAt, which is the editorial date shown on the post.
+  // This is when the row last changed, which is what a sitemap means by
+  // lastModified.
+  updatedAt: Date;
   categoryId: string | null;
 };
 
@@ -290,6 +294,7 @@ export async function getPublishedPostSummaries(): Promise<
       title: posts.title,
       slug: posts.slug,
       publishedAt: posts.publishedAt,
+      updatedAt: posts.updatedAt,
       categoryId: posts.categoryId,
     })
     .from(posts)

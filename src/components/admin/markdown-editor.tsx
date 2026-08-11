@@ -44,11 +44,17 @@ export function MarkdownEditor({
       // least visible in the editor and gets corrected.
       const alt = file.name.replace(/\.[a-z0-9]+$/i, "").replace(/[-_]+/g, " ");
       const snippet = `\n\n![${alt}](/media/${key})\n\n`;
+      // Read live, after the upload, rather than from the value captured when
+      // it started: an upload takes seconds, and anything typed meanwhile
+      // would be overwritten by splicing into the older text.
       const textarea = textareaRef.current;
-      const from = textarea?.selectionStart ?? value.length;
-      const to = textarea?.selectionEnd ?? value.length;
-      const next = insertAt(value, snippet, from, to);
-      onChange(next);
+      const current = textarea?.value ?? value;
+      const from = Math.min(
+        textarea?.selectionStart ?? current.length,
+        current.length,
+      );
+      const to = Math.min(textarea?.selectionEnd ?? from, current.length);
+      onChange(insertAt(current, snippet, from, to));
       // Put the caret after what was just inserted so typing continues below
       // the image instead of before it.
       requestAnimationFrame(() => {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -44,6 +45,7 @@ export function PostCategoriesManager({
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<PostCategory>();
   const [pending, startTransition] = useTransition();
+  const router = useRouter();
 
   const form = useForm<PostCategoryInput>({
     resolver: zodResolver(postCategorySchema),
@@ -72,6 +74,7 @@ export function PostCategoriesManager({
     }
     toast.success(editing ? "Category renamed." : "Category added.");
     setOpen(false);
+    router.refresh();
   }
 
   function remove(category: PostCategory) {
@@ -80,6 +83,7 @@ export function PostCategoriesManager({
       toast[result.ok ? "success" : "error"](
         result.ok ? "Category deleted." : result.message,
       );
+      if (result.ok) router.refresh();
     });
   }
 
@@ -175,6 +179,7 @@ export function PostCategoriesManager({
               />
               <FormTextField
                 label="Order"
+                type="number"
                 description="Lower numbers appear first."
                 error={form.formState.errors.displayOrder?.message}
                 inputProps={form.register("displayOrder", {

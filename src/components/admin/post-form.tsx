@@ -41,17 +41,22 @@ function toDateInput(date: Date) {
   return date.toISOString().slice(0, 10);
 }
 
-const emptyPost: PostInput = {
-  title: "",
-  slug: "",
-  bodyMarkdown: "",
-  categoryId: null,
-  publishedAt: new Date(),
-  published: false,
-  pinned: false,
-  pinnedOrder: 0,
-  links: [],
-};
+// A function rather than a constant: a module-level `new Date()` is fixed at
+// import time, so in a long-lived admin session a new post would open dated to
+// whenever the tab was first loaded.
+function emptyPost(): PostInput {
+  return {
+    title: "",
+    slug: "",
+    bodyMarkdown: "",
+    categoryId: null,
+    publishedAt: new Date(),
+    published: false,
+    pinned: false,
+    pinnedOrder: 0,
+    links: [],
+  };
+}
 
 export function PostForm({
   post,
@@ -88,7 +93,7 @@ export function PostForm({
             displayOrder: link.displayOrder,
           })),
         }
-      : emptyPost,
+      : emptyPost(),
   });
 
   const {
@@ -351,6 +356,7 @@ export function PostForm({
           />
           <FormTextField
             label="Pin order"
+            type="number"
             description="Lower numbers come first on the homepage."
             error={errors.pinnedOrder?.message}
             inputProps={register("pinnedOrder", { valueAsNumber: true })}

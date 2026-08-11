@@ -141,6 +141,13 @@
       "when": 1786481966633,
       "tag": "0019_writing",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786487426930,
+      "tag": "0020_pinned_posts_advisory_lock",
+      "breakpoints": true
     }
   ]
 }

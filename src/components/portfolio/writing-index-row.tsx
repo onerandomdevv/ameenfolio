@@ -13,7 +13,7 @@ export function WritingIndexRow({ post }: { post: PublishedPostSummary }) {
       data-bippy-safe-zone
       className="group flex items-baseline gap-2 py-1.5"
     >
-      <span className="text-sm text-foreground transition-colors group-hover:text-muted-foreground">
+      <span className="min-w-0 break-words text-sm text-foreground transition-colors group-hover:text-muted-foreground">
         {post.title}
       </span>
       {/* Nudged up half a pixel: a border sits on the text baseline, and the

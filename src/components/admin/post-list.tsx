@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { ArrowUpRight, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -34,6 +35,7 @@ export function AdminPostList({
 }) {
   const [pending, startTransition] = useTransition();
   const adminBase = useAdminBase();
+  const router = useRouter();
   const categoryNames = new Map(categories.map((c) => [c.id, c.name]));
 
   if (!posts.length) {
@@ -51,6 +53,9 @@ export function AdminPostList({
       toast[result.ok ? "success" : "error"](
         result.ok ? "Post deleted." : result.message,
       );
+      // The action clears the public routes; this page is a separate route
+      // and would otherwise keep showing the row that was just removed.
+      if (result.ok) router.refresh();
     });
   }
 
