@@ -274,22 +274,24 @@ export default async function HomePage() {
                 ))}
               </div>
             ) : null}
-            {/* Reads as the last line of the list rather than a control beside
-                the heading: the archive is where the section continues, so the
-                invitation belongs at the point the visitor runs out of
-                projects. */}
-            <Link
-              href="/projects"
-              data-bippy-reaction="curious"
-              data-bippy-safe-zone
-              className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
-            >
-              View all projects →
-            </Link>
           </>
         ) : (
           <ProjectsEmptyState description="Fresh projects will be published here soon." />
         )}
+        {/* Reads as the last line of the list rather than a control beside the
+            heading: the archive is where the section continues, so the
+            invitation belongs at the point the visitor runs out of projects.
+            Outside the branch above because the archive lists every published
+            project, not just the ones flagged for the homepage — it can have
+            plenty to show while this section has none. */}
+        <Link
+          href="/projects"
+          data-bippy-reaction="curious"
+          data-bippy-safe-zone
+          className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
+        >
+          View all projects →
+        </Link>
       </section>
 
       <section

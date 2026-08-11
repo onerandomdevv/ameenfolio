@@ -41,6 +41,24 @@ describe("isReadOnlyRequest", () => {
     ).toBe(false);
   });
 
+  // Each of these opens with SELECT and still changes something when replayed:
+  // a sequence advanced, a notification delivered, a table created, a row
+  // locked.
+  it("rejects reads that carry a side effect", () => {
+    for (const sql of [
+      "select nextval('projects_id_seq')",
+      "select setval('projects_id_seq', 1)",
+      "select pg_notify('channel', 'payload')",
+      "select pg_advisory_lock(1)",
+      'select * into "archive" from "projects"',
+      'select * from "projects" for update',
+      'select * from "projects" for no key update',
+      'select * from "projects" for share',
+    ]) {
+      expect(isReadOnlyRequest(body(sql))).toBe(false);
+    }
+  });
+
   it("fails closed on anything it cannot read", () => {
     expect(isReadOnlyRequest("not json")).toBe(false);
     expect(isReadOnlyRequest(undefined)).toBe(false);
@@ -107,6 +125,16 @@ describe("createRetryingFetch", () => {
     ).rejects.toThrow("fetch failed");
     expect(impl).toHaveBeenCalledTimes(3);
     expect(onRetry).toHaveBeenCalledTimes(2);
+  });
+
+  // Otherwise the loop body never runs and the caller is rejected with
+  // undefined, which looks nothing like a database failure.
+  it("refuses an attempt count that would skip the request", () => {
+    for (const attempts of [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(() =>
+        createRetryingFetch(vi.fn() as unknown as typeof fetch, { attempts }),
+      ).toThrow(RangeError);
+    }
   });
 
   it("backs off further on each successive attempt", async () => {

@@ -60,13 +60,26 @@ function collectStatements(parsed: unknown): string[] {
   return [];
 }
 
+// Opening with SELECT does not make a statement side-effect free. These are
+// the forms that read like a query and still change something when replayed:
+// a sequence advanced, a notification delivered, a table created, a row
+// locked. None of them appear in this codebase's queries, which are all
+// Drizzle-generated reads — the guard is here because the retry sits at the
+// driver, where it will meet whatever anyone writes later.
+const SIDE_EFFECTING_READ =
+  /\b(insert|update|delete|merge|truncate|alter|drop|create|into|nextval|setval|pg_notify|pg_advisory[a-z_]*|for\s+(update|share|no\s+key\s+update|key\s+share))\b/;
+
 function isReadOnlyStatement(statement: string) {
   const sql = statement.trim().toLowerCase();
   if (!sql.startsWith("select") && !sql.startsWith("with ")) return false;
   // A CTE can still end in a mutation, and RETURNING hides one mid-statement.
-  return !/\b(insert|update|delete|merge|truncate|alter|drop|create)\b/.test(
-    sql,
-  );
+  //
+  // What this cannot see is a user-defined function that writes: SELECT
+  // audit_and_return($1) is indistinguishable from any other call. Detecting
+  // that needs the database's own read-only judgement, not string matching, so
+  // the residual rule is the one this module opens with — anything with a
+  // side effect must not be reached through a plain SELECT.
+  return !SIDE_EFFECTING_READ.test(sql);
 }
 
 export function createRetryingFetch(
@@ -74,6 +87,12 @@ export function createRetryingFetch(
   options: RetryOptions = {},
 ): typeof fetch {
   const attempts = options.attempts ?? DEFAULT_ATTEMPTS;
+  // Caught here rather than in the loop: a zero or negative count would skip
+  // fetchImpl entirely and reject with undefined, turning a misconfiguration
+  // into a database call that silently never happened.
+  if (!Number.isSafeInteger(attempts) || attempts < 1) {
+    throw new RangeError("attempts must be a positive integer");
+  }
   const delayMs = options.delayMs ?? defaultDelay;
   const sleep = options.sleep ?? defaultSleep;
 
