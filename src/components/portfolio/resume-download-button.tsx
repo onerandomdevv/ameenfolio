@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Download, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type ResumeDownloadButtonProps = {
@@ -63,13 +62,15 @@ export function ResumeDownloadButton({
   }
 
   return (
-    <Button
+    // A plain button rather than the Button component: this sits inside a
+    // sentence now, and Button's fixed height and padding would break the line
+    // it is part of.
+    <button
       type="button"
-      variant="link"
       onClick={downloadResume}
       aria-busy={downloading}
       className={cn(
-        "px-0 font-bold text-foreground underline hover:text-primary",
+        "inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-accent-lime hover:decoration-accent-lime focus-visible:text-accent-lime",
         className,
       )}
       data-bippy-reaction="working"
@@ -77,11 +78,14 @@ export function ResumeDownloadButton({
       data-bippy-safe-zone
     >
       {downloading ? (
-        <LoaderCircle data-icon="inline-start" className="animate-spin" />
+        <LoaderCircle
+          className="size-3.5 shrink-0 animate-spin"
+          aria-hidden="true"
+        />
       ) : (
-        <Download data-icon="inline-start" />
+        <Download className="size-3.5 shrink-0" aria-hidden="true" />
       )}
-      View Resume
-    </Button>
+      view resume
+    </button>
   );
 }

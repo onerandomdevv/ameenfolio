@@ -48,15 +48,19 @@ export function SendMessageDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
+        {/* Sits inside a sentence, so it takes no minimum height: forcing a
+            44px tap target here would break the line it belongs to. WCAG
+            exempts targets that are inline in a block of text for exactly
+            this reason. */}
         <button
           type="button"
           data-bippy-reaction="curious"
           data-bippy-dialogue="contact"
           data-bippy-safe-zone
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-foreground underline underline-offset-4 transition-colors hover:text-primary focus-visible:text-primary"
+          className="inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-accent-lime hover:decoration-accent-lime focus-visible:text-accent-lime"
         >
-          <ChatBubbleGlyph className="size-4" aria-hidden="true" />
-          Send a message
+          <ChatBubbleGlyph className="size-3.5 shrink-0" aria-hidden="true" />
+          send a message
         </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-sm">

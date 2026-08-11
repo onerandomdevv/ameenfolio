@@ -330,31 +330,29 @@ export default async function HomePage() {
           tech stack. The résumé lives here now: it was tucked against the
           footer rule as a lone right-aligned link, which read as fine print
           rather than as one of two ways to start a conversation. */}
+      {/* One sentence rather than a heading over two buttons. The invitation
+          and the two ways to accept it are the same thought, and setting them
+          as a headline plus a button row made a small courtesy look like a
+          call to action. aria-label rather than a heading for the same reason:
+          there is no longer a heading to point at. */}
       <section
         id="contact"
         className="mt-20 text-center"
-        aria-labelledby="contact-heading"
+        aria-label="Get in touch"
       >
-        <h2
-          id="contact-heading"
-          className="text-base leading-7 text-foreground/90"
-        >
-          Open to a nice conversation.
-        </h2>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5">
+        <p className="text-sm leading-7 text-muted-foreground">
+          Open to a nice conversation,{" "}
           <SendMessageDialog
             email={settings.email}
             whatsappUrl={contactLinks.whatsapp}
-          />
-          <span
-            aria-hidden="true"
-            className="h-4 w-px shrink-0 bg-border max-sm:hidden"
-          />
+          />{" "}
+          or{" "}
           <ResumeDownloadButton
             hasResume={Boolean(settings.resumeKey)}
             filename={settings.resumeFilename}
           />
-        </div>
+          .
+        </p>
       </section>
 
       <footer className="mt-8 font-mono text-xs text-muted-foreground">
