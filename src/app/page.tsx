@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment } from "react";
 import { after } from "next/server";
-import { getPublicPortfolio } from "@/db/queries";
+import { getPinnedPosts, getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
@@ -15,6 +15,7 @@ import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { TechStackSection } from "@/components/portfolio/tech-stack-section";
+import { WritingSection } from "@/components/portfolio/writing-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -66,6 +67,8 @@ export default async function HomePage() {
     publishedProjectCount,
     statsSnapshot,
   } = await getPublicPortfolio();
+
+  const pinnedPosts = await getPinnedPosts();
 
   const { cards: homepageCards, rows: homepageRows } =
     splitHomepageProjects(projects);
@@ -318,6 +321,8 @@ export default async function HomePage() {
           </RecognitionsEmptyState>
         )}
       </section>
+
+      <WritingSection posts={pinnedPosts} />
 
       <TechStackSection items={techStack} />
 

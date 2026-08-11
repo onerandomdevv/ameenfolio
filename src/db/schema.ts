@@ -7,10 +7,12 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import type { Availability } from "@/config/availability";
+import type { PostLinkIconName } from "@/config/post-link-icons";
 import type { ProjectIconName } from "@/config/project-icons";
 import type { RecognitionIconName } from "@/config/recognition-icons";
 import type { TechStackGroupValue } from "@/config/tech-stack";
@@ -219,6 +221,100 @@ export const statsSnapshot = pgTable(
   (table) => [check("stats_snapshot_singleton", sql`${table.id} = 1`)],
 );
 
+// A heading lifted out of the rendered body so the post page can build its
+// contents list without re-parsing the markup on every request.
+export type PostHeading = {
+  id: string;
+  text: string;
+  level: number;
+};
+
+// Categories are rows, not a fixed enum, because their names are the owner's
+// to change — "Notes" may become "Field notes" without a migration. That is
+// the one thing that separates them from the tech-stack groups, whose keys the
+// layout depends on.
+export const postCategories = pgTable(
+  "post_categories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    displayOrder: integer("display_order").notNull().default(0),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("post_categories_name_idx").on(table.name),
+    index("post_categories_order_idx").on(table.displayOrder),
+    check("post_categories_name_present", sql`length(trim(${table.name})) > 0`),
+  ],
+);
+
+export const posts = pgTable(
+  "posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    // Both forms are stored: the markdown is what the owner edits, the HTML is
+    // what the page serves. Public pages are force-dynamic, so rendering on
+    // read would re-parse the same post on every visit for a result that only
+    // changes when it is saved.
+    bodyMarkdown: text("body_markdown").notNull(),
+    bodyHtml: text("body_html").notNull(),
+    headings: jsonb("headings").$type<PostHeading[]>().notNull().default([]),
+    // Nullable, and set null on delete: removing a category regroups its posts
+    // rather than taking them down with it.
+    categoryId: uuid("category_id").references(() => postCategories.id, {
+      onDelete: "set null",
+    }),
+    // Separate from createdAt because the date on the post is editorial — a
+    // piece written over a week is dated when it went out, not when the row
+    // first appeared.
+    publishedAt: timestamp("published_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    published: boolean("published").notNull().default(false),
+    pinned: boolean("pinned").notNull().default(false),
+    pinnedOrder: integer("pinned_order").notNull().default(0),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("posts_slug_idx").on(table.slug),
+    index("posts_published_idx").on(table.published, table.publishedAt),
+    index("posts_pinned_idx").on(
+      table.published,
+      table.pinned,
+      table.pinnedOrder,
+    ),
+    check(
+      "posts_slug_shape",
+      sql`${table.slug} ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`,
+    ),
+  ],
+);
+
+// Where a post points when it is finished — the repository, the video, the
+// thread. Cascades, because a link has no meaning without the post it closes.
+export const postLinks = pgTable(
+  "post_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    label: text("label").notNull(),
+    url: text("url").notNull(),
+    iconName: text("icon_name")
+      .$type<PostLinkIconName>()
+      .notNull()
+      .default("link"),
+    displayOrder: integer("display_order").notNull().default(0),
+    ...timestamps,
+  },
+  (table) => [
+    index("post_links_post_order_idx").on(table.postId, table.displayOrder),
+  ],
+);
+
 export type Project = typeof projects.$inferSelect;
 export type Recognition = typeof recognitions.$inferSelect;
 export type NowSection = typeof nowSection.$inferSelect;
@@ -226,3 +322,6 @@ export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
 export type StatsSnapshot = typeof statsSnapshot.$inferSelect;
 export type TechStackItem = typeof techStackItems.$inferSelect;
+export type Post = typeof posts.$inferSelect;
+export type PostCategory = typeof postCategories.$inferSelect;
+export type PostLink = typeof postLinks.$inferSelect;
