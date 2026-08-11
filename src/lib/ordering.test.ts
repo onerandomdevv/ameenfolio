@@ -3,9 +3,11 @@ import {
   byDisplayOrder,
   canAddHomepageProject,
   canAddNowLink,
+  canPinPost,
   HOMEPAGE_CARD_PROJECTS,
   MAX_HOMEPAGE_PROJECTS,
   MAX_NOW_LINKS,
+  MAX_PINNED_POSTS,
   splitHomepageProjects,
 } from "@/lib/ordering";
 
@@ -28,6 +30,11 @@ describe("portfolio ordering", () => {
     const { cards, rows } = splitHomepageProjects([1, 2, 3]);
     expect(cards).toHaveLength(3);
     expect(rows).toEqual([]);
+  });
+
+  it("prevents a sixth pinned post", () => {
+    expect(canPinPost(MAX_PINNED_POSTS - 1)).toBe(true);
+    expect(canPinPost(MAX_PINNED_POSTS)).toBe(false);
   });
 
   it("sorts display items in ascending administrator order", () => {

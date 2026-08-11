@@ -1,6 +1,6 @@
 import "client-only";
 
-export type UploadResourceType = "icon" | "profile" | "resume";
+export type UploadResourceType = "icon" | "profile" | "resume" | "post";
 
 export async function uploadFile(resourceType: UploadResourceType, file: File) {
   const signed = await fetch("/api/admin/uploads/sign", {

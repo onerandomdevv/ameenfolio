@@ -4,6 +4,9 @@
 export const HOMEPAGE_CARD_PROJECTS = 8;
 export const MAX_HOMEPAGE_PROJECTS = 12;
 export const MAX_NOW_LINKS = 4;
+// The homepage shows a chosen few rather than the newest few, so an older post
+// stays reachable after a run of new ones.
+export const MAX_PINNED_POSTS = 5;
 
 export function canAddHomepageProject(existingPublishedSelections: number) {
   return existingPublishedSelections < MAX_HOMEPAGE_PROJECTS;
@@ -20,6 +23,10 @@ export function splitHomepageProjects<T>(homepageProjects: T[]) {
 
 export function canAddNowLink(existingLinks: number) {
   return existingLinks < MAX_NOW_LINKS;
+}
+
+export function canPinPost(existingPinnedPublished: number) {
+  return existingPinnedPublished < MAX_PINNED_POSTS;
 }
 
 export function byDisplayOrder<T extends { displayOrder: number }>(a: T, b: T) {

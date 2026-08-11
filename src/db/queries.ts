@@ -1,10 +1,13 @@
 import "server-only";
 
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
   nowSection,
+  postCategories,
+  postLinks,
+  posts,
   projects,
   recognitions,
   siteSettings,
@@ -16,7 +19,7 @@ import {
 import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
 import { logServer } from "@/lib/logger";
-import { MAX_HOMEPAGE_PROJECTS } from "@/lib/ordering";
+import { MAX_HOMEPAGE_PROJECTS, MAX_PINNED_POSTS } from "@/lib/ordering";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
@@ -211,7 +214,7 @@ export async function getPublicBippyEnabled() {
 export async function isReferencedPublicMedia(key: string) {
   if (!canQueryDatabase()) return false;
   const db = getDb();
-  const [project, nowLink, publishedNow, settings] = await Promise.all([
+  const [project, nowLink, publishedNow, settings, post] = await Promise.all([
     db
       .select({ id: projects.id })
       .from(projects)
@@ -232,6 +235,130 @@ export async function isReferencedPublicMedia(key: string) {
       .from(siteSettings)
       .where(eq(siteSettings.profileImageKey, key))
       .limit(1),
+    // A post image is referenced from inside the body rather than by a column
+    // of its own, so the body is what has to be searched. The key is a 48-char
+    // hex name from createObjectKey, not anything a reader supplies, and it is
+    // shape-checked by isPublicMediaKey before this runs — but it still goes
+    // in as a bound parameter rather than interpolated text.
+    db
+      .select({ id: posts.id })
+      .from(posts)
+      .where(
+        and(
+          eq(posts.published, true),
+          sql`position(${key} in ${posts.bodyMarkdown}) > 0`,
+        ),
+      )
+      .limit(1),
   ]);
-  return Boolean(project[0] || (nowLink[0] && publishedNow[0]) || settings[0]);
+  return Boolean(
+    project[0] || (nowLink[0] && publishedNow[0]) || settings[0] || post[0],
+  );
+}
+
+// --- Writing -------------------------------------------------------------
+
+// Pinned rather than newest: an older post stays reachable from the homepage
+// after a run of new ones.
+export async function getPinnedPosts() {
+  if (!canQueryDatabase()) return [];
+  return getDb()
+    .select()
+    .from(posts)
+    .where(and(eq(posts.published, true), eq(posts.pinned, true)))
+    .orderBy(asc(posts.pinnedOrder), desc(posts.publishedAt))
+    .limit(MAX_PINNED_POSTS);
+}
+
+export type PublishedPostSummary = {
+  id: string;
+  title: string;
+  slug: string;
+  publishedAt: Date;
+  // Distinct from publishedAt, which is the editorial date shown on the post.
+  // This is when the row last changed, which is what a sitemap means by
+  // lastModified.
+  updatedAt: Date;
+  categoryId: string | null;
+};
+
+// The index page needs headlines, not bodies. Selecting the columns keeps a
+// page of twenty posts from carrying twenty rendered articles with it.
+export async function getPublishedPostSummaries(): Promise<
+  PublishedPostSummary[]
+> {
+  if (!canQueryDatabase()) return [];
+  return getDb()
+    .select({
+      id: posts.id,
+      title: posts.title,
+      slug: posts.slug,
+      publishedAt: posts.publishedAt,
+      updatedAt: posts.updatedAt,
+      categoryId: posts.categoryId,
+    })
+    .from(posts)
+    .where(eq(posts.published, true))
+    .orderBy(desc(posts.publishedAt), desc(posts.createdAt));
+}
+
+export async function getPostCategories() {
+  if (!canQueryDatabase()) return [];
+  return getDb()
+    .select()
+    .from(postCategories)
+    .orderBy(asc(postCategories.displayOrder), asc(postCategories.name));
+}
+
+export async function getPublishedPost(slug: string) {
+  if (!canQueryDatabase()) return null;
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(posts)
+    .where(and(eq(posts.slug, slug), eq(posts.published, true)))
+    .limit(1);
+  const post = rows[0];
+  if (!post) return null;
+
+  const [links, category] = await Promise.all([
+    db
+      .select()
+      .from(postLinks)
+      .where(eq(postLinks.postId, post.id))
+      .orderBy(asc(postLinks.displayOrder), asc(postLinks.createdAt)),
+    post.categoryId
+      ? db
+          .select()
+          .from(postCategories)
+          .where(eq(postCategories.id, post.categoryId))
+          .limit(1)
+      : Promise.resolve([]),
+  ]);
+
+  return { post, links, category: category[0] ?? null };
+}
+
+export async function getAdminPosts() {
+  return getDb().select().from(posts).orderBy(desc(posts.updatedAt));
+}
+
+export async function getAdminPost(id: string) {
+  const db = getDb();
+  const rows = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
+  const post = rows[0];
+  if (!post) return null;
+  const links = await db
+    .select()
+    .from(postLinks)
+    .where(eq(postLinks.postId, post.id))
+    .orderBy(asc(postLinks.displayOrder), asc(postLinks.createdAt));
+  return { post, links };
+}
+
+export async function getTakenSlugs(excludeId?: string) {
+  const rows = await getDb()
+    .select({ slug: posts.slug, id: posts.id })
+    .from(posts);
+  return rows.filter((row) => row.id !== excludeId).map((row) => row.slug);
 }

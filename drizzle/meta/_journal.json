@@ -134,6 +134,20 @@
       "when": 1786471050425,
       "tag": "0018_homepage_projects_limit_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786481966633,
+      "tag": "0019_writing",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786487426930,
+      "tag": "0020_pinned_posts_advisory_lock",
+      "breakpoints": true
     }
   ]
 }

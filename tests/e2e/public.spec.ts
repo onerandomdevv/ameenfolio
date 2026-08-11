@@ -137,13 +137,15 @@ test("resume is not presented as a standalone homepage section", async ({
 
   // The résumé is one of the two closing calls to action, not footer fine
   // print, so it is asserted inside the contact section rather than <footer>.
-  const contact = page.locator("section[aria-labelledby=contact-heading]");
-  await expect(
-    contact.getByRole("heading", { name: "Open to a nice conversation" }),
-  ).toBeVisible();
+  const contact = page.locator("#contact");
+  // One sentence, not a heading over a button row: both actions sit in the
+  // running text, so the whole invitation reads as a single line.
+  await expect(contact.locator("p")).toHaveText(
+    /Open to a nice conversation, send a message or view resume\./,
+  );
   // A dialog trigger, not a mailto link: it offers a choice of channel rather
   // than committing the visitor to email before they have picked one.
-  await contact.getByRole("button", { name: "Send a message" }).click();
+  await contact.getByRole("button", { name: "send a message" }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByRole("link", { name: /Email/ })).toHaveAttribute(
     "href",
@@ -153,9 +155,9 @@ test("resume is not presented as a standalone homepage section", async ({
   // A button, not a link: the résumé is fetched and downloaded in place rather
   // than navigated to, so there is deliberately no href to follow.
   await expect(
-    contact.getByRole("button", { name: "View Resume" }),
+    contact.getByRole("button", { name: "view resume" }),
   ).toBeVisible();
-  await expect(page.getByRole("link", { name: "View Resume" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /view resume/i })).toHaveCount(0);
 });
 
 test("projects archive has no internal detail links", async ({ page }) => {

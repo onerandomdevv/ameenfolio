@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { availabilityValues } from "@/config/availability";
+import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
 import { techStackGroupValues } from "@/config/tech-stack";
@@ -82,6 +83,49 @@ export const techStackItemSchema = z.object({
   visible: z.boolean(),
 });
 
+export const postCategorySchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  displayOrder: z.number().int().min(0).max(999),
+});
+
+export const postLinkSchema = z.object({
+  label: z.string().trim().min(1).max(80),
+  url: z.url().startsWith("https://"),
+  iconName: z.enum(postLinkIconValues),
+  displayOrder: z.number().int().min(0).max(999),
+});
+
+// The slug is the post's address. Shape-checked here as well as by the column
+// constraint, so a bad one is a field error on the form rather than a database
+// exception surfacing as a failed save.
+const postSlug = z
+  .string()
+  .trim()
+  .min(1)
+  .max(80)
+  .regex(
+    /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+    "Lowercase letters, numbers and single hyphens only.",
+  );
+
+export const postSchema = z.object({
+  title: z.string().trim().min(2).max(160),
+  slug: postSlug,
+  bodyMarkdown: z.string().trim().min(1, "The post needs a body."),
+  // An empty select means uncategorised, which is a real state rather than a
+  // missing value: a post can be published before it is filed. Explicitly
+  // nullable rather than optional-with-a-default, so the schema's input and
+  // output types match and the form resolver stays typed.
+  categoryId: z.uuid().nullable(),
+  // A real Date, not a coerced one, for the same reason: coercion widens the
+  // input side to unknown and the resolver can no longer line up with the form.
+  publishedAt: z.date(),
+  published: z.boolean(),
+  pinned: z.boolean(),
+  pinnedOrder: z.number().int().min(0).max(999),
+  links: z.array(postLinkSchema).max(6),
+});
+
 export const nowSectionSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(600),
   published: z.boolean(),
@@ -131,7 +175,7 @@ export const bippyVisibilitySchema = z.object({
 });
 
 export const uploadRequestSchema = z.object({
-  resourceType: z.enum(["icon", "profile", "resume"]),
+  resourceType: z.enum(["icon", "profile", "resume", "post"]),
   filename: z.string().trim().min(1).max(180),
   contentType: z.string().trim(),
   size: z.number().int().positive(),
@@ -144,3 +188,6 @@ export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
 export type BippyVisibilityInput = z.infer<typeof bippyVisibilitySchema>;
+export type PostInput = z.infer<typeof postSchema>;
+export type PostLinkInput = z.infer<typeof postLinkSchema>;
+export type PostCategoryInput = z.infer<typeof postCategorySchema>;

@@ -17,9 +17,18 @@ export const UPLOAD_RULES = {
     maxBytes: 10 * 1024 * 1024,
     prefix: "resumes",
   },
+  // Screenshots and exported diagrams, so the ceiling is higher than an icon's
+  // and gif is allowed: a short screen capture is often the clearest way to
+  // show what a thing does.
+  post: {
+    contentTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+    maxBytes: 8 * 1024 * 1024,
+    prefix: "posts",
+  },
 } as const;
 
 const extensions: Record<string, string> = {
+  "image/gif": ".gif",
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/webp": ".webp",
@@ -72,8 +81,20 @@ export function isPublicProfileKey(key: string) {
   );
 }
 
+export function isPublicPostImageKey(key: string) {
+  const normalized = key.replaceAll("\\", "/");
+  return (
+    normalized === key &&
+    !normalized.includes("..") &&
+    /^posts\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp|gif)$/.test(normalized) &&
+    path.posix.normalize(normalized) === normalized
+  );
+}
+
 export function isPublicMediaKey(key: string) {
-  return isPublicIconKey(key) || isPublicProfileKey(key);
+  return (
+    isPublicIconKey(key) || isPublicProfileKey(key) || isPublicPostImageKey(key)
+  );
 }
 
 export function isManagedObjectKey(key: string) {

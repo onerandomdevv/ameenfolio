@@ -15,10 +15,12 @@
   --color-border-subtle: rgba(255, 255, 255, 0.06);
   --color-border-highlight: rgba(255, 255, 255, 0.12);
 
-  /* The brand lime, matching the GitHub profile README. Down to two uses: the
-     WakaTime activity heatmap, where it encodes how much was coded that day,
-     and a project card's arrow on hover. Keeping the list short is what stops
-     it becoming general decoration. */
+  /* The brand lime, matching the GitHub profile README. Two uses, and this
+     list is the whole of it: the WakaTime activity heatmap, where it encodes
+     how much was coded that day, and the arrow on a project card or row on
+     hover. Everything else — writing rows, post links, the closing
+     invitation — signals with weight or an underline instead. Keeping the
+     list this short is what stops it becoming general decoration. */
   --color-accent-lime: #7fff00;
 
   --color-background: var(--background);
@@ -177,4 +179,181 @@ button {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Rendered markdown. Hand-written rather than a typography plugin: the post
+   has to sit in the same type system as the rest of the site, and the plugin's
+   scale and colours would arrive as a second opinion about both.
+   Every selector is scoped to .post-body so nothing here reaches the app. */
+.post-body {
+  color: var(--foreground);
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.post-body > * + * {
+  margin-top: 1.15em;
+}
+
+.post-body h2,
+.post-body h3,
+.post-body h4 {
+  font-weight: 600;
+  line-height: 1.35;
+  /* Scroll anchoring: without it a heading jumped to from the contents list
+     lands flush against the top of the viewport. */
+  scroll-margin-top: 2rem;
+}
+
+.post-body h2 {
+  margin-top: 2.25em;
+  font-size: 1.05rem;
+}
+
+.post-body h3 {
+  margin-top: 1.9em;
+  font-size: 0.975rem;
+}
+
+.post-body h4 {
+  margin-top: 1.6em;
+  font-size: 0.925rem;
+  color: var(--muted-foreground);
+}
+
+.post-body a {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+  transition: text-decoration-color 150ms;
+}
+
+.post-body a:hover {
+  text-decoration-color: var(--foreground);
+}
+
+.post-body strong {
+  font-weight: 600;
+}
+
+.post-body ul,
+.post-body ol {
+  padding-left: 1.25rem;
+}
+
+.post-body ul {
+  list-style: disc;
+}
+
+.post-body ol {
+  list-style: decimal;
+}
+
+.post-body li + li {
+  margin-top: 0.4em;
+}
+
+.post-body li::marker {
+  color: var(--muted-foreground);
+}
+
+.post-body blockquote {
+  border-left: 2px solid var(--border);
+  padding-left: 1rem;
+  color: var(--muted-foreground);
+}
+
+.post-body img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+}
+
+.post-body code {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.86em;
+}
+
+/* Inline code only. The descendant selector would otherwise put a border and
+   padding around every token inside a highlighted block. */
+.post-body :not(pre) > code {
+  border-radius: 0.25rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.1em 0.35em;
+}
+
+.post-body pre {
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--muted);
+  padding: 0.9rem 1rem;
+  line-height: 1.6;
+}
+
+.post-body table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.post-body th,
+.post-body td {
+  border: 1px solid var(--border);
+  padding: 0.45rem 0.7rem;
+  text-align: left;
+}
+
+.post-body th {
+  font-weight: 600;
+}
+
+.post-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin-top: 2em;
+}
+
+/* Syntax highlighting. A small palette keyed to this site's accent rather than
+   a highlight.js theme, which would bring its own background and greys. */
+.post-body .hljs-comment,
+.post-body .hljs-quote {
+  color: color-mix(in srgb, var(--muted-foreground) 85%, transparent);
+  font-style: italic;
+}
+
+.post-body .hljs-keyword,
+.post-body .hljs-selector-tag,
+.post-body .hljs-literal,
+.post-body .hljs-type {
+  color: #ff7b72;
+}
+
+.post-body .hljs-string,
+.post-body .hljs-regexp,
+.post-body .hljs-addition {
+  color: #9ecbff;
+}
+
+.post-body .hljs-number,
+.post-body .hljs-symbol {
+  color: #f0b9a0;
+}
+
+.post-body .hljs-title,
+.post-body .hljs-function .hljs-title,
+.post-body .hljs-attr,
+.post-body .hljs-attribute {
+  color: #e2c08d;
+}
+
+.post-body .hljs-built_in,
+.post-body .hljs-class .hljs-title {
+  color: #d4bfff;
 }

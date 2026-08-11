@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment } from "react";
 import { after } from "next/server";
-import { getPublicPortfolio } from "@/db/queries";
+import { getPinnedPosts, getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
@@ -15,6 +15,7 @@ import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { TechStackSection } from "@/components/portfolio/tech-stack-section";
+import { WritingSection } from "@/components/portfolio/writing-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -66,6 +67,8 @@ export default async function HomePage() {
     publishedProjectCount,
     statsSnapshot,
   } = await getPublicPortfolio();
+
+  const pinnedPosts = await getPinnedPosts();
 
   const { cards: homepageCards, rows: homepageRows } =
     splitHomepageProjects(projects);
@@ -319,40 +322,41 @@ export default async function HomePage() {
         )}
       </section>
 
+      <WritingSection posts={pinnedPosts} />
+
       <TechStackSection items={techStack} />
 
       {/* The page closes on an invitation rather than trailing off after the
-          tech stack. The résumé lives here now: it was tucked against the
-          footer rule as a lone right-aligned link, which read as fine print
-          rather than as one of two ways to start a conversation. */}
+          tech stack, and it is one sentence rather than a heading over two
+          buttons: the invitation and the two ways to accept it are the same
+          thought. aria-label rather than aria-labelledby because there is no
+          longer a heading to point at.
+
+          Spaced closer than a section break on both sides. It is a closing
+          line rather than another section, so a full gap above left it
+          stranded between the stack and the footer instead of belonging to
+          the end of the page. */}
       <section
         id="contact"
-        className="mt-20 text-center"
-        aria-labelledby="contact-heading"
+        className="mt-14 text-center"
+        aria-label="Get in touch"
       >
-        <h2
-          id="contact-heading"
-          className="text-base leading-7 text-foreground/90"
-        >
-          Open to a nice conversation.
-        </h2>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5">
+        <p className="text-sm leading-7 text-muted-foreground">
+          Open to a nice conversation,{" "}
           <SendMessageDialog
             email={settings.email}
             whatsappUrl={contactLinks.whatsapp}
-          />
-          <span
-            aria-hidden="true"
-            className="h-4 w-px shrink-0 bg-border max-sm:hidden"
-          />
+          />{" "}
+          or{" "}
           <ResumeDownloadButton
             hasResume={Boolean(settings.resumeKey)}
             filename={settings.resumeFilename}
           />
-        </div>
+          .
+        </p>
       </section>
 
-      <footer className="mt-8 font-mono text-xs text-muted-foreground">
+      <footer className="mt-6 font-mono text-xs text-muted-foreground">
         <Separator />
         <div className="mt-8 flex items-center justify-between gap-4">
           <p
