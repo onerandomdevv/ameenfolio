@@ -327,17 +327,18 @@ export default async function HomePage() {
       <TechStackSection items={techStack} />
 
       {/* The page closes on an invitation rather than trailing off after the
-          tech stack. The résumé lives here now: it was tucked against the
-          footer rule as a lone right-aligned link, which read as fine print
-          rather than as one of two ways to start a conversation. */}
-      {/* One sentence rather than a heading over two buttons. The invitation
-          and the two ways to accept it are the same thought, and setting them
-          as a headline plus a button row made a small courtesy look like a
-          call to action. aria-label rather than a heading for the same reason:
-          there is no longer a heading to point at. */}
+          tech stack, and it is one sentence rather than a heading over two
+          buttons: the invitation and the two ways to accept it are the same
+          thought. aria-label rather than aria-labelledby because there is no
+          longer a heading to point at.
+
+          Spaced closer than a section break on both sides. It is a closing
+          line rather than another section, so a full gap above left it
+          stranded between the stack and the footer instead of belonging to
+          the end of the page. */}
       <section
         id="contact"
-        className="mt-20 text-center"
+        className="mt-14 text-center"
         aria-label="Get in touch"
       >
         <p className="text-sm leading-7 text-muted-foreground">
@@ -355,7 +356,7 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <footer className="mt-8 font-mono text-xs text-muted-foreground">
+      <footer className="mt-6 font-mono text-xs text-muted-foreground">
         <Separator />
         <div className="mt-8 flex items-center justify-between gap-4">
           <p
