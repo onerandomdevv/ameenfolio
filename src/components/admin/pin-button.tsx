@@ -58,11 +58,12 @@ export function PinButton({
   );
 }
 
-// Shown under the row it belongs to. Rank comes from the list's pin order, so
-// it can never skip a number or repeat one.
+// Sits beside the name rather than under it, in the same grey as the
+// description: it is a fact about the row, not a second heading. Rank comes
+// from the list's pin order, so it can never skip a number or repeat one.
 export function PinnedMark({ rank }: { rank: number }) {
   return (
-    <span className="mt-1 inline-flex items-center gap-1.5 font-mono text-[11px]">
+    <span className="inline-flex items-center gap-1 font-mono text-[11px] font-normal text-muted-foreground">
       <Pin className="size-[11px]" aria-hidden="true" />
       Pinned · #{rank}
     </span>

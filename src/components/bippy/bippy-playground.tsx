@@ -7,24 +7,9 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  Activity,
-  Gauge,
-  Laptop,
-  Moon,
-  RotateCcw,
-  Sparkles,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Activity, Laptop, Moon, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { SectionHeading } from "@/components/admin/admin-primitives";
 import {
   bippyStateTimeouts,
   transitionBippy,
@@ -373,25 +358,28 @@ export function BippyPlayground() {
     : "Not tested";
 
   return (
-    <section aria-labelledby="playground-heading">
-      <Card className="gap-0 overflow-hidden rounded-md py-0 shadow-none">
-        <CardHeader className="border-b px-4 py-4 sm:px-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1.5">
-              <CardTitle id="playground-heading">Bippy playground</CardTitle>
-              <CardDescription>
-                Test his states, movement, and runtime health.
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" aria-label={`Current state: ${state}`}>
-              {state}
-            </Badge>
-          </div>
-        </CardHeader>
+    <section aria-labelledby="playground-heading" className="max-w-[720px]">
+      <SectionHeading
+        meta="States, movement and runtime health"
+        action={
+          <span
+            className="rounded-full border border-border px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
+            aria-label={`Current state: ${state}`}
+          >
+            {state}
+          </span>
+        }
+      >
+        <span id="playground-heading">Playground</span>
+      </SectionHeading>
 
+      <div>
+        {/* True black, not the admin grey: the arena stands in for the
+            portfolio's own background, so he is tested against what he will
+            actually sit on. */}
         <div
           ref={arenaRef}
-          className="relative h-[20rem] overflow-hidden bg-[#050505] sm:h-[24rem]"
+          className="relative h-[20rem] overflow-hidden rounded-xl border border-border bg-[#050505] sm:h-[24rem]"
           onPointerMove={moveDraggedBippy}
           onPointerUp={stopDragging}
           onPointerCancel={stopDragging}
@@ -418,7 +406,7 @@ export function BippyPlayground() {
         </div>
 
         <div
-          className="grid grid-cols-2 gap-2 border-t p-3 sm:grid-cols-4 sm:p-4"
+          className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4"
           aria-label="Bippy states"
         >
           <Button
@@ -471,23 +459,14 @@ export function BippyPlayground() {
           </Button>
         </div>
 
-        <Separator />
-
-        <CardContent className="space-y-4 px-4 py-4 sm:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Gauge className="size-4 text-muted-foreground" aria-hidden />
-              <div>
-                <h3 className="text-sm font-medium">Performance</h3>
-                <p className="text-xs text-muted-foreground">
-                  A local check. No metrics are stored.
-                </p>
-              </div>
-            </div>
+        <SectionHeading
+          className="mt-8"
+          meta="A local check. No metrics are stored."
+          action={
             <Button
               type="button"
               size="sm"
-              variant="outline"
+              variant="ghost"
               disabled={performanceCheck.isRunning || !pageVisible}
               onClick={performanceCheck.runTest}
             >
@@ -496,9 +475,13 @@ export function BippyPlayground() {
                 ? `Testing · ${performanceCheck.remainingSeconds}s`
                 : "Run 10s check"}
             </Button>
-          </div>
+          }
+        >
+          Performance
+        </SectionHeading>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-4">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-px overflow-hidden border-y border-border bg-border sm:grid-cols-4">
             <PerformanceMetric
               label="Live FPS"
               value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
@@ -540,23 +523,25 @@ export function BippyPlayground() {
               </>
             ) : null}
           </div>
-        </CardContent>
+        </div>
+      </div>
 
-        <p className="sr-only" aria-live="polite">
-          Bippy is now {state}.
-        </p>
-      </Card>
+      <p className="sr-only" aria-live="polite">
+        Bippy is now {state}.
+      </p>
     </section>
   );
 }
 
 function PerformanceMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-card px-3 py-3">
-      <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
+    <div className="bg-background px-3 py-2.5">
+      <p className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase">
         {label}
       </p>
-      <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+      <p className="mt-1 font-mono text-[15px] tabular-nums text-foreground">
+        {value}
+      </p>
     </div>
   );
 }

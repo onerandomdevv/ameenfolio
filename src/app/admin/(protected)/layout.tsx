@@ -1,6 +1,7 @@
 import { count, eq } from "drizzle-orm";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { getDb } from "@/db/client";
+import { getAdminSettings } from "@/db/queries";
 import { posts, projects, recognitions, techStackItems } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
 
@@ -34,13 +35,19 @@ export default async function ProtectedAdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdmin();
-  const counts = await sectionCounts();
+  const [counts, settings] = await Promise.all([
+    sectionCounts(),
+    getAdminSettings(),
+  ]);
 
   return (
     // min-h-dvh so the grey reaches the bottom of short pages: the body itself
     // is painted black for the public site and would show through otherwise.
     <div className="admin-theme min-h-dvh bg-background text-foreground">
-      <AdminSidebar counts={counts} />
+      <AdminSidebar
+        counts={counts}
+        profileImageKey={settings.profileImageKey}
+      />
       {/* Padded rather than gridded, because the sidebar is fixed — a grid
           column would scroll away with the content. */}
       <div className="pl-[62px] lg:pl-[216px]">

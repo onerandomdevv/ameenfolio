@@ -69,12 +69,12 @@ export function AdminPostList({
           <ListRow
             key={post.id}
             title={post.title}
+            titleMeta={rank ? <PinnedMark rank={rank} /> : null}
             meta={
               <>
                 <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
                   /writing/{post.slug}
                 </p>
-                {rank ? <PinnedMark rank={rank} /> : null}
               </>
             }
             badge={

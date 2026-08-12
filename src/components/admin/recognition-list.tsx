@@ -81,7 +81,7 @@ export function AdminRecognitionList({
                 : null
             }
             title={recognition.title}
-            meta={rank ? <PinnedMark rank={rank} /> : null}
+            titleMeta={rank ? <PinnedMark rank={rank} /> : null}
             actions={
               <>
                 {recognition.published ? (

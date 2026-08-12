@@ -81,7 +81,10 @@ export function FieldRow({
     <div
       className={cn(
         "grid gap-x-4 gap-y-1 border-b border-border/60 py-2.5 transition-colors hover:border-border",
-        "grid-cols-1 sm:grid-cols-[9.5rem_minmax(0,1fr)_auto]",
+        // minmax(0,1fr) rather than grid-cols-1: a bare `1fr` track keeps an
+        // `auto` minimum, so a wide intrinsic child — a file input is the
+        // usual culprit — pushes the track past the container.
+        "grid-cols-[minmax(0,1fr)] sm:grid-cols-[9.5rem_minmax(0,1fr)_auto]",
         align === "start" ? "sm:items-start" : "sm:items-center",
       )}
     >
@@ -109,25 +112,30 @@ export function FieldNote({ children }: { children: ReactNode }) {
 export function ListRow({
   icon,
   title,
+  titleMeta,
   meta,
   badge,
   actions,
 }: {
   icon?: ReactNode;
   title: ReactNode;
+  titleMeta?: ReactNode;
   meta?: ReactNode;
   badge?: ReactNode;
   actions?: ReactNode;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/60 py-3">
+      {/* The mark itself, with no tile behind it. A box would make a GitHub
+          glyph and an uploaded logo look like the same kind of thing. */}
       {icon ? (
-        <span className="grid size-[30px] shrink-0 place-items-center rounded-lg bg-accent">
-          {icon}
-        </span>
+        <span className="grid size-5 shrink-0 place-items-center">{icon}</span>
       ) : null}
       <div className="min-w-0 flex-1 basis-[min(100%,16rem)]">
-        <p className="text-[13.5px] font-medium">{title}</p>
+        <p className="flex flex-wrap items-baseline gap-x-2 text-[13.5px] font-medium">
+          {title}
+          {titleMeta}
+        </p>
         {meta}
       </div>
       {badge}

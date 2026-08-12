@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -30,8 +31,18 @@ const links = [
 // sends "View site" back into the admin instead of the portfolio. The public
 // origin has to be named rather than inferred from the current one.
 const publicSiteHref = process.env.NEXT_PUBLIC_APP_URL || "/";
+const mediaBase = process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL?.replace(
+  /\/$/,
+  "",
+);
 
-export function AdminSidebar({ counts }: { counts: Record<string, number> }) {
+export function AdminSidebar({
+  counts,
+  profileImageKey,
+}: {
+  counts: Record<string, number>;
+  profileImageKey?: string | null;
+}) {
   const pathname = usePathname();
   const base = useAdminBase();
 
@@ -44,18 +55,29 @@ export function AdminSidebar({ counts }: { counts: Record<string, number> }) {
         "lg:w-[216px]",
       )}
     >
-      <div className="flex h-[62px] shrink-0 items-center justify-center px-4 lg:h-auto lg:justify-start lg:py-4">
-        <div className="min-w-0 max-lg:hidden">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Admin
-          </p>
-          <p className="truncate text-sm font-semibold">Ameenfolio</p>
-        </div>
-        <span
-          aria-hidden="true"
-          className="grid size-8 place-items-center rounded-lg bg-accent font-mono text-[11px] lg:hidden"
-        >
-          AK
+      <div className="flex h-[62px] shrink-0 items-center gap-2.5 px-3 max-lg:justify-center lg:px-4">
+        {/* The photo is the identity here, so it carries the mark rather than
+            a wordmark repeating the site's name. */}
+        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-accent font-mono text-[11px] text-muted-foreground">
+          {profileImageKey ? (
+            <Image
+              src={
+                mediaBase
+                  ? `${mediaBase}/${profileImageKey}`
+                  : `/media/${profileImageKey}`
+              }
+              alt=""
+              width={32}
+              height={32}
+              unoptimized
+              className="size-full object-cover"
+            />
+          ) : (
+            "A"
+          )}
+        </span>
+        <span className="truncate font-mono text-[12px] tracking-[0.14em] max-lg:hidden">
+          AMEEN
         </span>
       </div>
 

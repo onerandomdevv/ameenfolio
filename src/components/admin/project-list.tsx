@@ -71,12 +71,12 @@ export function AdminProjectList({
             key={project.id}
             icon={<ProjectMark project={project} />}
             title={project.title}
+            titleMeta={rank ? <PinnedMark rank={rank} /> : null}
             meta={
               <>
                 <p className="mt-0.5 truncate text-[12.5px] text-muted-foreground">
                   {project.shortDescription}
                 </p>
-                {rank ? <PinnedMark rank={rank} /> : null}
               </>
             }
             badge={

@@ -14,12 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { cropProfileImage } from "@/lib/image/crop";
@@ -166,6 +161,11 @@ export function ProfileImageField({
           ref={inputRef}
           id="profile-image-upload"
           className="sr-only"
+          // Inline, because the Input base sets w-full and tailwind-merge
+          // resolves that against sr-only unpredictably — leaving an invisible
+          // full-width element that still widened the page on a phone. A style
+          // attribute cannot be merged away.
+          style={{ width: 1, height: 1 }}
           type="file"
           accept="image/png,image/jpeg,image/webp"
           disabled={pending}
@@ -175,9 +175,6 @@ export function ProfileImageField({
             if (file) selectFile(file);
           }}
         />
-        <FieldDescription>
-          Crop ratio 1:1. Saved as a 512 × 512 WebP image.
-        </FieldDescription>
         <FieldError>{error ?? localError}</FieldError>
       </Field>
 
