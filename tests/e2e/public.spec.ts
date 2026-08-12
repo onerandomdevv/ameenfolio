@@ -100,13 +100,21 @@ test("homepage renders the Tech Stack groups", async ({ page }) => {
     has: page.getByRole("heading", { name: "Tech Stack" }),
   });
 
-  // Scoped per group. Counting listitems across the whole section would pass
-  // with one group holding everything and the other rendering empty.
+  // Each group is a row that opens its own list, so the assertion opens them.
+  // Still scoped per group: counting across both would pass with one holding
+  // everything and the other empty.
   for (const name of ["Core Stack", "Tools & Infrastructure"]) {
-    const heading = section.getByRole("heading", { name, exact: true });
-    await expect(heading).toBeVisible();
-    const group = heading.locator("..");
-    expect(await group.getByRole("listitem").count()).toBeGreaterThan(0);
+    const row = section.getByRole("button", { name, exact: true });
+    await expect(row).toBeVisible();
+
+    // Nothing is listed until it is opened — that is the point of the redesign.
+    await row.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    expect(await dialog.getByRole("listitem").count()).toBeGreaterThan(0);
+
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
   }
 
   expect(

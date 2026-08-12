@@ -85,8 +85,9 @@ export const recognitions = pgTable(
       .notNull()
       .default("trophy"),
     verificationUrl: text("verification_url"),
-    // Same as projects: pinned ones show on the homepage, newest pin first.
-    // Uncapped, unlike projects and posts.
+    // Same as projects: pinned ones show on the homepage, newest pin first,
+    // capped at twelve by the recognitions_pinned_limit trigger. The full list
+    // lives on the writing page.
     pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     published: boolean("published").notNull().default(false),
     ...timestamps,

@@ -3,9 +3,10 @@ import { Plus } from "lucide-react";
 import { getAdminRecognitions } from "@/db/queries";
 import { AdminPage } from "@/components/admin/admin-primitives";
 import { AdminRecognitionList } from "@/components/admin/recognition-list";
-import { StatusFilter } from "@/components/admin/status-filter";
+import { PinCount, StatusFilter } from "@/components/admin/status-filter";
 import { Button } from "@/components/ui/button";
 import { adminBasePath } from "@/lib/admin-path";
+import { MAX_PINNED_RECOGNITIONS } from "@/lib/ordering";
 
 export default async function RecognitionsPage({
   searchParams,
@@ -21,12 +22,14 @@ export default async function RecognitionsPage({
   const showing = params.status === "draft" ? "draft" : "live";
   const live = items.filter((item) => item.published);
   const drafts = items.filter((item) => !item.published);
+  const pinned = live.filter((item) => item.pinnedAt).length;
 
   return (
     <AdminPage
       title="Recognitions"
       actions={
         <>
+          <PinCount used={pinned} max={MAX_PINNED_RECOGNITIONS} />
           <StatusFilter live={live.length} drafts={drafts.length} />
           <Button asChild size="sm">
             <Link href={`${base}/recognitions/new`}>

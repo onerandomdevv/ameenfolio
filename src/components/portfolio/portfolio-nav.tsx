@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PortfolioNavMenu } from "@/components/portfolio/portfolio-nav-menu";
 import { cn } from "@/lib/utils";
 
 type PortfolioNavProps = {
@@ -43,6 +44,9 @@ export function PortfolioNav({ current }: PortfolioNavProps) {
             </Link>
           </li>
         ))}
+        <li className="flex items-center">
+          <PortfolioNavMenu />
+        </li>
       </ul>
     </nav>
   );

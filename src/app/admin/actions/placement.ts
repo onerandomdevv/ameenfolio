@@ -14,8 +14,10 @@ import { logServer } from "@/lib/logger";
 import {
   canPinPost,
   canPinProject,
+  canPinRecognition,
   MAX_PINNED_POSTS,
   MAX_PINNED_PROJECTS,
+  MAX_PINNED_RECOGNITIONS,
 } from "@/lib/ordering";
 import {
   pinSchema,
@@ -33,6 +35,23 @@ const tables = {
   project: projects,
   post: posts,
   recognition: recognitions,
+} as const;
+
+// Recognitions used to be exempt: there was no second tier for them to overflow
+// into, so any number could be pinned. The homepage shows a capped list now,
+// which makes them the same kind of thing as the other two.
+const caps = {
+  project: {
+    table: "projects",
+    cap: MAX_PINNED_PROJECTS,
+    hasRoom: canPinProject,
+  },
+  post: { table: "posts", cap: MAX_PINNED_POSTS, hasRoom: canPinPost },
+  recognition: {
+    table: "recognitions",
+    cap: MAX_PINNED_RECOGNITIONS,
+    hasRoom: canPinRecognition,
+  },
 } as const;
 
 export async function setPublished(
@@ -70,12 +89,10 @@ export async function setPinned(
   // Checked before the write so the owner gets a sentence rather than a
   // constraint violation. The database trigger is still the thing that makes
   // it true — this read cannot see a save happening at the same moment.
-  if (parsed.data.pinned && kind !== "recognition") {
-    const pinned = await countPinned(kind === "project" ? "projects" : "posts");
-    const room =
-      kind === "project" ? canPinProject(pinned) : canPinPost(pinned);
-    if (!room) {
-      const cap = kind === "project" ? MAX_PINNED_PROJECTS : MAX_PINNED_POSTS;
+  if (parsed.data.pinned) {
+    const { table, cap, hasRoom } = caps[kind];
+    const pinned = await countPinned(table);
+    if (!hasRoom(pinned)) {
       return {
         ok: false,
         message: `Only ${cap} can be pinned to the homepage. Unpin one first.`,
