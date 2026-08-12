@@ -1,60 +1,60 @@
 import { describe, expect, it } from "vitest";
-import { splitEmphasis } from "@/lib/text-emphasis";
 import { portfolioIdentity } from "@/config/portfolio";
+import { splitEmphasis } from "@/lib/text-emphasis";
+
+const rejoin = (text: string) =>
+  splitEmphasis(text)
+    .map((segment) => segment.text)
+    .join("");
 
 describe("splitEmphasis", () => {
-  it("marks each term and keeps the surrounding text intact", () => {
-    expect(splitEmphasis("a Founder here", ["Founder"])).toEqual([
-      { text: "a ", emphasized: false },
-      { text: "Founder", emphasized: true },
-      { text: " here", emphasized: false },
-    ]);
-  });
-
-  it("preserves the original text exactly when rejoined", () => {
-    const text = portfolioIdentity.introduction;
-    const rejoined = splitEmphasis(text, portfolioIdentity.introductionEmphasis)
-      .map((segment) => segment.text)
-      .join("");
-
-    expect(rejoined).toBe(text);
-  });
-
-  it("prefers the longest term when one contains another", () => {
+  it("emphasises text between double asterisks and drops the markers", () => {
     expect(
-      splitEmphasis("Software Engineer", ["Engineer", "Software Engineer"]),
-    ).toEqual([{ text: "Software Engineer", emphasized: true }]);
+      splitEmphasis("I am a **Software Engineer** and a **Founder**."),
+    ).toEqual([
+      { text: "I am a ", emphasized: false },
+      { text: "Software Engineer", emphasized: true },
+      { text: " and a ", emphasized: false },
+      { text: "Founder", emphasized: true },
+      { text: ".", emphasized: false },
+    ]);
   });
 
-  it("matches every occurrence", () => {
-    const marked = splitEmphasis("Founder and Founder", ["Founder"]).filter(
-      (segment) => segment.emphasized,
+  it("keeps the visible text intact for the shipped introduction", () => {
+    expect(rejoin(portfolioIdentity.introduction)).toBe(
+      portfolioIdentity.introduction.replaceAll("**", ""),
     );
-
-    expect(marked).toHaveLength(2);
   });
 
-  it("is case sensitive", () => {
-    expect(splitEmphasis("founder", ["Founder"])).toEqual([
-      { text: "founder", emphasized: false },
+  it("preserves newlines so the paragraph keeps its line breaks", () => {
+    const segments = splitEmphasis("First line.\nSecond **line**.");
+    expect(segments[0].text).toContain("\n");
+    expect(rejoin("First line.\nSecond **line**.")).toBe(
+      "First line.\nSecond line.",
+    );
+  });
+
+  // Half-typed markers are the normal state of a field being edited, so they
+  // must not emphasise the remainder of the paragraph.
+  it("leaves an unclosed marker as written", () => {
+    expect(splitEmphasis("I am a **Software")).toEqual([
+      { text: "I am a **Software", emphasized: false },
     ]);
   });
 
-  it("returns the text untouched when there are no terms", () => {
-    expect(splitEmphasis("plain", [])).toEqual([
-      { text: "plain", emphasized: false },
+  it("leaves an empty marker pair as written", () => {
+    expect(splitEmphasis("a **** b")).toEqual([
+      { text: "a **** b", emphasized: false },
     ]);
-    expect(splitEmphasis("", ["Founder"])).toEqual([]);
   });
 
-  it("emphasises both configured phrases in the real introduction", () => {
-    const marked = splitEmphasis(
-      portfolioIdentity.introduction,
-      portfolioIdentity.introductionEmphasis,
-    )
-      .filter((segment) => segment.emphasized)
-      .map((segment) => segment.text);
+  it("returns nothing for empty text", () => {
+    expect(splitEmphasis("")).toEqual([]);
+  });
 
-    expect(marked).toEqual(["Software Engineer", "Founder"]);
+  it("handles emphasis at both ends", () => {
+    expect(splitEmphasis("**all of it**")).toEqual([
+      { text: "all of it", emphasized: true },
+    ]);
   });
 });

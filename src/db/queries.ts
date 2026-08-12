@@ -22,6 +22,11 @@ import { MAX_PINNED_POSTS, MAX_PINNED_PROJECTS } from "@/lib/ordering";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
+  // Null, so the copy in src/config/portfolio.ts supplies these until the
+  // Profile screen is saved.
+  displayName: null,
+  role: null,
+  introduction: null,
   email: "hello@example.com",
   contactLinks: {},
   profileImageKey: null,
@@ -192,6 +197,35 @@ export async function getAdminSettings() {
     .from(siteSettings)
     .where(eq(siteSettings.id, 1));
   return rows[0] ?? defaultSiteSettings;
+}
+
+// A narrow read for the places that need only the name and role — the page
+// title and the share card — so neither pays for the whole portfolio query.
+export async function getIdentitySettings() {
+  const fallback = {
+    displayName: null,
+    role: null,
+    introduction: null,
+  };
+  if (!canQueryDatabase()) return fallback;
+
+  try {
+    const rows = await getDb()
+      .select({
+        displayName: siteSettings.displayName,
+        role: siteSettings.role,
+        introduction: siteSettings.introduction,
+      })
+      .from(siteSettings)
+      .where(eq(siteSettings.id, 1))
+      .limit(1);
+    return rows[0] ?? fallback;
+  } catch (error) {
+    // Metadata must never take the page down with it: a title from the shipped
+    // copy is better than a 500.
+    logServer("error", "query.identity_failed", { error: String(error) });
+    return fallback;
+  }
 }
 
 export async function getPublicBippyEnabled() {

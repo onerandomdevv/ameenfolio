@@ -27,10 +27,14 @@ import {
   XIcon,
   YouTubeIcon,
 } from "@/components/icons/brand-icons";
-import { BriefcaseGlyph, MailGlyph } from "@/components/icons/glyph-icons";
+import {
+  BriefcaseGlyph,
+  MailGlyph,
+  UserGlyph,
+} from "@/components/icons/glyph-icons";
 import { availabilityLabel } from "@/config/availability";
-import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
+import { initialsOf, resolveIdentity } from "@/lib/identity";
 import { splitEmphasis } from "@/lib/text-emphasis";
 import { splitHomepageProjects } from "@/lib/ordering";
 import {
@@ -87,12 +91,8 @@ export default async function HomePage() {
       ? `${profileImageBase}/${settings.profileImageKey}`
       : `/media/${settings.profileImageKey}`
     : undefined;
-  const initials = portfolioIdentity.name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const { name: displayName, role, introduction } = resolveIdentity(settings);
+  const initials = initialsOf(displayName);
   const contactItems = [
     {
       label: "GitHub",
@@ -160,7 +160,7 @@ export default async function HomePage() {
             {profileImageSrc ? (
               <AvatarImage
                 src={profileImageSrc}
-                alt={`${portfolioIdentity.name} profile photo`}
+                alt={`${displayName} profile photo`}
                 className="rounded-[22%] object-cover"
               />
             ) : null}
@@ -172,10 +172,11 @@ export default async function HomePage() {
             <h1
               className={`${instrumentSerif.className} text-[clamp(2.25rem,8vw,3.25rem)] leading-[0.95] tracking-[-0.02em] text-foreground`}
             >
-              {portfolioIdentity.name}
+              {displayName}
             </h1>
-            <p className="mt-2 text-sm font-bold text-muted-foreground">
-              {portfolioIdentity.role}
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
+              <UserGlyph className="size-3.5 shrink-0" aria-hidden="true" />
+              {role}
             </p>
             <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
               <BriefcaseGlyph className="size-3.5" aria-hidden="true" />
@@ -184,10 +185,7 @@ export default async function HomePage() {
           </div>
         </div>
         <p className="mt-8 max-w-xl whitespace-pre-line text-pretty text-base leading-7 text-foreground/90">
-          {splitEmphasis(
-            portfolioIdentity.introduction,
-            portfolioIdentity.introductionEmphasis,
-          ).map((segment, index) =>
+          {splitEmphasis(introduction).map((segment, index) =>
             segment.emphasized ? (
               <strong
                 key={index}
@@ -200,7 +198,16 @@ export default async function HomePage() {
             ),
           )}
         </p>
-        <nav className="mt-3" aria-label="Contact links and location">
+        {/* Always rendered. The layout is part of the page rather than something
+            that appears once a fetch succeeds, so the strip holds its place and
+            the cells fill in as their data becomes available. */}
+        <StatsStrip
+          snapshot={statsSnapshot}
+          hackathonWins={settings.hackathonWins}
+          publishedProjectCount={publishedProjectCount}
+        />
+
+        <nav className="mt-6" aria-label="Contact links and location">
           <ul className="flex flex-wrap gap-x-5 gap-y-3">
             {contactItems.map((item) => {
               const Icon = item.icon;
@@ -242,15 +249,6 @@ export default async function HomePage() {
           </ul>
         </nav>
       </section>
-
-      {/* Always rendered. The layout is part of the page rather than something
-          that appears once a fetch succeeds, so the strip holds its place and
-          the cells fill in as their data becomes available. */}
-      <StatsStrip
-        snapshot={statsSnapshot}
-        hackathonWins={settings.hackathonWins}
-        publishedProjectCount={publishedProjectCount}
-      />
 
       <NowSection section={now} />
 

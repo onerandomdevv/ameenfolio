@@ -155,6 +155,17 @@ body {
   overflow-x: hidden;
 }
 
+/* The admin is grey, but the page canvas is painted from the root element, and
+   the root has no background of its own — so it falls back to the body's black.
+   The shell covers exactly the scrollable height, which is why this is invisible
+   on a desktop: it only shows in the rubber-band region a touch device reveals
+   past the end of a scroll, as a black band under the page.
+   Setting it on the root is the fix, because that is what the canvas reads. */
+html:has(.admin-theme),
+body:has(.admin-theme) {
+  background-color: #151519;
+}
+
 ::selection {
   background: #fafafa;
   color: #000;

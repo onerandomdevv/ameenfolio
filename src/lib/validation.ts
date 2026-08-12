@@ -137,7 +137,20 @@ export const nowLinkSchema = z
     message: "Alt text is required when an icon is uploaded.",
   });
 
-export const siteSettingsSchema = z.object({
+// Who you are and how to reach you. Split from the SEO pair because they are
+// two screens now, and each writes only its own columns — a shared schema would
+// make either save wipe the other's fields.
+export const profileSchema = z.object({
+  // What the homepage shows under the photo. The introduction keeps its own
+  // line breaks and carries its emphasis inline as **double asterisks**, so the
+  // field holds exactly what is rendered.
+  displayName: z.string().trim().min(1, "A name is required.").max(80),
+  role: z.string().trim().min(1, "A role is required.").max(80),
+  introduction: z
+    .string()
+    .trim()
+    .min(1, "An introduction is required.")
+    .max(600),
   email: z.email(),
   contactLinks: z.object({
     github: optionalHttpsUrl,
@@ -158,6 +171,10 @@ export const siteSettingsSchema = z.object({
   // at two digits because the strip gives the value one short line.
   hackathonWins: z.number().int().min(0).max(99),
   availability: z.enum(availabilityValues),
+});
+
+// What search engines and link previews show. All that is left on Settings.
+export const seoSchema = z.object({
   seoTitle: z.string().trim().min(10).max(70),
   seoDescription: z.string().trim().min(40).max(170),
 });
@@ -190,7 +207,8 @@ export type RecognitionInput = z.infer<typeof recognitionSchema>;
 export type TechStackItemInput = z.infer<typeof techStackItemSchema>;
 export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
-export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
+export type ProfileInput = z.infer<typeof profileSchema>;
+export type SeoInput = z.infer<typeof seoSchema>;
 export type BippyVisibilityInput = z.infer<typeof bippyVisibilitySchema>;
 export type PublishInput = z.infer<typeof publishSchema>;
 export type PinInput = z.infer<typeof pinSchema>;

@@ -6,6 +6,7 @@ import {
   Layers,
   Settings,
   Trophy,
+  UserRound,
 } from "lucide-react";
 
 // One list, two shapes: the rail on a desktop and the page picker on a phone
@@ -17,6 +18,7 @@ export const adminSections = [
   { href: "/recognitions", label: "Recognitions", icon: Trophy },
   { href: "/tech-stack", label: "Tech Stack", icon: Code2 },
   { href: "/bippy", label: "Bippy", icon: Bot },
+  { href: "/profile", label: "Profile", icon: UserRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;
 
