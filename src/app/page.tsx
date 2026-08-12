@@ -17,7 +17,6 @@ import { SectionHeading } from "@/components/portfolio/section-heading";
 import { TechStackSection } from "@/components/portfolio/tech-stack-section";
 import { WritingSection } from "@/components/portfolio/writing-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
   GitHubIcon,
   GlobeIcon,
@@ -295,6 +294,8 @@ export default async function HomePage() {
         </Link>
       </section>
 
+      <WritingSection posts={pinnedPosts} />
+
       <section
         className="mt-24"
         aria-labelledby="recognitions-heading"
@@ -318,9 +319,18 @@ export default async function HomePage() {
             Recognition entries will appear here once published.
           </RecognitionsEmptyState>
         )}
+        {/* Outside the conditional, so it survives an empty list: the archive
+            can hold plenty while nothing here is pinned. The fragment lands on
+            the recognitions section of the writing page rather than its top. */}
+        <Link
+          href="/writing#recognitions"
+          data-bippy-reaction="curious"
+          data-bippy-safe-zone
+          className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
+        >
+          View more →
+        </Link>
       </section>
-
-      <WritingSection posts={pinnedPosts} />
 
       <TechStackSection items={techStack} />
 
@@ -334,11 +344,7 @@ export default async function HomePage() {
           line rather than another section, so a full gap above left it
           stranded between the stack and the footer instead of belonging to
           the end of the page. */}
-      <section
-        id="contact"
-        className="mt-14 text-center"
-        aria-label="Get in touch"
-      >
+      <section id="contact" className="mt-14" aria-label="Get in touch">
         <p className="text-sm leading-7 text-muted-foreground">
           Open to a nice conversation,{" "}
           <SendMessageDialog
@@ -354,50 +360,47 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <footer className="mt-6 font-mono text-xs text-muted-foreground">
-        <Separator />
-        <div className="mt-8 flex items-center justify-between gap-4">
-          <p
-            className={`${instrumentSerif.className} text-lg font-bold text-foreground`}
-          >
-            © {new Date().getFullYear()} onerandomdevv
-          </p>
-          <nav aria-label="Footer social links">
-            <ul className="flex items-center">
-              {footerSocialItems.map((item) => {
-                const Icon = item.icon;
-                const className =
-                  "inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary";
+      {/* No rule above it. The closing line already ends the page, and a
+          divider between it and these icons read as the start of something
+          else rather than the end of what came before. */}
+      <footer className="mt-5 font-mono text-xs text-muted-foreground">
+        <nav aria-label="Footer social links">
+          {/* Pulled left by the icon box's own padding, so the first glyph
+                lines up with the text above rather than sitting inset. */}
+          <ul className="-ml-2.5 flex items-center">
+            {footerSocialItems.map((item) => {
+              const Icon = item.icon;
+              const className =
+                "inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary";
 
-                return (
-                  <li key={item.label}>
-                    {item.href ? (
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={item.label}
-                        data-bippy-reaction="curious"
-                        data-bippy-safe-zone
-                        className={className}
-                      >
-                        <Icon className="size-[18px]" aria-hidden="true" />
-                      </a>
-                    ) : (
-                      <span
-                        role="img"
-                        aria-label={item.label}
-                        className="inline-flex size-9 items-center justify-center text-muted-foreground opacity-50"
-                      >
-                        <Icon className="size-[18px]" aria-hidden="true" />
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
+              return (
+                <li key={item.label}>
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={item.label}
+                      data-bippy-reaction="curious"
+                      data-bippy-safe-zone
+                      className={className}
+                    >
+                      <Icon className="size-[18px]" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span
+                      role="img"
+                      aria-label={item.label}
+                      className="inline-flex size-9 items-center justify-center text-muted-foreground opacity-50"
+                    >
+                      <Icon className="size-[18px]" aria-hidden="true" />
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </footer>
     </main>
   );

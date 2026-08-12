@@ -18,7 +18,11 @@ import {
 import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
 import { logServer } from "@/lib/logger";
-import { MAX_PINNED_POSTS, MAX_PINNED_PROJECTS } from "@/lib/ordering";
+import {
+  MAX_PINNED_POSTS,
+  MAX_PINNED_PROJECTS,
+  MAX_PINNED_RECOGNITIONS,
+} from "@/lib/ordering";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
@@ -102,7 +106,10 @@ export async function getPublicPortfolio() {
       .where(
         and(eq(recognitions.published, true), isNotNull(recognitions.pinnedAt)),
       )
-      .orderBy(desc(recognitions.pinnedAt)),
+      // Capped in the query as well as by the trigger: the homepage should show
+      // twelve even if a thirteenth ever slipped past the write path.
+      .orderBy(desc(recognitions.pinnedAt))
+      .limit(MAX_PINNED_RECOGNITIONS),
     db
       .select()
       .from(techStackItems)
@@ -166,11 +173,36 @@ export async function getAdminProject(id: string) {
   return rows[0] ?? null;
 }
 
+// Everything on the site, for the archive on the writing page. Pinning decides
+// the homepage; publishing decides this.
+export async function getPublishedRecognitions() {
+  if (!canQueryDatabase()) return [];
+
+  try {
+    return await getDb()
+      .select()
+      .from(recognitions)
+      .where(eq(recognitions.published, true))
+      // Newest first, nothing else. Pinning decides the homepage; here the
+      // archive just reads in the order things happened.
+      .orderBy(desc(recognitions.createdAt));
+  } catch (error) {
+    logServer("error", "query.published_recognitions_failed", {
+      error: String(error),
+    });
+    return [];
+  }
+}
+
 export async function getAdminRecognitions() {
-  return getDb()
-    .select()
-    .from(recognitions)
-    .orderBy(desc(recognitions.pinnedAt), desc(recognitions.updatedAt));
+  return (
+    getDb()
+      .select()
+      .from(recognitions)
+      // Recency, the same as projects and posts. Ordering by pinned_at put the
+      // unpinned rows on top, because a DESC sort places NULLs first.
+      .orderBy(desc(recognitions.updatedAt))
+  );
 }
 
 export async function getAdminNow() {
@@ -381,19 +413,17 @@ export async function getTakenSlugs(excludeId?: string) {
 
 // Counted rather than derived from a list: the caps are enforced against what
 // is in the database at the moment of the write, not what a page last rendered.
-export async function countPinned(table: "projects" | "posts") {
-  const db = getDb();
-  const [row] =
-    table === "projects"
-      ? await db
-          .select({ value: count() })
-          .from(projects)
-          .where(
-            and(eq(projects.published, true), isNotNull(projects.pinnedAt)),
-          )
-      : await db
-          .select({ value: count() })
-          .from(posts)
-          .where(and(eq(posts.published, true), isNotNull(posts.pinnedAt)));
+const pinnableTables = {
+  projects,
+  posts,
+  recognitions,
+} as const;
+
+export async function countPinned(table: keyof typeof pinnableTables) {
+  const pinnable = pinnableTables[table];
+  const [row] = await getDb()
+    .select({ value: count() })
+    .from(pinnable)
+    .where(and(eq(pinnable.published, true), isNotNull(pinnable.pinnedAt)));
   return Number(row.value);
 }

@@ -4,10 +4,12 @@ import {
   canAddNowLink,
   canPinPost,
   canPinProject,
+  canPinRecognition,
   HOMEPAGE_CARD_PROJECTS,
   MAX_NOW_LINKS,
   MAX_PINNED_POSTS,
   MAX_PINNED_PROJECTS,
+  MAX_PINNED_RECOGNITIONS,
   pinRank,
   splitHomepageProjects,
 } from "@/lib/ordering";
@@ -21,6 +23,11 @@ describe("portfolio ordering", () => {
   it("prevents a sixth pinned post", () => {
     expect(canPinPost(MAX_PINNED_POSTS - 1)).toBe(true);
     expect(canPinPost(MAX_PINNED_POSTS)).toBe(false);
+  });
+
+  it("prevents a thirteenth pinned recognition", () => {
+    expect(canPinRecognition(MAX_PINNED_RECOGNITIONS - 1)).toBe(true);
+    expect(canPinRecognition(MAX_PINNED_RECOGNITIONS)).toBe(false);
   });
 
   it("prevents a fifth Now link", () => {

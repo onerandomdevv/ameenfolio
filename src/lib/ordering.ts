@@ -4,9 +4,8 @@
 export const HOMEPAGE_CARD_PROJECTS = 8;
 export const MAX_PINNED_PROJECTS = 12;
 export const MAX_PINNED_POSTS = 5;
+export const MAX_PINNED_RECOGNITIONS = 12;
 export const MAX_NOW_LINKS = 4;
-
-// Recognitions are deliberately uncapped: there is no tiering to run out of.
 
 export function canPinProject(existingPinned: number) {
   return existingPinned < MAX_PINNED_PROJECTS;
@@ -14,6 +13,10 @@ export function canPinProject(existingPinned: number) {
 
 export function canPinPost(existingPinned: number) {
   return existingPinned < MAX_PINNED_POSTS;
+}
+
+export function canPinRecognition(existingPinned: number) {
+  return existingPinned < MAX_PINNED_RECOGNITIONS;
 }
 
 export function canAddNowLink(existingLinks: number) {

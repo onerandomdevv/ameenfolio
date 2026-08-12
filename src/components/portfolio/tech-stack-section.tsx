@@ -1,5 +1,5 @@
 import { SectionHeading } from "@/components/portfolio/section-heading";
-import { Badge } from "@/components/ui/badge";
+import { TechStackGroups } from "@/components/portfolio/tech-stack-groups";
 import { techStackGroups } from "@/config/tech-stack";
 import type { TechStackItem } from "@/db/schema";
 
@@ -8,8 +8,12 @@ export function TechStackSection({ items }: { items: TechStackItem[] }) {
   // over empty space, so emptying one from the admin removes it cleanly.
   const groups = techStackGroups
     .map((group) => ({
-      ...group,
-      items: items.filter((item) => item.groupKey === group.value),
+      value: group.value,
+      label: group.label,
+      // Only what the list needs, so the whole row does not cross to the client.
+      items: items
+        .filter((item) => item.groupKey === group.value)
+        .map((item) => ({ id: item.id, name: item.name })),
     }))
     .filter((group) => group.items.length > 0);
 
@@ -22,27 +26,7 @@ export function TechStackSection({ items }: { items: TechStackItem[] }) {
       data-bippy-section="stack"
     >
       <SectionHeading id="stack-heading" title="Tech Stack" />
-      <div className="mt-8 flex flex-col gap-8">
-        {groups.map((group) => (
-          <div key={group.value}>
-            <h3 className="text-xs font-normal text-foreground">
-              {group.label}
-            </h3>
-            <ul className="mt-4 flex flex-wrap gap-2">
-              {group.items.map((technology) => (
-                <li key={technology.id}>
-                  <Badge
-                    variant="secondary"
-                    className="min-h-9 rounded-[4px] px-3"
-                  >
-                    {technology.name}
-                  </Badge>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <TechStackGroups groups={groups} />
     </section>
   );
 }
