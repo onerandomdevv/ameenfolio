@@ -5,7 +5,8 @@ import {
   nowSectionSchema,
   projectSchema,
   recognitionSchema,
-  siteSettingsSchema,
+  profileSchema,
+  seoSchema,
 } from "@/lib/validation";
 
 describe("portfolio validation", () => {
@@ -69,18 +70,15 @@ describe("portfolio validation", () => {
   });
 
   it("accepts only HTTPS contact links", () => {
-    const result = siteSettingsSchema.safeParse({
+    const result = profileSchema.safeParse({
       email: "ameen@example.com",
       contactLinks: { github: "javascript:alert(1)" },
-      seoTitle: "Ameen — Product Engineer",
-      seoDescription:
-        "Selected software projects, recognition, and the tools used by Ameen.",
     });
     expect(result.success).toBe(false);
   });
 
   it("accepts configurable footer social links", () => {
-    const result = siteSettingsSchema.safeParse({
+    const result = profileSchema.safeParse({
       email: "ameen@example.com",
       contactLinks: {
         instagram: "https://instagram.com/onerandomdevv",
@@ -90,22 +88,16 @@ describe("portfolio validation", () => {
       },
       hackathonWins: 3,
       availability: "open",
-      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
-      seoDescription:
-        "Selected software projects, recognition, and the tools used by Aliameen.",
     });
 
     expect(result.success).toBe(true);
   });
 
   it("accepts only generated profile image keys", () => {
-    const result = siteSettingsSchema.safeParse({
+    const result = profileSchema.safeParse({
       email: "ameen@example.com",
       contactLinks: {},
       profileImageKey: "profiles/2026/my-photo.webp",
-      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
-      seoDescription:
-        "Selected software projects, recognition, and the tools used by Aliameen.",
     });
     expect(result.success).toBe(false);
   });
@@ -115,22 +107,16 @@ describe("portfolio validation", () => {
       email: "ameen@example.com",
       contactLinks: {},
       hackathonWins: 0,
-      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
-      seoDescription:
-        "Selected software projects, recognition, and the tools used by Aliameen.",
     };
 
     expect(
-      siteSettingsSchema.safeParse({ ...settings, availability: "open" })
-        .success,
+      profileSchema.safeParse({ ...settings, availability: "open" }).success,
     ).toBe(true);
     expect(
-      siteSettingsSchema.safeParse({ ...settings, availability: "booked" })
-        .success,
+      profileSchema.safeParse({ ...settings, availability: "booked" }).success,
     ).toBe(true);
     expect(
-      siteSettingsSchema.safeParse({ ...settings, availability: "maybe" })
-        .success,
+      profileSchema.safeParse({ ...settings, availability: "maybe" }).success,
     ).toBe(false);
   });
 
@@ -139,19 +125,55 @@ describe("portfolio validation", () => {
       email: "ameen@example.com",
       contactLinks: {},
       availability: "open",
-      seoTitle: "Aliameen Kareem — Full-Stack Engineer",
-      seoDescription:
-        "Selected software projects, recognition, and the tools used by Aliameen.",
     };
 
     expect(
-      siteSettingsSchema.safeParse({ ...settings, hackathonWins: 100 }).success,
+      profileSchema.safeParse({ ...settings, hackathonWins: 100 }).success,
     ).toBe(false);
     expect(
-      siteSettingsSchema.safeParse({ ...settings, hackathonWins: -1 }).success,
+      profileSchema.safeParse({ ...settings, hackathonWins: -1 }).success,
     ).toBe(false);
     expect(
-      siteSettingsSchema.safeParse({ ...settings, hackathonWins: 2.5 }).success,
+      profileSchema.safeParse({ ...settings, hackathonWins: 2.5 }).success,
+    ).toBe(false);
+  });
+
+  // Profile and Settings are separate screens writing one row. Each schema has
+  // to stand alone, or a save from one would be rejected for missing the
+  // other's fields — or worse, accept and blank them.
+  it("validates the profile without any SEO fields present", () => {
+    expect(
+      profileSchema.safeParse({
+        email: "ameen@example.com",
+        contactLinks: {},
+        hackathonWins: 0,
+        availability: "open",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("validates SEO without any profile fields present", () => {
+    expect(
+      seoSchema.safeParse({
+        seoTitle: "Aliameen Kareem — Full-Stack Engineer",
+        seoDescription:
+          "Selected software projects, recognition, and the tools used by Aliameen.",
+      }).success,
+    ).toBe(true);
+  });
+
+  it("keeps the SEO length limits on the settings half", () => {
+    expect(
+      seoSchema.safeParse({
+        seoTitle: "Too short",
+        seoDescription: "x".repeat(60),
+      }).success,
+    ).toBe(false);
+    expect(
+      seoSchema.safeParse({
+        seoTitle: "A perfectly reasonable title",
+        seoDescription: "x".repeat(171),
+      }).success,
     ).toBe(false);
   });
 
