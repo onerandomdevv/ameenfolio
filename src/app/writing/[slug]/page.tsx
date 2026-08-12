@@ -35,7 +35,7 @@ export default async function PostPage({ params }: PageProps) {
   const found = await getPublishedPost(slug);
   if (!found) notFound();
 
-  const { post, links, category } = found;
+  const { post, links } = found;
   // Only the top level: a contents list that mirrors every subheading stops
   // being a summary of the piece.
   const contents = post.headings.filter((heading) => heading.level === 2);
@@ -86,12 +86,6 @@ export default async function PostPage({ params }: PageProps) {
             <time dateTime={toDateAttribute(post.publishedAt)}>
               {formatPostDate(post.publishedAt)}
             </time>
-            {category ? (
-              <>
-                <span aria-hidden="true">·</span>
-                <span>{category.name}</span>
-              </>
-            ) : null}
           </p>
         </header>
 

@@ -4,11 +4,9 @@ import { NowEmptyState } from "@/components/portfolio/now-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { nowFont } from "@/app/fonts";
 import { Badge } from "@/components/ui/badge";
-import { formatNowLastUpdated, type PublicNow } from "@/lib/now";
+import type { PublicNow } from "@/lib/now";
 
 export function NowSection({ section }: { section: PublicNow | null }) {
-  const lastUpdated = section ? formatNowLastUpdated(section.updatedAt) : null;
-
   return (
     <section
       className="mt-8 max-w-xl"
@@ -61,11 +59,6 @@ export function NowSection({ section }: { section: PublicNow | null }) {
               Muted at /80 rather than dimmer: at 10px this counts as small
               text and needs 4.5:1 against the background. /70 measures 4.33:1
               and fails the contrast check. */}
-          {section.showLastUpdated && lastUpdated ? (
-            <p className="mt-4 text-right font-mono text-[10px] text-muted-foreground/80">
-              {lastUpdated}
-            </p>
-          ) : null}
         </>
       ) : (
         <NowEmptyState />

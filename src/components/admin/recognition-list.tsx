@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { createElement } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { deletePost } from "@/app/admin/actions/writing";
+import { deleteRecognition } from "@/app/admin/actions/recognitions";
 import { EmptyState, ListRow } from "@/components/admin/admin-primitives";
 import { PinButton, PinnedMark } from "@/components/admin/pin-button";
 import {
@@ -19,42 +20,42 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import type { Post } from "@/db/schema";
+import { getRecognitionIcon } from "@/config/recognition-icons";
+import type { Recognition } from "@/db/schema";
 import { pinRank } from "@/lib/ordering";
 import { useAdminBase } from "@/lib/use-admin-base";
-import { formatPostMonth } from "@/lib/writing/format";
 
-export function AdminPostList({
-  posts,
+export function AdminRecognitionList({
+  recognitions,
   all,
   showing,
 }: {
-  posts: Post[];
-  all: Post[];
+  recognitions: Recognition[];
+  all: Recognition[];
   showing: "live" | "draft";
 }) {
   const base = useAdminBase();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
-  if (!posts.length) {
+  if (!recognitions.length) {
     return (
       <EmptyState
-        title={showing === "live" ? "Nothing published yet" : "No drafts"}
+        title={showing === "live" ? "Nothing on the site yet" : "No drafts"}
         description={
           showing === "live"
-            ? "Posts you publish will appear here."
-            : "Writing you save without publishing will appear here."
+            ? "Recognitions you add will appear here."
+            : "Anything saved without adding will appear here."
         }
       />
     );
   }
 
-  function remove(post: Post) {
+  function remove(recognition: Recognition) {
     startTransition(async () => {
-      const result = await deletePost(post.id);
+      const result = await deleteRecognition(recognition.id);
       toast[result.ok ? "success" : "error"](
-        result.ok ? "Post deleted." : result.message,
+        result.ok ? "Recognition deleted." : result.message,
       );
       if (result.ok) router.refresh();
     });
@@ -62,39 +63,38 @@ export function AdminPostList({
 
   return (
     <div className="border-t border-border/60">
-      {posts.map((post) => {
-        const rank = pinRank(all, post);
+      {recognitions.map((recognition) => {
+        const rank = pinRank(all, recognition);
+        const icon = getRecognitionIcon(recognition.iconName);
 
         return (
           <ListRow
-            key={post.id}
-            title={post.title}
-            meta={
-              <>
-                <p className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground">
-                  /writing/{post.slug}
-                </p>
-                {rank ? <PinnedMark rank={rank} /> : null}
-              </>
+            key={recognition.id}
+            // The mark itself, not its name: it is what tells a first from a
+            // third at a glance.
+            icon={
+              icon
+                ? createElement(icon, {
+                    className: "size-4",
+                    "aria-hidden": true,
+                  })
+                : null
             }
-            badge={
-              <span className="shrink-0 font-mono text-[11px] tabular-nums text-muted-foreground">
-                {post.published
-                  ? formatPostMonth(post.publishedAt)
-                  : `Saved ${formatPostMonth(post.updatedAt)}`}
-              </span>
-            }
+            title={recognition.title}
+            meta={rank ? <PinnedMark rank={rank} /> : null}
             actions={
               <>
-                {post.published ? (
+                {recognition.published ? (
                   <PinButton
-                    kind="post"
-                    id={post.id}
-                    pinned={Boolean(post.pinnedAt)}
+                    kind="recognition"
+                    id={recognition.id}
+                    pinned={Boolean(recognition.pinnedAt)}
                   />
                 ) : null}
                 <Button asChild variant="outline" size="sm">
-                  <Link href={`${base}/writing/${post.id}/edit`}>Edit</Link>
+                  <Link href={`${base}/recognitions/${recognition.id}/edit`}>
+                    Edit
+                  </Link>
                 </Button>
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
@@ -109,15 +109,14 @@ export function AdminPostList({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this post?</AlertDialogTitle>
+                      <AlertDialogTitle>Delete this?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        {post.title} and its links will be removed. Any images
-                        it used stay in storage.
+                        {recognition.title} will be removed from the site.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => remove(post)}>
+                      <AlertDialogAction onClick={() => remove(recognition)}>
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>

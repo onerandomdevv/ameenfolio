@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
-import { getAdminPost, getPostCategories } from "@/db/queries";
-import { AdminPageHeader } from "@/components/admin/page-header";
+import { getAdminPost } from "@/db/queries";
 import { PostForm } from "@/components/admin/post-form";
 
 export default async function EditPostPage({
@@ -9,16 +8,8 @@ export default async function EditPostPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [found, categories] = await Promise.all([
-    getAdminPost(id),
-    getPostCategories(),
-  ]);
+  const found = await getAdminPost(id);
   if (!found) notFound();
 
-  return (
-    <>
-      <AdminPageHeader title="Edit post" description={found.post.title} />
-      <PostForm post={found.post} links={found.links} categories={categories} />
-    </>
-  );
+  return <PostForm post={found.post} links={found.links} />;
 }

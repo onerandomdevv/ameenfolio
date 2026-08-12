@@ -2,18 +2,26 @@
 // eight get a card each; anything after that drops to a compact row, so the
 // section can keep growing without the grid turning into a wall of panels.
 export const HOMEPAGE_CARD_PROJECTS = 8;
-export const MAX_HOMEPAGE_PROJECTS = 12;
-export const MAX_NOW_LINKS = 4;
-// The homepage shows a chosen few rather than the newest few, so an older post
-// stays reachable after a run of new ones.
+export const MAX_PINNED_PROJECTS = 12;
 export const MAX_PINNED_POSTS = 5;
+export const MAX_NOW_LINKS = 4;
 
-export function canAddHomepageProject(existingPublishedSelections: number) {
-  return existingPublishedSelections < MAX_HOMEPAGE_PROJECTS;
+// Recognitions are deliberately uncapped: there is no tiering to run out of.
+
+export function canPinProject(existingPinned: number) {
+  return existingPinned < MAX_PINNED_PROJECTS;
 }
 
-// Position decides the tier, nothing on the project itself: homepageOrder has
-// already sorted the list by the time it gets here.
+export function canPinPost(existingPinned: number) {
+  return existingPinned < MAX_PINNED_POSTS;
+}
+
+export function canAddNowLink(existingLinks: number) {
+  return existingLinks < MAX_NOW_LINKS;
+}
+
+// Position decides the tier, nothing on the project itself: the list has
+// already been sorted by pin time when it gets here.
 export function splitHomepageProjects<T>(homepageProjects: T[]) {
   return {
     cards: homepageProjects.slice(0, HOMEPAGE_CARD_PROJECTS),
@@ -21,12 +29,18 @@ export function splitHomepageProjects<T>(homepageProjects: T[]) {
   };
 }
 
-export function canAddNowLink(existingLinks: number) {
-  return existingLinks < MAX_NOW_LINKS;
-}
-
-export function canPinPost(existingPinnedPublished: number) {
-  return existingPinnedPublished < MAX_PINNED_POSTS;
+// What the admin prints beside a pinned row. Rank is a rendering of pin order,
+// never a stored number — which is what makes two #1s or a gap at #3
+// impossible, the failure mode the old display_order integers had.
+export function pinRank<T extends { pinnedAt: Date | null }>(
+  items: T[],
+  item: T,
+) {
+  const pinned = items
+    .filter((entry) => entry.pinnedAt)
+    .sort((a, b) => b.pinnedAt!.getTime() - a.pinnedAt!.getTime());
+  const at = pinned.indexOf(item);
+  return at === -1 ? null : at + 1;
 }
 
 export function byDisplayOrder<T extends { displayOrder: number }>(a: T, b: T) {

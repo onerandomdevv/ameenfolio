@@ -22,4 +22,5 @@ export function validationFailure(error: {
 export function refreshPublicContent() {
   revalidatePath("/");
   revalidatePath("/projects");
+  revalidatePath("/writing");
 }
