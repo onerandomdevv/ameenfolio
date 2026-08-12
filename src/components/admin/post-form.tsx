@@ -46,6 +46,7 @@ export function PostForm({ post, links }: { post?: Post; links?: PostLink[] }) {
   const router = useRouter();
   const base = useAdminBase();
   const [leaving, setLeaving] = useState(false);
+  const [leavingBusy, setLeavingBusy] = useState(false);
   // Only for a post that has never been saved. Once an address is published,
   // people have it — so the slug stops following the title.
   const [slugFollowsTitle, setSlugFollowsTitle] = useState(!post);
@@ -85,7 +86,19 @@ export function PostForm({ post, links }: { post?: Post; links?: PostLink[] }) {
   const hasContent = Boolean(title.trim() || body.trim());
 
   async function persist(values: PostInput, shouldPublish: boolean) {
-    const result = await savePost(values, post?.id, shouldPublish);
+    // Numbered from their position at save time. Deriving each link's order
+    // when it is appended repeats a number after a removal — delete the first
+    // of two and the survivor keeps 1, which the next append also takes — and
+    // savePost rewrites every row in one batch, so the tie makes the displayed
+    // order arbitrary.
+    const ordered: PostInput = {
+      ...values,
+      links: (values.links ?? []).map((link, index) => ({
+        ...link,
+        displayOrder: index,
+      })),
+    };
+    const result = await savePost(ordered, post?.id, shouldPublish);
     if (!result.ok) {
       Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
         setError(name as keyof PostInput, { message: messages[0] }),
@@ -112,19 +125,35 @@ export function PostForm({ post, links }: { post?: Post; links?: PostLink[] }) {
     setLeaving(true);
   }
 
+  // A flag of its own, because `isSubmitting` only covers handlers run through
+  // handleSubmit and these are called straight from the leave guard. Without it
+  // the guard stays live for the whole request and a second click saves again —
+  // here the unique slug blocks the row, but you get an error you did not earn.
   async function saveDraft() {
-    if (!(await persist(getValues(), false))) return;
-    setLeaving(false);
-    toast.success("Saved as a draft.");
-    router.push(`${base}/writing`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      if (!(await persist(getValues(), false))) return;
+      setLeaving(false);
+      toast.success("Saved as a draft.");
+      router.push(`${base}/writing`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   async function discard() {
-    setLeaving(false);
-    if (post) await deletePost(post.id);
-    router.push(`${base}/writing`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      setLeaving(false);
+      if (post) await deletePost(post.id);
+      router.push(`${base}/writing`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   return (
@@ -302,7 +331,7 @@ export function PostForm({ post, links }: { post?: Post; links?: PostLink[] }) {
         onOpenChange={setLeaving}
         onDiscard={discard}
         onSaveDraft={saveDraft}
-        saving={isSubmitting}
+        saving={leavingBusy}
       />
     </AdminPage>
   );

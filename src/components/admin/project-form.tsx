@@ -35,6 +35,7 @@ export function ProjectForm({ project }: { project?: Project }) {
   const router = useRouter();
   const base = useAdminBase();
   const [leaving, setLeaving] = useState(false);
+  const [leavingBusy, setLeavingBusy] = useState(false);
   const live = Boolean(project?.published);
 
   const form = useForm<ProjectInput>({
@@ -103,20 +104,43 @@ export function ProjectForm({ project }: { project?: Project }) {
     setLeaving(true);
   }
 
+  // `isSubmitting` only covers handlers run through handleSubmit, and these two
+  // are called straight from the leave guard. Without a flag of their own the
+  // guard's buttons stay live for the whole request, and a second click starts
+  // a second save — which, with no unique constraint on a project, inserts a
+  // second row.
   async function saveDraft() {
-    const values = getValues();
-    if (!(await persist(values, false))) return;
-    setLeaving(false);
-    toast.success("Saved as a draft.");
-    router.push(`${base}/projects`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      const values = getValues();
+      if (!(await persist(values, false))) return;
+      setLeaving(false);
+      toast.success("Saved as a draft.");
+      router.push(`${base}/projects`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   async function discard() {
-    setLeaving(false);
-    if (project) await deleteProject(project.id);
-    router.push(`${base}/projects`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      // An icon uploaded for a project that is now being thrown away would
+      // otherwise sit in storage with nothing pointing at it.
+      const uploaded = getValues("iconKey");
+      if (uploaded && uploaded !== project?.iconKey) {
+        await cleanupUpload(uploaded);
+      }
+      setLeaving(false);
+      if (project) await deleteProject(project.id);
+      router.push(`${base}/projects`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   const words = countWords(description);
@@ -239,7 +263,7 @@ export function ProjectForm({ project }: { project?: Project }) {
         onOpenChange={setLeaving}
         onDiscard={discard}
         onSaveDraft={saveDraft}
-        saving={isSubmitting}
+        saving={leavingBusy}
       />
     </AdminPage>
   );

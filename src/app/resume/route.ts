@@ -25,6 +25,9 @@ export async function GET(request: Request) {
         "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${filename}"`,
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
+        // The inline view is sandboxed by a Content-Security-Policy rule in
+        // next.config.ts, not here: headers from that config replace a Route
+        // Handler's own header of the same name.
       },
     });
   } catch {

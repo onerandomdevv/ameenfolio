@@ -76,6 +76,14 @@ export function TechStackManager({ items }: { items: TechStackItem[] }) {
 
   function drop(group: TechStackGroupValue, beforeId: string | null) {
     if (!dragging) return;
+    // Dropped on itself: `without` has already removed it, so looking for it
+    // finds nothing and the fallback would send it to the end of the last
+    // group. Releasing where you started should change nothing.
+    if (beforeId === dragging) {
+      setDragging(null);
+      setOver(null);
+      return;
+    }
     const moving = rows.find((row) => row.id === dragging);
     if (!moving) return;
 
@@ -112,7 +120,15 @@ export function TechStackManager({ items }: { items: TechStackItem[] }) {
       const result = await saveTechStackItem({
         name: name.trim(),
         groupKey: adding,
-        displayOrder: grouped(adding).length,
+        // One past the highest order in use, not the group's size. `commit`
+        // numbers by position in the flat list across both groups, so a group's
+        // items can hold 5, 6, 7 — and a count of 3 would sort the new item
+        // before them, contradicting "It joins the end of the group".
+        displayOrder:
+          rows.reduce(
+            (highest, row) => Math.max(highest, row.displayOrder),
+            -1,
+          ) + 1,
         visible: true,
       });
       if (!result.ok) {

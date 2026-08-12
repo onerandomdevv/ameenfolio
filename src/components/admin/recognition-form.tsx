@@ -41,6 +41,7 @@ export function RecognitionForm({
   const router = useRouter();
   const base = useAdminBase();
   const [leaving, setLeaving] = useState(false);
+  const [leavingBusy, setLeavingBusy] = useState(false);
   const live = Boolean(recognition?.published);
 
   const form = useForm<RecognitionInput>({
@@ -64,7 +65,13 @@ export function RecognitionForm({
 
   const title = useWatch({ control, name: "title" }) ?? "";
   const iconName = useWatch({ control, name: "iconName" });
+  const verificationUrl = useWatch({ control, name: "verificationUrl" }) ?? "";
   const preview = getRecognitionIcon(iconName);
+
+  // "https://" is the field's starting value, so it does not count as typing.
+  const hasContent = Boolean(
+    title.trim() || verificationUrl.replace(/^https:\/\/$/, "").trim(),
+  );
 
   async function persist(values: RecognitionInput, publish: boolean) {
     const result = await saveRecognition(values, recognition?.id, publish);
@@ -87,26 +94,44 @@ export function RecognitionForm({
 
   function cancel() {
     // Already on the site, or nothing written: leaving needs no decision.
-    if (live || !title.trim()) {
+    // The link counts as written work too — checking only the title threw away
+    // a typed verification URL without asking.
+    if (live || !hasContent) {
       router.push(`${base}/recognitions`);
       return;
     }
     setLeaving(true);
   }
 
+  // A flag of its own: `isSubmitting` only covers handlers run through
+  // handleSubmit, and these are called straight from the leave guard. Without
+  // it the guard's buttons stay live for the whole request, and a second click
+  // adds a second recognition.
   async function saveDraft() {
-    if (!(await persist(getValues(), false))) return;
-    setLeaving(false);
-    toast.success("Saved as a draft.");
-    router.push(`${base}/recognitions`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      if (!(await persist(getValues(), false))) return;
+      setLeaving(false);
+      toast.success("Saved as a draft.");
+      router.push(`${base}/recognitions`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   async function discard() {
-    setLeaving(false);
-    if (recognition) await deleteRecognition(recognition.id);
-    router.push(`${base}/recognitions`);
-    router.refresh();
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      setLeaving(false);
+      if (recognition) await deleteRecognition(recognition.id);
+      router.push(`${base}/recognitions`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
   }
 
   return (
@@ -121,7 +146,7 @@ export function RecognitionForm({
             {isSubmitting ? (
               <LoaderCircle data-icon="inline-start" className="animate-spin" />
             ) : null}
-            Add
+            {recognition ? "Save" : "Add"}
           </Button>
         </>
       }
@@ -196,7 +221,7 @@ export function RecognitionForm({
         onOpenChange={setLeaving}
         onDiscard={discard}
         onSaveDraft={saveDraft}
-        saving={isSubmitting}
+        saving={leavingBusy}
       />
     </AdminPage>
   );

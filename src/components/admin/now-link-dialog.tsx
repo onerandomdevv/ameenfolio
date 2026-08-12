@@ -68,14 +68,20 @@ export function NowLinkDialog({
   const [uploading, setUploading] = useState(false);
   const [saving, startSaving] = useTransition();
 
-  // Reopening on a different row must not show the previous row's values.
-  const [seen, setSeen] = useState(link?.id);
-  if (open && seen !== link?.id) {
-    setSeen(link?.id);
-    setLabel(link?.label ?? "");
-    setUrl(link?.url ?? "https://");
-    setIconKey(link?.iconKey ?? undefined);
-    setIconName((link?.iconName as NowLinkIconName) ?? DEFAULT_NOW_LINK_ICON);
+  // Every open starts from the saved values, so Cancel really does discard.
+  // Keyed on the closed-to-open transition rather than on the link's id: a row
+  // owns one dialog for its whole life, so the id never changes and a test
+  // against it can never fire — including for the add dialog, where the id is
+  // undefined on both sides.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      setLabel(link?.label ?? "");
+      setUrl(link?.url ?? "https://");
+      setIconKey(link?.iconKey ?? undefined);
+      setIconName((link?.iconName as NowLinkIconName) ?? DEFAULT_NOW_LINK_ICON);
+    }
   }
 
   function chooseFile(file: File) {

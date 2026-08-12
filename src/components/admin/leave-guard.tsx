@@ -45,16 +45,27 @@ export function LeaveGuard({
           {/* Cancel closes and returns to the form. A modal with only two
               destructive-ish choices would trap someone who hit Cancel by
               mistake. */}
-          <AlertDialogCancel>Keep editing</AlertDialogCancel>
+          <AlertDialogCancel disabled={saving}>Keep editing</AlertDialogCancel>
           <button
             type="button"
             onClick={onDiscard}
-            className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-sm text-destructive transition-colors hover:bg-destructive/10"
+            disabled={saving}
+            className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-sm text-destructive transition-colors hover:bg-destructive/10 disabled:pointer-events-none disabled:opacity-50"
           >
             Delete
           </button>
-          <AlertDialogAction onClick={onSaveDraft} disabled={saving}>
-            Save draft
+          {/* preventDefault so the dialog stays open while the save runs.
+              AlertDialogAction closes on click by default, which unmounts the
+              button before `disabled` can take effect — leaving a live control
+              that a second click would fire again, inserting a second row. */}
+          <AlertDialogAction
+            disabled={saving}
+            onClick={(event) => {
+              event.preventDefault();
+              if (!saving) onSaveDraft();
+            }}
+          >
+            {saving ? "Saving…" : "Save draft"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
