@@ -79,6 +79,9 @@ describe("portfolio validation", () => {
 
   it("accepts configurable footer social links", () => {
     const result = profileSchema.safeParse({
+      displayName: "Aliameen Kareem",
+      role: "Full-Stack Engineer",
+      introduction: "I am a **Software Engineer**.",
       email: "ameen@example.com",
       contactLinks: {
         instagram: "https://instagram.com/onerandomdevv",
@@ -104,6 +107,9 @@ describe("portfolio validation", () => {
 
   it("accepts only the two availability states", () => {
     const settings = {
+      displayName: "Aliameen Kareem",
+      role: "Full-Stack Engineer",
+      introduction: "I am a **Software Engineer**.",
       email: "ameen@example.com",
       contactLinks: {},
       hackathonWins: 0,
@@ -144,6 +150,9 @@ describe("portfolio validation", () => {
   it("validates the profile without any SEO fields present", () => {
     expect(
       profileSchema.safeParse({
+        displayName: "Aliameen Kareem",
+        role: "Full-Stack Engineer",
+        introduction: "I am a **Software Engineer**.",
         email: "ameen@example.com",
         contactLinks: {},
         hackathonWins: 0,

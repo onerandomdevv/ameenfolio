@@ -1,16 +1,26 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { portfolioIdentity } from "@/config/portfolio";
+import { getIdentitySettings } from "@/db/queries";
+import { resolveIdentity } from "@/lib/identity";
 
-export const alt = `${portfolioIdentity.name} — ${portfolioIdentity.role}`;
+// Static, because `alt` cannot be async — so it says what the card is rather
+// than naming someone, which would drift the moment the name is edited.
+export const alt = "Portfolio preview card";
+// Rendered per request, not prerendered. The name and role are editable, and a
+// card baked at build time would keep introducing whoever was in the database
+// when the site was last deployed — the exact drift generating it was meant to
+// avoid. Social scrapers fetch this rarely, so the cost is a non-issue.
+export const dynamic = "force-dynamic";
+
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Generated rather than committed as a PNG so the card cannot drift from
-// src/config/portfolio.ts. The font is read from disk rather than fetched, so a
-// build never depends on the network.
+// Generated rather than committed as a PNG so the card cannot drift from the
+// name and role the site is actually showing. The font is read from disk rather
+// than fetched, so a build never depends on the network.
 export default async function OpengraphImage() {
+  const identity = resolveIdentity(await getIdentitySettings());
   const [serif, logo, portrait] = await Promise.all([
     readFile(
       join(process.cwd(), "src/app/og-assets/InstrumentSerif-Regular.ttf"),
@@ -76,7 +86,7 @@ export default async function OpengraphImage() {
           style={{ marginBottom: 32 }}
         />
         <div style={{ fontSize: 80, lineHeight: 1, letterSpacing: "-0.02em" }}>
-          {portfolioIdentity.name}
+          {identity.name}
         </div>
         <div
           style={{
@@ -86,7 +96,7 @@ export default async function OpengraphImage() {
             color: "#b4b4b8",
           }}
         >
-          {portfolioIdentity.role}
+          {identity.role}
         </div>
       </div>
     </div>,

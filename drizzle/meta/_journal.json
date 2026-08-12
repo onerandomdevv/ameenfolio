@@ -162,6 +162,20 @@
       "when": 1786509810926,
       "tag": "0022_now_link_icon_name",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786516370822,
+      "tag": "0023_editable_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786518174017,
+      "tag": "0024_editable_role",
+      "breakpoints": true
     }
   ]
 }

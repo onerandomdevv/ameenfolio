@@ -173,6 +173,11 @@ export const siteSettings = pgTable(
       .$type<ContactLinks>()
       .notNull()
       .default({}),
+    // NULL means never edited, so the copy in src/config/portfolio.ts keeps
+    // supplying it and the wording lives in one place until then.
+    displayName: text("display_name"),
+    role: text("role"),
+    introduction: text("introduction"),
     profileImageKey: text("profile_image_key"),
     resumeKey: text("resume_key"),
     resumeFilename: text("resume_filename"),

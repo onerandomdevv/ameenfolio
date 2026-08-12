@@ -141,6 +141,16 @@ export const nowLinkSchema = z
 // two screens now, and each writes only its own columns — a shared schema would
 // make either save wipe the other's fields.
 export const profileSchema = z.object({
+  // What the homepage shows under the photo. The introduction keeps its own
+  // line breaks and carries its emphasis inline as **double asterisks**, so the
+  // field holds exactly what is rendered.
+  displayName: z.string().trim().min(1, "A name is required.").max(80),
+  role: z.string().trim().min(1, "A role is required.").max(80),
+  introduction: z
+    .string()
+    .trim()
+    .min(1, "An introduction is required.")
+    .max(600),
   email: z.email(),
   contactLinks: z.object({
     github: optionalHttpsUrl,

@@ -3,44 +3,52 @@ import { Suspense } from "react";
 import "./globals.css";
 import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { Toaster } from "@/components/ui/sonner";
-import { portfolioIdentity } from "@/config/portfolio";
-import { getPublicBippyEnabled } from "@/db/queries";
+import { getIdentitySettings, getPublicBippyEnabled } from "@/db/queries";
+import { resolveIdentity } from "@/lib/identity";
 import { inter } from "@/app/fonts";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.CANONICAL_SITE_URL ?? "http://localhost:3000",
-  ),
-  title: {
-    default: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
-    template: `%s | ${portfolioIdentity.name}`,
-  },
-  description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
-  alternates: { canonical: "/" },
-  openGraph: {
-    title: `${portfolioIdentity.name} — ${portfolioIdentity.role}`,
-    description: `Selected projects, recognition, and the technologies behind ${portfolioIdentity.name}'s work.`,
-    url: "/",
-    siteName: portfolioIdentity.name,
-    locale: "en_US",
-    type: "website",
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
+// Async, because the name and role are editable now. Static metadata would
+// keep naming whoever was hardcoded at build time, so a shared link could
+// introduce someone by a title they had already changed.
+export async function generateMetadata(): Promise<Metadata> {
+  const { name, role } = resolveIdentity(await getIdentitySettings());
+  const description = `Selected projects, recognition, and the technologies behind ${name}'s work.`;
+
+  return {
+    metadataBase: new URL(
+      process.env.CANONICAL_SITE_URL ?? "http://localhost:3000",
+    ),
+    title: {
+      default: `${name} — ${role}`,
+      template: `%s | ${name}`,
+    },
+    description,
+    alternates: { canonical: "/" },
+    openGraph: {
+      title: `${name} — ${role}`,
+      description,
+      url: "/",
+      siteName: name,
+      locale: "en_US",
+      type: "website",
+    },
+    robots: {
       index: true,
       follow: true,
-      "max-video-preview": -1,
-      "max-image-preview": "large",
-      "max-snippet": -1,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-video-preview": -1,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
-  },
-  twitter: {
-    title: portfolioIdentity.name,
-    card: "summary_large_image",
-  },
-};
+    twitter: {
+      title: name,
+      card: "summary_large_image",
+    },
+  };
+}
 
 export default async function RootLayout({
   children,

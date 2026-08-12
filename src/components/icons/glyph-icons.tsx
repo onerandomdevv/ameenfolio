@@ -34,6 +34,17 @@ export function BriefcaseGlyph(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+// Head and shoulders as separate <path> elements, for the reason given above:
+// as subpaths of one path the head would punch a hole in the shoulders.
+export function UserGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>
+      <path d="M12 2.4a4.8 4.8 0 1 1 0 9.6 4.8 4.8 0 0 1 0-9.6z" />
+      <path d="M12 13.6c4.3 0 7.8 2.6 7.8 5.8v.6a1.6 1.6 0 0 1-1.6 1.6H5.8a1.6 1.6 0 0 1-1.6-1.6v-.6c0-3.2 3.5-5.8 7.8-5.8z" />
+    </svg>
+  );
+}
+
 export function TrophyGlyph(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" focusable="false" {...props}>

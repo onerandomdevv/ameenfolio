@@ -34,6 +34,9 @@ type WritableSettings = Partial<typeof siteSettings.$inferInsert>;
 async function writeSettings(changes: WritableSettings) {
   const current = await getAdminSettings();
   const values = {
+    displayName: current.displayName,
+    role: current.role,
+    introduction: current.introduction,
     email: current.email,
     contactLinks: current.contactLinks ?? {},
     profileImageKey: current.profileImageKey,
