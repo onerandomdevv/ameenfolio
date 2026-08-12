@@ -10,6 +10,10 @@ import { getDb } from "@/db/client";
 import { getAdminSettings } from "@/db/queries";
 import { siteSettings } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
+import {
+  buildSettingsWrite,
+  type WritableSettings,
+} from "@/lib/settings-write";
 import { logServer } from "@/lib/logger";
 import { assertStoredUpload, deleteObject } from "@/lib/storage/server";
 import {
@@ -19,41 +23,19 @@ import {
   type SeoInput,
 } from "@/lib/validation";
 
-type WritableSettings = Partial<typeof siteSettings.$inferInsert>;
-
 /**
  * Profile and SEO live on separate screens but in one row, so each save has to
- * touch only its own columns.
- *
- * The write is still a full upsert rather than an update, because the row is
- * not guaranteed to exist — `getAdminSettings` falls back to defaults in memory
- * when it does not — and `email`, `seo_title` and `seo_description` are NOT NULL
- * with no default, so a partial insert would fail. Merging over the current
- * values keeps the other screen's fields intact either way.
+ * touch only its own columns. `buildSettingsWrite` is where that split lives,
+ * and why the insert and the update carry different sets.
  */
 async function writeSettings(changes: WritableSettings) {
   const current = await getAdminSettings();
-  const values = {
-    displayName: current.displayName,
-    role: current.role,
-    introduction: current.introduction,
-    email: current.email,
-    contactLinks: current.contactLinks ?? {},
-    profileImageKey: current.profileImageKey,
-    resumeKey: current.resumeKey,
-    resumeFilename: current.resumeFilename,
-    hackathonWins: current.hackathonWins,
-    availability: current.availability,
-    seoTitle: current.seoTitle,
-    seoDescription: current.seoDescription,
-    ...changes,
-    updatedAt: new Date(),
-  };
+  const { insert, update } = buildSettingsWrite(current, changes, new Date());
 
   await getDb()
     .insert(siteSettings)
-    .values({ id: 1, ...values })
-    .onConflictDoUpdate({ target: siteSettings.id, set: values });
+    .values(insert)
+    .onConflictDoUpdate({ target: siteSettings.id, set: update });
 
   refreshPublicContent();
 }
