@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminPage } from "@/components/admin/admin-primitives";
 import { BippyVisibilitySetting } from "@/components/admin/bippy-visibility-setting";
 import { BippyPlayground } from "@/components/bippy/bippy-playground";
 import { getAdminSettings } from "@/db/queries";
@@ -13,9 +14,9 @@ export default async function AdminBippyPage() {
   const settings = await getAdminSettings();
 
   return (
-    <>
-      <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
+    <AdminPage title="Bippy">
       <BippyPlayground />
-    </>
+      <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
+    </AdminPage>
   );
 }

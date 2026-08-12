@@ -15,6 +15,7 @@ import { recognitionSchema, type RecognitionInput } from "@/lib/validation";
 export async function saveRecognition(
   input: RecognitionInput,
   id?: string,
+  publish?: boolean,
 ): Promise<ActionResult> {
   await requireAdmin();
   const parsed = recognitionSchema.safeParse(input);
@@ -22,6 +23,7 @@ export async function saveRecognition(
   const values = {
     ...parsed.data,
     verificationUrl: parsed.data.verificationUrl || null,
+    ...(publish === undefined ? {} : { published: publish }),
   };
 
   try {

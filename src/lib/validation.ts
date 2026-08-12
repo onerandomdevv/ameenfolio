@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { availabilityValues } from "@/config/availability";
+import { nowLinkIconValues } from "@/config/now-link-icons";
 import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
@@ -54,9 +55,6 @@ export const projectSchema = z
     url: z.url().startsWith("https://"),
     ...iconFields,
     iconName: z.enum(projectIconValues),
-    showOnHomepage: z.boolean(),
-    homepageOrder: z.number().int().min(0).max(999),
-    published: z.boolean(),
   })
   .refine((value) => !value.iconKey || Boolean(value.iconAlt), {
     path: ["iconAlt"],
@@ -72,8 +70,6 @@ export const recognitionSchema = z.object({
     .refine(withinCardWordLimit, cardWordLimitMessage),
   iconName: z.enum(recognitionIconNames),
   verificationUrl: optionalHttpsUrl,
-  displayOrder: z.number().int().min(0).max(999),
-  published: z.boolean(),
 });
 
 export const techStackItemSchema = z.object({
@@ -81,11 +77,6 @@ export const techStackItemSchema = z.object({
   groupKey: z.enum(techStackGroupValues),
   displayOrder: z.number().int().min(0).max(999),
   visible: z.boolean(),
-});
-
-export const postCategorySchema = z.object({
-  name: z.string().trim().min(1).max(40),
-  displayOrder: z.number().int().min(0).max(999),
 });
 
 export const postLinkSchema = z.object({
@@ -112,24 +103,24 @@ export const postSchema = z.object({
   title: z.string().trim().min(2).max(160),
   slug: postSlug,
   bodyMarkdown: z.string().trim().min(1, "The post needs a body."),
-  // An empty select means uncategorised, which is a real state rather than a
-  // missing value: a post can be published before it is filed. Explicitly
-  // nullable rather than optional-with-a-default, so the schema's input and
-  // output types match and the form resolver stays typed.
-  categoryId: z.uuid().nullable(),
-  // A real Date, not a coerced one, for the same reason: coercion widens the
-  // input side to unknown and the resolver can no longer line up with the form.
+  // A real Date, not a coerced one: coercion widens the input side to unknown
+  // and the form resolver can no longer line up with it.
   publishedAt: z.date(),
-  published: z.boolean(),
-  pinned: z.boolean(),
-  pinnedOrder: z.number().int().min(0).max(999),
   links: z.array(postLinkSchema).max(6),
 });
+
+// Dragging sends the whole list back, so the order is validated as a list.
+export const techStackOrderSchema = z.array(
+  z.object({
+    id: z.uuid(),
+    groupKey: z.enum(techStackGroupValues),
+    displayOrder: z.number().int().min(0).max(999),
+  }),
+);
 
 export const nowSectionSchema = z.object({
   description: z.string().trim().min(1, "Description is required.").max(600),
   published: z.boolean(),
-  showLastUpdated: z.boolean(),
 });
 
 export const nowLinkSchema = z
@@ -137,6 +128,7 @@ export const nowLinkSchema = z
     label: z.string().trim().min(1).max(80),
     url: z.url().startsWith("https://"),
     ...iconFields,
+    iconName: z.enum(nowLinkIconValues),
     displayOrder: z.number().int().min(0).max(999),
     visible: z.boolean(),
   })
@@ -170,6 +162,18 @@ export const siteSettingsSchema = z.object({
   seoDescription: z.string().trim().min(40).max(170),
 });
 
+// Publishing and pinning are their own actions rather than fields on a form:
+// the button decides, and a live item comes down by being deleted.
+export const publishSchema = z.object({
+  id: z.uuid(),
+  published: z.boolean(),
+});
+
+export const pinSchema = z.object({
+  id: z.uuid(),
+  pinned: z.boolean(),
+});
+
 export const bippyVisibilitySchema = z.object({
   enabled: z.boolean(),
 });
@@ -188,6 +192,7 @@ export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
 export type SiteSettingsInput = z.infer<typeof siteSettingsSchema>;
 export type BippyVisibilityInput = z.infer<typeof bippyVisibilitySchema>;
+export type PublishInput = z.infer<typeof publishSchema>;
+export type PinInput = z.infer<typeof pinSchema>;
 export type PostInput = z.infer<typeof postSchema>;
 export type PostLinkInput = z.infer<typeof postLinkSchema>;
-export type PostCategoryInput = z.infer<typeof postCategorySchema>;

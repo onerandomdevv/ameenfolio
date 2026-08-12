@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import { saveBippyVisibility } from "@/app/admin/actions/bippy";
-import { Label } from "@/components/ui/label";
+import { SectionHeading } from "@/components/admin/admin-primitives";
 import { Switch } from "@/components/ui/switch";
 
 export function BippyVisibilitySetting({ enabled }: { enabled: boolean }) {
@@ -32,26 +32,34 @@ export function BippyVisibilitySetting({ enabled }: { enabled: boolean }) {
   }
 
   return (
-    // One row, one label, one switch. The previous copy explained where Bippy
-    // appears and what the playground still does when it is off — none of
-    // which the person flipping their own toggle needs told.
-    <div className="mb-8 flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3 sm:px-5">
-      <Label htmlFor="public-bippy-enabled" className="text-sm font-medium">
-        Show Bippy on the portfolio
-      </Label>
-      <div className="flex shrink-0 items-center gap-2">
-        {pending ? (
-          <LoaderCircle
-            className="size-4 animate-spin text-muted-foreground"
-            aria-hidden="true"
+    // Last on the page, after the playground: this is the thing you touch once
+    // you have decided he is ready to go out.
+    <div className="mt-8 max-w-[720px]">
+      <SectionHeading>Public site</SectionHeading>
+      {/* One line at every width: the label is short and the switch belongs at
+          the end of it, so the stacking a field row does would only add a
+          break where none is needed. */}
+      <div className="flex items-center gap-4 border-b border-border/60 py-3">
+        <label
+          htmlFor="public-bippy-enabled"
+          className="text-[13px] whitespace-nowrap"
+        >
+          Show Bippy on the portfolio
+        </label>
+        <span className="ml-auto flex shrink-0 items-center gap-2">
+          {pending ? (
+            <LoaderCircle
+              className="size-3.5 animate-spin text-muted-foreground"
+              aria-hidden="true"
+            />
+          ) : null}
+          <Switch
+            id="public-bippy-enabled"
+            checked={checked}
+            disabled={pending}
+            onCheckedChange={updateVisibility}
           />
-        ) : null}
-        <Switch
-          id="public-bippy-enabled"
-          checked={checked}
-          disabled={pending}
-          onCheckedChange={updateVisibility}
-        />
+        </span>
       </div>
     </div>
   );

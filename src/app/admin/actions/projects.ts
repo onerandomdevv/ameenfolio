@@ -1,6 +1,6 @@
 "use server";
 
-import { and, count, eq, ne } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   refreshPublicContent,
   validationFailure,
@@ -10,50 +10,27 @@ import { getDb } from "@/db/client";
 import { projects } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
 import { logServer } from "@/lib/logger";
-import { canAddHomepageProject } from "@/lib/ordering";
 import { assertStoredUpload, deleteObject } from "@/lib/storage/server";
 import { projectSchema, type ProjectInput } from "@/lib/validation";
-
-async function homepageLimitAvailable(excludeId?: string) {
-  const where = excludeId
-    ? and(
-        eq(projects.showOnHomepage, true),
-        eq(projects.published, true),
-        ne(projects.id, excludeId),
-      )
-    : and(eq(projects.showOnHomepage, true), eq(projects.published, true));
-  const [result] = await getDb()
-    .select({ value: count() })
-    .from(projects)
-    .where(where);
-  return canAddHomepageProject(Number(result.value));
-}
 
 export async function saveProject(
   input: ProjectInput,
   id?: string,
+  publish?: boolean,
 ): Promise<ActionResult> {
   await requireAdmin();
   const parsed = projectSchema.safeParse(input);
   if (!parsed.success) return validationFailure(parsed.error);
+  // published is not on the form. Creating from the Post button publishes;
+  // saving a draft leaves it alone, which is what `publish` carries.
   const values = {
     ...parsed.data,
     contribution: parsed.data.contribution || null,
     statusLabel: parsed.data.statusLabel || null,
     iconKey: parsed.data.iconKey ?? null,
     iconAlt: parsed.data.iconAlt || null,
+    ...(publish === undefined ? {} : { published: publish }),
   };
-  if (
-    parsed.data.published &&
-    parsed.data.showOnHomepage &&
-    !(await homepageLimitAvailable(id))
-  ) {
-    return {
-      ok: false,
-      message: "Only twelve published projects can appear on the homepage.",
-    };
-  }
-
   try {
     if (values.iconKey) {
       await assertStoredUpload(values.iconKey, "icon");

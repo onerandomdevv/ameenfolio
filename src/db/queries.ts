@@ -1,11 +1,10 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
   nowSection,
-  postCategories,
   postLinks,
   posts,
   projects,
@@ -19,7 +18,7 @@ import {
 import { defaultAvailability } from "@/config/availability";
 import { toPublicNow } from "@/lib/now";
 import { logServer } from "@/lib/logger";
-import { MAX_HOMEPAGE_PROJECTS, MAX_PINNED_POSTS } from "@/lib/ordering";
+import { MAX_PINNED_POSTS, MAX_PINNED_PROJECTS } from "@/lib/ordering";
 
 const defaultSiteSettings: SiteSettings = {
   id: 1,
@@ -41,7 +40,6 @@ export const defaultNowSection = {
   id: 1,
   description: "",
   published: false,
-  showLastUpdated: true,
   updatedAt: new Date(0),
 } satisfies typeof nowSection.$inferSelect;
 
@@ -88,18 +86,18 @@ export async function getPublicPortfolio() {
     db
       .select()
       .from(projects)
-      .where(
-        and(eq(projects.published, true), eq(projects.showOnHomepage, true)),
-      )
-      .orderBy(asc(projects.homepageOrder), desc(projects.createdAt))
-      // The page splits this list into cards and rows by position, so it has
-      // to arrive whole rather than clipped to the card tier.
-      .limit(MAX_HOMEPAGE_PROJECTS),
+      .where(and(eq(projects.published, true), isNotNull(projects.pinnedAt)))
+      // Newest pin first. The page splits this list into cards and rows by
+      // position, so it has to arrive whole rather than clipped to the cards.
+      .orderBy(desc(projects.pinnedAt))
+      .limit(MAX_PINNED_PROJECTS),
     db
       .select()
       .from(recognitions)
-      .where(eq(recognitions.published, true))
-      .orderBy(asc(recognitions.displayOrder), desc(recognitions.createdAt)),
+      .where(
+        and(eq(recognitions.published, true), isNotNull(recognitions.pinnedAt)),
+      )
+      .orderBy(desc(recognitions.pinnedAt)),
     db
       .select()
       .from(techStackItems)
@@ -144,11 +142,14 @@ export async function getPublicPortfolio() {
 // same query returned the row.
 export async function getAllPublishedProjects() {
   if (!canQueryDatabase()) return [];
-  return getDb()
-    .select()
-    .from(projects)
-    .where(eq(projects.published, true))
-    .orderBy(asc(projects.homepageOrder), desc(projects.createdAt));
+  return (
+    getDb()
+      .select()
+      .from(projects)
+      .where(eq(projects.published, true))
+      // No pin order here: the archive is everything, newest first.
+      .orderBy(desc(projects.createdAt))
+  );
 }
 
 export async function getAdminProjects() {
@@ -164,7 +165,7 @@ export async function getAdminRecognitions() {
   return getDb()
     .select()
     .from(recognitions)
-    .orderBy(asc(recognitions.displayOrder), desc(recognitions.updatedAt));
+    .orderBy(desc(recognitions.pinnedAt), desc(recognitions.updatedAt));
 }
 
 export async function getAdminNow() {
@@ -265,8 +266,8 @@ export async function getPinnedPosts() {
   return getDb()
     .select()
     .from(posts)
-    .where(and(eq(posts.published, true), eq(posts.pinned, true)))
-    .orderBy(asc(posts.pinnedOrder), desc(posts.publishedAt))
+    .where(and(eq(posts.published, true), isNotNull(posts.pinnedAt)))
+    .orderBy(desc(posts.pinnedAt))
     .limit(MAX_PINNED_POSTS);
 }
 
@@ -279,7 +280,6 @@ export type PublishedPostSummary = {
   // This is when the row last changed, which is what a sitemap means by
   // lastModified.
   updatedAt: Date;
-  categoryId: string | null;
 };
 
 // The index page needs headlines, not bodies. Selecting the columns keeps a
@@ -295,19 +295,10 @@ export async function getPublishedPostSummaries(): Promise<
       slug: posts.slug,
       publishedAt: posts.publishedAt,
       updatedAt: posts.updatedAt,
-      categoryId: posts.categoryId,
     })
     .from(posts)
     .where(eq(posts.published, true))
     .orderBy(desc(posts.publishedAt), desc(posts.createdAt));
-}
-
-export async function getPostCategories() {
-  if (!canQueryDatabase()) return [];
-  return getDb()
-    .select()
-    .from(postCategories)
-    .orderBy(asc(postCategories.displayOrder), asc(postCategories.name));
 }
 
 export async function getPublishedPost(slug: string) {
@@ -321,22 +312,13 @@ export async function getPublishedPost(slug: string) {
   const post = rows[0];
   if (!post) return null;
 
-  const [links, category] = await Promise.all([
-    db
-      .select()
-      .from(postLinks)
-      .where(eq(postLinks.postId, post.id))
-      .orderBy(asc(postLinks.displayOrder), asc(postLinks.createdAt)),
-    post.categoryId
-      ? db
-          .select()
-          .from(postCategories)
-          .where(eq(postCategories.id, post.categoryId))
-          .limit(1)
-      : Promise.resolve([]),
-  ]);
+  const links = await db
+    .select()
+    .from(postLinks)
+    .where(eq(postLinks.postId, post.id))
+    .orderBy(asc(postLinks.displayOrder), asc(postLinks.createdAt));
 
-  return { post, links, category: category[0] ?? null };
+  return { post, links };
 }
 
 export async function getAdminPosts() {
@@ -361,4 +343,23 @@ export async function getTakenSlugs(excludeId?: string) {
     .select({ slug: posts.slug, id: posts.id })
     .from(posts);
   return rows.filter((row) => row.id !== excludeId).map((row) => row.slug);
+}
+
+// Counted rather than derived from a list: the caps are enforced against what
+// is in the database at the moment of the write, not what a page last rendered.
+export async function countPinned(table: "projects" | "posts") {
+  const db = getDb();
+  const [row] =
+    table === "projects"
+      ? await db
+          .select({ value: count() })
+          .from(projects)
+          .where(
+            and(eq(projects.published, true), isNotNull(projects.pinnedAt)),
+          )
+      : await db
+          .select({ value: count() })
+          .from(posts)
+          .where(and(eq(posts.published, true), isNotNull(posts.pinnedAt)));
+  return Number(row.value);
 }

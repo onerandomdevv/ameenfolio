@@ -14,9 +14,8 @@ const project = {
   iconKey: null,
   iconAlt: null,
   iconName: "custom" as const,
-  showOnHomepage: true,
-  homepageOrder: 1,
   published: true,
+  pinnedAt: null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-01T00:00:00.000Z"),
 } satisfies Project;

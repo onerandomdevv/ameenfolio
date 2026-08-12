@@ -1,66 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm, useWatch, type FieldPath } from "react-hook-form";
-import { LoaderCircle, Plus, Trash2 } from "lucide-react";
+import { LoaderCircle, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { saveNowSection } from "@/app/admin/actions/now";
 import {
-  deleteNowLink,
-  saveNowLink,
-  saveNowSection,
-} from "@/app/admin/actions/now";
-import { AdminEmptyState } from "@/components/admin/admin-empty-state";
-import { AdminSection } from "@/components/admin/admin-section";
-import { FormTextField } from "@/components/admin/form-text-field";
-import { UploadField } from "@/components/admin/upload-field";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  AdminPage,
+  FieldNote,
+  SectionHeading,
+} from "@/components/admin/admin-primitives";
+import { LineInput } from "@/components/admin/line-input";
+import { NowLinkDialog } from "@/components/admin/now-link-dialog";
+import { NowLinkRow } from "@/components/admin/now-link-row";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-  FieldLegend,
-} from "@/components/ui/field";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import type { NowLink, NowSection } from "@/db/schema";
 import { MAX_NOW_LINKS } from "@/lib/ordering";
-import { cleanupUpload } from "@/lib/storage/cleanup-upload";
-import {
-  nowLinkSchema,
-  nowSectionSchema,
-  type NowLinkInput,
-  type NowSectionInput,
-} from "@/lib/validation";
 
-const emptyLink: NowLinkInput = {
-  label: "",
-  url: "",
-  displayOrder: 0,
-  visible: true,
-};
+const MAX_DESCRIPTION = 600;
 
 export function NowManager({
   section,
@@ -69,371 +26,105 @@ export function NowManager({
   section: NowSection;
   links: NowLink[];
 }) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<NowLink>();
-  const atLimit = links.length >= MAX_NOW_LINKS;
+  const router = useRouter();
+  const [description, setDescription] = useState(section.description);
+  const [saving, startSaving] = useTransition();
+  // A row that exists only in the browser until it is saved, so "Add link"
+  // gives you somewhere to type rather than writing an empty row first.
+  const [drafting, setDrafting] = useState(false);
 
-  function launch(item?: NowLink) {
-    setEditing(item);
-    setOpen(true);
-  }
-
-  return (
-    <div className="flex flex-col gap-8">
-      <NowSectionForm section={section} />
-
-      <section aria-labelledby="now-links-heading">
-        <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 id="now-links-heading" className="text-lg font-semibold">
-              Linked items
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Add up to {MAX_NOW_LINKS} current projects, learning topics, or
-              contributions.
-            </p>
-          </div>
-          <Button onClick={() => launch()} disabled={atLimit}>
-            <Plus data-icon="inline-start" />
-            Add link
-          </Button>
-        </div>
-
-        {atLimit ? (
-          <p className="mb-4 text-sm text-muted-foreground">
-            Maximum of {MAX_NOW_LINKS} links reached.
-          </p>
-        ) : null}
-
-        {links.length ? (
-          <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-            {links.map((item) => (
-              <li
-                key={item.id}
-                className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
-              >
-                <div className="min-w-0">
-                  <h3 className="text-sm font-medium text-foreground">
-                    {item.label}
-                  </h3>
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {item.url}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.visible ? "Visible" : "Hidden"} / Order{" "}
-                    {item.displayOrder}
-                  </p>
-                </div>
-                <div className="flex shrink-0 items-center gap-4 text-sm">
-                  <button
-                    type="button"
-                    onClick={() => launch(item)}
-                    className="inline-flex h-8 items-center rounded-md border border-border px-3 text-sm text-foreground transition-colors hover:bg-secondary"
-                  >
-                    Edit
-                  </button>
-                  <DeleteNowLink item={item} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <AdminEmptyState
-            title="No linked items yet"
-            description="The Now section can be published with only its description."
-          />
-        )}
-      </section>
-
-      <NowLinkDialog
-        key={editing?.id ?? "new"}
-        open={open}
-        onOpenChange={setOpen}
-        item={editing}
-      />
-    </div>
-  );
-}
-
-function NowSectionForm({ section }: { section: NowSection }) {
-  const form = useForm<NowSectionInput>({
-    resolver: zodResolver(nowSectionSchema),
-    defaultValues: {
-      description: section.description,
-      published: section.published,
-      showLastUpdated: section.showLastUpdated,
-    },
-  });
-  const {
-    register,
-    control,
-    setError,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = form;
-
-  async function submit(values: NowSectionInput) {
-    const result = await saveNowSection(values);
-    if (!result.ok) {
-      Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
-        setError(name as FieldPath<NowSectionInput>, { message: messages[0] }),
+  function save() {
+    startSaving(async () => {
+      const result = await saveNowSection({
+        description,
+        // Saving is what puts it on the site — there is no separate switch.
+        published: true,
+      });
+      toast[result.ok ? "success" : "error"](
+        result.ok ? "Now updated." : result.message,
       );
-      toast.error(result.message);
-      return;
-    }
-
-    toast.success("Now section saved.");
-    window.location.reload();
-  }
-
-  return (
-    <AdminSection
-      title="Current focus"
-      description={
-        "This copy appears below the fixed “Now” heading on the homepage."
-      }
-    >
-      <div>
-        <form id="now-section-form" onSubmit={handleSubmit(submit)}>
-          <FieldGroup>
-            <Field data-invalid={Boolean(errors.description)}>
-              <FieldLabel htmlFor="now-description">Description</FieldLabel>
-              <Textarea
-                id="now-description"
-                rows={5}
-                aria-invalid={Boolean(errors.description)}
-                {...register("description")}
-              />
-              <FieldDescription>
-                A short update about what has your attention right now.
-              </FieldDescription>
-              <FieldError>{errors.description?.message}</FieldError>
-            </Field>
-            <FieldSet>
-              <FieldLegend variant="label">Publishing</FieldLegend>
-              <FieldGroup className="gap-4">
-                <Controller
-                  control={control}
-                  name="published"
-                  render={({ field }) => (
-                    <Field orientation="horizontal">
-                      <FieldLabel htmlFor="now-published">Published</FieldLabel>
-                      <Switch
-                        id="now-published"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </Field>
-                  )}
-                />
-                <Controller
-                  control={control}
-                  name="showLastUpdated"
-                  render={({ field }) => (
-                    <Field orientation="horizontal">
-                      <FieldLabel htmlFor="now-last-updated">
-                        Show last updated date
-                      </FieldLabel>
-                      <Switch
-                        id="now-last-updated"
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </Field>
-                  )}
-                />
-              </FieldGroup>
-            </FieldSet>
-          </FieldGroup>
-        </form>
-      </div>
-      <div className="mt-6 flex justify-end">
-        <Button type="submit" form="now-section-form" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : null}
-          {isSubmitting ? "Saving…" : "Save Now section"}
-        </Button>
-      </div>
-    </AdminSection>
-  );
-}
-
-function NowLinkDialog({
-  open,
-  onOpenChange,
-  item,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  item?: NowLink;
-}) {
-  const form = useForm<NowLinkInput>({
-    resolver: zodResolver(nowLinkSchema),
-    defaultValues: item
-      ? {
-          label: item.label,
-          url: item.url,
-          iconKey: item.iconKey ?? undefined,
-          iconAlt: item.iconAlt ?? undefined,
-          displayOrder: item.displayOrder,
-          visible: item.visible,
-        }
-      : emptyLink,
-  });
-  const {
-    register,
-    control,
-    setValue,
-    setError,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = form;
-  const iconKey = useWatch({ control, name: "iconKey" });
-
-  async function submit(values: NowLinkInput) {
-    const result = await saveNowLink(values, item?.id);
-    if (!result.ok) {
-      if (values.iconKey && values.iconKey !== item?.iconKey) {
-        await cleanupUpload(values.iconKey);
-        setValue("iconKey", undefined);
-      }
-      Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
-        setError(name as FieldPath<NowLinkInput>, { message: messages[0] }),
-      );
-      toast.error(result.message);
-      return;
-    }
-
-    toast.success(item ? "Now link updated." : "Now link created.");
-    onOpenChange(false);
-    window.location.reload();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
-        <DialogHeader>
-          <DialogTitle>{item ? "Edit Now link" : "Add Now link"}</DialogTitle>
-          <DialogDescription>
-            Link to something you are currently building, learning, or
-            contributing to.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(submit)}>
-          <FieldGroup className="grid gap-5 sm:grid-cols-2">
-            <FormTextField
-              label="Label"
-              error={errors.label?.message}
-              inputProps={register("label")}
-            />
-            <FormTextField
-              label="Display order"
-              type="number"
-              error={errors.displayOrder?.message}
-              inputProps={register("displayOrder", { valueAsNumber: true })}
-            />
-            <FormTextField
-              className="sm:col-span-2"
-              label="HTTPS URL"
-              type="url"
-              error={errors.url?.message}
-              inputProps={register("url")}
-            />
-            <UploadField
-              resourceType="icon"
-              value={iconKey}
-              error={errors.iconKey?.message}
-              onChange={(key) => setValue("iconKey", key)}
-            />
-            <FormTextField
-              label="Icon alt text"
-              error={errors.iconAlt?.message}
-              inputProps={register("iconAlt")}
-            />
-            <Controller
-              control={control}
-              name="visible"
-              render={({ field }) => (
-                <Field orientation="horizontal" className="sm:col-span-2">
-                  <FieldLabel htmlFor="now-link-visible">Visible</FieldLabel>
-                  <Switch
-                    id="now-link-visible"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </Field>
-              )}
-            />
-          </FieldGroup>
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <LoaderCircle
-                  data-icon="inline-start"
-                  className="animate-spin"
-                />
-              ) : null}
-              {isSubmitting ? "Saving…" : "Save link"}
-            </Button>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-function DeleteNowLink({ item }: { item: NowLink }) {
-  const [pending, startTransition] = useTransition();
-
-  function remove() {
-    startTransition(async () => {
-      const result = await deleteNowLink(item.id);
-      if (result.ok) {
-        toast.success("Now link deleted.");
-        window.location.reload();
-      } else {
-        toast.error(result.message);
-      }
+      if (result.ok) router.refresh();
     });
   }
 
+  const atCap = links.length >= MAX_NOW_LINKS;
+
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          size="icon-sm"
-          variant="ghost"
-          aria-label={`Delete ${item.label}`}
-        >
-          <Trash2 />
+    <AdminPage
+      title="Now"
+      actions={
+        <Button onClick={save} disabled={saving}>
+          {saving ? (
+            <LoaderCircle data-icon="inline-start" className="animate-spin" />
+          ) : null}
+          Save changes
         </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Delete “{item.label}”?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This permanently removes the link and its managed icon.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={pending}
-            variant="destructive"
-            onClick={remove}
-          >
-            {pending ? "Deleting…" : "Delete"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      }
+    >
+      <div className="max-w-[720px]">
+        <SectionHeading
+          meta={
+            <span className="font-mono tabular-nums">
+              {description.trim().length} / {MAX_DESCRIPTION}
+            </span>
+          }
+        >
+          Current focus
+        </SectionHeading>
+        <LineInput
+          as="textarea"
+          rows={5}
+          maxLength={MAX_DESCRIPTION}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="What you are working on right now"
+          className="rounded-lg border border-border bg-card px-3 py-2.5 text-[13.5px] leading-7"
+        />
+        <FieldNote>Saving puts this on the site straight away.</FieldNote>
+
+        <SectionHeading
+          className="mt-8"
+          meta={
+            <span className="font-mono tabular-nums">
+              {links.length} / {MAX_NOW_LINKS}
+            </span>
+          }
+          action={
+            !atCap ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDrafting(true)}
+              >
+                <Plus data-icon="inline-start" />
+                Add link
+              </Button>
+            ) : null
+          }
+        >
+          Links
+        </SectionHeading>
+
+        <div className="border-t border-border/60">
+          {links.map((link) => (
+            <NowLinkRow key={link.id} link={link} />
+          ))}
+        </div>
+
+        {!links.length ? (
+          <FieldNote>
+            No links yet. Up to {MAX_NOW_LINKS} can sit under the copy.
+          </FieldNote>
+        ) : null}
+
+        {/* Adding uses the same dialog as editing, so both routes set the same
+            three facts in the same layout. */}
+        <NowLinkDialog
+          open={drafting}
+          onOpenChange={setDrafting}
+          displayOrder={links.length}
+        />
+      </div>
+    </AdminPage>
   );
 }

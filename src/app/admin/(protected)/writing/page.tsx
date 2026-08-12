@@ -1,38 +1,51 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { getAdminPosts, getPostCategories } from "@/db/queries";
-import { AdminPageHeader } from "@/components/admin/page-header";
+import { getAdminPosts } from "@/db/queries";
+import { AdminPage } from "@/components/admin/admin-primitives";
 import { AdminPostList } from "@/components/admin/post-list";
-import { PostCategoriesManager } from "@/components/admin/post-categories-manager";
+import { PinCount, StatusFilter } from "@/components/admin/status-filter";
 import { Button } from "@/components/ui/button";
 import { adminBasePath } from "@/lib/admin-path";
 import { MAX_PINNED_POSTS } from "@/lib/ordering";
 
-export default async function AdminWritingPage() {
-  const [posts, categories, base] = await Promise.all([
+export default async function AdminWritingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const [posts, base, params] = await Promise.all([
     getAdminPosts(),
-    getPostCategories(),
     adminBasePath(),
+    searchParams,
   ]);
 
+  const showing = params.status === "draft" ? "draft" : "live";
+  const live = posts.filter((post) => post.published);
+  const drafts = posts.filter((post) => !post.published);
+  const pinned = live.filter((post) => post.pinnedAt).length;
+
   return (
-    <>
-      <AdminPageHeader
-        title="Writing"
-        description={`Notes and articles. Pin up to ${MAX_PINNED_POSTS} to the homepage.`}
-        action={
+    <AdminPage
+      title="Writing"
+      actions={
+        <>
+          <PinCount used={pinned} max={MAX_PINNED_POSTS} />
+          <StatusFilter live={live.length} drafts={drafts.length} />
           <Button asChild size="sm">
             <Link href={`${base}/writing/new`}>
               <Plus data-icon="inline-start" />
-              New post
+              <span className="max-sm:hidden">New post</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </Button>
-        }
+        </>
+      }
+    >
+      <AdminPostList
+        posts={showing === "draft" ? drafts : live}
+        all={live}
+        showing={showing}
       />
-      <div className="grid gap-6">
-        <AdminPostList posts={posts} categories={categories} base={base} />
-        <PostCategoriesManager categories={categories} />
-      </div>
-    </>
+    </AdminPage>
   );
 }

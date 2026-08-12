@@ -27,7 +27,6 @@ function touchSection(db: ReturnType<typeof getDb>, updatedAt: Date) {
       id: 1,
       description: "",
       published: false,
-      showLastUpdated: true,
       updatedAt,
     })
     .onConflictDoUpdate({

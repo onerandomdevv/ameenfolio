@@ -54,18 +54,16 @@ export const projects = pgTable(
       .$type<ProjectIconName>()
       .notNull()
       .default("custom"),
-    showOnHomepage: boolean("show_on_homepage").notNull().default(false),
-    homepageOrder: integer("homepage_order").notNull().default(0),
+    // Pinning is the only placement control. A timestamp rather than a
+    // boolean plus an integer: what the homepage needs is an order, and the
+    // moment something was pinned already is one. Null means not pinned.
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     published: boolean("published").notNull().default(false),
     ...timestamps,
   },
   (table) => [
     index("projects_published_idx").on(table.published),
-    index("projects_homepage_idx").on(
-      table.published,
-      table.showOnHomepage,
-      table.homepageOrder,
-    ),
+    index("projects_pinned_idx").on(table.published, table.pinnedAt),
     check(
       "projects_icon_name_valid",
       sql`${table.iconName} in ('custom', 'github', 'web')`,
@@ -87,12 +85,14 @@ export const recognitions = pgTable(
       .notNull()
       .default("trophy"),
     verificationUrl: text("verification_url"),
-    displayOrder: integer("display_order").notNull().default(0),
+    // Same as projects: pinned ones show on the homepage, newest pin first.
+    // Uncapped, unlike projects and posts.
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     published: boolean("published").notNull().default(false),
     ...timestamps,
   },
   (table) => [
-    index("recognitions_public_idx").on(table.published, table.displayOrder),
+    index("recognitions_public_idx").on(table.published, table.pinnedAt),
     check(
       "recognitions_icon_name_valid",
       sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles', 'github', 'x', 'instagram', 'tiktok', 'linkedin', 'whatsapp', 'youtube', 'globe')`,
@@ -129,7 +129,6 @@ export const nowSection = pgTable(
     id: integer("id").primaryKey().default(1),
     description: text("description").notNull(),
     published: boolean("published").notNull().default(false),
-    showLastUpdated: boolean("show_last_updated").notNull().default(true),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -145,6 +144,8 @@ export const nowLinks = pgTable(
     url: text("url").notNull(),
     iconKey: text("icon_key"),
     iconAlt: text("icon_alt"),
+    // The brand mark shown when no image is uploaded. 'web' is the globe.
+    iconName: text("icon_name").notNull().default("web"),
     displayOrder: integer("display_order").notNull().default(0),
     visible: boolean("visible").notNull().default(true),
     ...timestamps,
@@ -154,6 +155,10 @@ export const nowLinks = pgTable(
     check(
       "now_links_icon_alt_required",
       sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`,
+    ),
+    check(
+      "now_links_icon_name_known",
+      sql`${table.iconName} in ('web', 'github', 'x', 'instagram', 'youtube')`,
     ),
   ],
 );
@@ -229,25 +234,6 @@ export type PostHeading = {
   level: number;
 };
 
-// Categories are rows, not a fixed enum, because their names are the owner's
-// to change — "Notes" may become "Field notes" without a migration. That is
-// the one thing that separates them from the tech-stack groups, whose keys the
-// layout depends on.
-export const postCategories = pgTable(
-  "post_categories",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    name: text("name").notNull(),
-    displayOrder: integer("display_order").notNull().default(0),
-    ...timestamps,
-  },
-  (table) => [
-    uniqueIndex("post_categories_name_idx").on(table.name),
-    index("post_categories_order_idx").on(table.displayOrder),
-    check("post_categories_name_present", sql`length(trim(${table.name})) > 0`),
-  ],
-);
-
 export const posts = pgTable(
   "posts",
   {
@@ -261,11 +247,6 @@ export const posts = pgTable(
     bodyMarkdown: text("body_markdown").notNull(),
     bodyHtml: text("body_html").notNull(),
     headings: jsonb("headings").$type<PostHeading[]>().notNull().default([]),
-    // Nullable, and set null on delete: removing a category regroups its posts
-    // rather than taking them down with it.
-    categoryId: uuid("category_id").references(() => postCategories.id, {
-      onDelete: "set null",
-    }),
     // Separate from createdAt because the date on the post is editorial — a
     // piece written over a week is dated when it went out, not when the row
     // first appeared.
@@ -273,18 +254,13 @@ export const posts = pgTable(
       .notNull()
       .defaultNow(),
     published: boolean("published").notNull().default(false),
-    pinned: boolean("pinned").notNull().default(false),
-    pinnedOrder: integer("pinned_order").notNull().default(0),
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     ...timestamps,
   },
   (table) => [
     uniqueIndex("posts_slug_idx").on(table.slug),
     index("posts_published_idx").on(table.published, table.publishedAt),
-    index("posts_pinned_idx").on(
-      table.published,
-      table.pinned,
-      table.pinnedOrder,
-    ),
+    index("posts_pinned_idx").on(table.published, table.pinnedAt),
     check(
       "posts_slug_shape",
       sql`${table.slug} ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'`,
@@ -323,5 +299,4 @@ export type SiteSettings = typeof siteSettings.$inferSelect;
 export type StatsSnapshot = typeof statsSnapshot.$inferSelect;
 export type TechStackItem = typeof techStackItems.$inferSelect;
 export type Post = typeof posts.$inferSelect;
-export type PostCategory = typeof postCategories.$inferSelect;
 export type PostLink = typeof postLinks.$inferSelect;

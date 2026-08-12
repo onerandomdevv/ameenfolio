@@ -25,7 +25,6 @@ await db.batch([
       id: 1,
       description: "Add a current focus update from the admin.",
       published: false,
-      showLastUpdated: true,
     })
     .onConflictDoNothing({ target: nowSection.id }),
 ]);

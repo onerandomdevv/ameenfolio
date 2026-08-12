@@ -1,3 +1,4 @@
+import type { ComponentType, SVGProps } from "react";
 import Image from "next/image";
 import { Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,11 @@ type AssetIconProps = {
   // Rendered as a lettered tile when no icon has been uploaded. Callers that
   // want a real placeholder pass one; the rest keep the generic mark.
   fallbackLabel?: string;
+  // The glyph shown when there is no icon and no letter. A link to somewhere on
+  // the web says so with a globe; the admin row shows the same mark, and the
+  // two have to agree or the preview lies about the site.
+  // Widened past LucideIcon so the hand-drawn brand marks qualify too.
+  fallbackIcon?: ComponentType<SVGProps<SVGSVGElement>>;
 };
 
 export function AssetIcon({
@@ -16,6 +22,7 @@ export function AssetIcon({
   alt,
   size = "default",
   fallbackLabel,
+  fallbackIcon: FallbackIcon = Boxes,
 }: AssetIconProps) {
   const classes = cn(
     "shrink-0 object-contain",
@@ -60,7 +67,7 @@ export function AssetIcon({
         className={cn(classes, "grid place-items-center text-foreground")}
         aria-hidden="true"
       >
-        <Boxes
+        <FallbackIcon
           className={
             size === "xxs" || size === "xs"
               ? "size-3"

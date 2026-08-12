@@ -54,7 +54,9 @@ export function UploadField({
 
   return (
     <Field
-      className={cn(className)}
+      // min-w-0 so a file input, whose intrinsic width is the button plus a
+      // filename, cannot push the column wider than the page.
+      className={cn("min-w-0", className)}
       data-invalid={invalid}
       data-disabled={pending}
     >
@@ -66,6 +68,7 @@ export function UploadField({
       </div>
       <Input
         id={`${resourceType}-upload`}
+        className="max-w-full"
         type="file"
         accept={accept}
         disabled={pending}

@@ -1,34 +1,22 @@
 "use client";
 
-import { createElement } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { LoaderCircle, Save } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { saveProject } from "@/app/admin/actions/projects";
-import { FormTextField } from "@/components/admin/form-text-field";
+import { deleteProject, saveProject } from "@/app/admin/actions/projects";
+import {
+  AdminPage,
+  FieldNote,
+  FieldRow,
+  SectionHeading,
+} from "@/components/admin/admin-primitives";
+import { LeaveGuard } from "@/components/admin/leave-guard";
+import { LineInput, LineSelect } from "@/components/admin/line-input";
 import { UploadField } from "@/components/admin/upload-field";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { projectIconOptions } from "@/config/project-icons";
 import type { Project } from "@/db/schema";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
@@ -41,14 +29,15 @@ const emptyProject: ProjectInput = {
   shortDescription: "",
   url: "https://",
   iconName: "custom",
-  homepageOrder: 0,
-  showOnHomepage: false,
-  published: false,
 };
 
 export function ProjectForm({ project }: { project?: Project }) {
   const router = useRouter();
   const base = useAdminBase();
+  const [leaving, setLeaving] = useState(false);
+  const [leavingBusy, setLeavingBusy] = useState(false);
+  const live = Boolean(project?.published);
+
   const form = useForm<ProjectInput>({
     resolver: zodResolver(projectSchema),
     defaultValues: project
@@ -61,9 +50,6 @@ export function ProjectForm({ project }: { project?: Project }) {
           iconKey: project.iconKey ?? undefined,
           iconAlt: project.iconAlt ?? undefined,
           iconName: project.iconName,
-          showOnHomepage: project.showOnHomepage,
-          homepageOrder: project.homepageOrder,
-          published: project.published,
         }
       : emptyProject,
   });
@@ -71,17 +57,23 @@ export function ProjectForm({ project }: { project?: Project }) {
     register,
     control,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
     setError,
     setValue,
   } = form;
-  const iconKey = useWatch({ control, name: "iconKey" });
-  const iconName = useWatch({ control, name: "iconName" });
-  const shortDescription = useWatch({ control, name: "shortDescription" });
-  const descriptionWords = countWords(shortDescription ?? "");
 
-  async function submit(values: ProjectInput) {
-    const result = await saveProject(values, project?.id);
+  const iconName = useWatch({ control, name: "iconName" });
+  const iconKey = useWatch({ control, name: "iconKey" });
+  const description = useWatch({ control, name: "shortDescription" }) ?? "";
+  const title = useWatch({ control, name: "title" }) ?? "";
+
+  // What "unsaved work" means: anything typed. An untouched form has nothing
+  // worth keeping, so leaving it needs no decision.
+  const hasContent = Boolean(title.trim() || description.trim());
+
+  async function persist(values: ProjectInput, publish: boolean) {
+    const result = await saveProject(values, project?.id, publish);
     if (!result.ok) {
       if (values.iconKey && values.iconKey !== project?.iconKey) {
         await cleanupUpload(values.iconKey);
@@ -91,212 +83,188 @@ export function ProjectForm({ project }: { project?: Project }) {
         setError(name as keyof ProjectInput, { message: messages[0] }),
       );
       toast.error(result.message);
-      return;
+      return false;
     }
+    return true;
+  }
 
-    toast.success(project ? "Project updated." : "Project created.");
+  async function post(values: ProjectInput) {
+    if (!(await persist(values, true))) return;
+    toast.success(live ? "Project updated." : "Project posted.");
     router.push(`${base}/projects`);
     router.refresh();
   }
 
+  function cancel() {
+    // Already on the site, or nothing written: leaving needs no decision.
+    if (live || !hasContent) {
+      router.push(`${base}/projects`);
+      return;
+    }
+    setLeaving(true);
+  }
+
+  // `isSubmitting` only covers handlers run through handleSubmit, and these two
+  // are called straight from the leave guard. Without a flag of their own the
+  // guard's buttons stay live for the whole request, and a second click starts
+  // a second save — which, with no unique constraint on a project, inserts a
+  // second row.
+  async function saveDraft() {
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      const values = getValues();
+      if (!(await persist(values, false))) return;
+      setLeaving(false);
+      toast.success("Saved as a draft.");
+      router.push(`${base}/projects`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
+  }
+
+  async function discard() {
+    if (leavingBusy) return;
+    setLeavingBusy(true);
+    try {
+      // An icon uploaded for a project that is now being thrown away would
+      // otherwise sit in storage with nothing pointing at it.
+      const uploaded = getValues("iconKey");
+      if (uploaded && uploaded !== project?.iconKey) {
+        await cleanupUpload(uploaded);
+      }
+      setLeaving(false);
+      if (project) await deleteProject(project.id);
+      router.push(`${base}/projects`);
+      router.refresh();
+    } finally {
+      setLeavingBusy(false);
+    }
+  }
+
+  const words = countWords(description);
+
   return (
-    <form onSubmit={handleSubmit(submit)} className="grid gap-8">
-      <FieldSet>
-        <FieldLegend>Project details</FieldLegend>
-        <FieldGroup className="grid gap-6 sm:grid-cols-2">
-          <FormTextField
-            label="Title"
-            error={errors.title?.message}
-            inputProps={register("title")}
-          />
-          <FormTextField
-            label="Status label"
-            description="Optional, e.g. Live or In development."
-            error={errors.statusLabel?.message}
-            inputProps={register("statusLabel")}
-          />
-          <Field
-            className="sm:col-span-2"
-            data-invalid={Boolean(errors.shortDescription)}
+    <AdminPage
+      title={project ? "Edit project" : "New project"}
+      actions={
+        <>
+          <Button type="button" variant="ghost" onClick={cancel}>
+            Cancel
+          </Button>
+          <Button type="submit" form="project-form" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <LoaderCircle data-icon="inline-start" className="animate-spin" />
+            ) : null}
+            Post
+          </Button>
+        </>
+      }
+    >
+      <form id="project-form" onSubmit={handleSubmit(post)}>
+        <div className="max-w-[620px]">
+          <SectionHeading>Project</SectionHeading>
+          <FieldRow label="Title" note={errors.title ? "required" : undefined}>
+            <LineInput
+              placeholder="Name of the project"
+              invalid={Boolean(errors.title)}
+              {...register("title")}
+            />
+          </FieldRow>
+          <FieldRow
+            label="Description"
+            align="start"
+            note={
+              <span className="font-mono tabular-nums">
+                {words}/{MAX_CARD_WORDS} words
+              </span>
+            }
           >
-            <FieldLabel htmlFor="shortDescription">
-              Short description
-            </FieldLabel>
-            <Textarea
-              id="shortDescription"
-              rows={4}
-              aria-invalid={Boolean(errors.shortDescription)}
+            <LineInput
+              as="textarea"
+              rows={2}
+              placeholder="What it does, in twelve words"
+              invalid={Boolean(errors.shortDescription)}
               {...register("shortDescription")}
             />
-            <FieldDescription
-              className={
-                descriptionWords > MAX_CARD_WORDS ? "text-destructive" : ""
-              }
-            >
-              {descriptionWords} / {MAX_CARD_WORDS} words — the card is sized
-              for one tidy block.
-            </FieldDescription>
-            <FieldError>{errors.shortDescription?.message}</FieldError>
-          </Field>
-          <Field
-            className="sm:col-span-2"
-            data-invalid={Boolean(errors.contribution)}
-          >
-            <FieldLabel htmlFor="contribution">
-              Contribution or outcome
-            </FieldLabel>
-            <Textarea
-              id="contribution"
-              rows={3}
-              aria-invalid={Boolean(errors.contribution)}
+          </FieldRow>
+          <FieldRow label="Contribution" note="optional">
+            <LineInput
+              placeholder="e.g. Founding Engineer"
               {...register("contribution")}
             />
-            <FieldDescription>
-              Optional evidence of your role or the result.
-            </FieldDescription>
-            <FieldError>{errors.contribution?.message}</FieldError>
-          </Field>
-          <FormTextField
-            className="sm:col-span-2"
-            label="URL"
-            type="url"
-            description="Where the card goes when clicked."
-            error={errors.url?.message}
-            inputProps={register("url")}
-          />
-        </FieldGroup>
-      </FieldSet>
+          </FieldRow>
+          <FieldRow label="Status label" note="optional">
+            <LineInput placeholder="e.g. Live" {...register("statusLabel")} />
+          </FieldRow>
+          <FieldRow label="URL" note={errors.url ? "https:// only" : undefined}>
+            <LineInput
+              mono
+              placeholder="https://"
+              invalid={Boolean(errors.url)}
+              {...register("url")}
+            />
+          </FieldRow>
+          <FieldNote>
+            One destination — clicking the card on the site follows this.
+          </FieldNote>
 
-      <FieldSet>
-        <FieldLegend>Presentation</FieldLegend>
-        <FieldGroup className="grid gap-6 sm:grid-cols-2">
-          <Controller
-            control={control}
-            name="iconName"
-            render={({ field }) => (
-              <Field
-                className="sm:col-span-2"
-                data-invalid={Boolean(errors.iconName)}
-              >
-                <FieldLabel htmlFor="project-icon">Icon source</FieldLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <SelectTrigger
-                    id="project-icon"
-                    className="w-full"
-                    aria-invalid={Boolean(errors.iconName)}
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {projectIconOptions.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.icon
-                            ? createElement(option.icon, {
-                                "aria-hidden": true,
-                              })
-                            : null}
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-                <FieldDescription>
-                  {
-                    projectIconOptions.find((o) => o.value === field.value)
-                      ?.hint
-                  }
-                </FieldDescription>
-                <FieldError>{errors.iconName?.message}</FieldError>
-              </Field>
-            )}
-          />
-          {/* The upload and its alt text only matter for the uploaded option.
-              Leaving them on screen for GitHub or Web invites filling in
-              fields that would then never be rendered. */}
+          <SectionHeading className="mt-8">Icon</SectionHeading>
+          <FieldRow label="Source" note="for a project with no logo">
+            <Controller
+              control={control}
+              name="iconName"
+              render={({ field }) => (
+                <LineSelect value={field.value} onChange={field.onChange}>
+                  {projectIconOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </LineSelect>
+              )}
+            />
+          </FieldRow>
           {iconName === "custom" ? (
             <>
-              <UploadField
-                resourceType="icon"
-                value={iconKey}
-                onChange={(key) =>
-                  setValue("iconKey", key, { shouldDirty: true })
-                }
-                error={errors.iconKey?.message}
-              />
-              <FormTextField
-                label="Icon alt text"
-                error={errors.iconAlt?.message}
-                inputProps={register("iconAlt")}
-              />
+              <FieldRow label="Image" align="start">
+                <UploadField
+                  resourceType="icon"
+                  value={iconKey}
+                  onChange={(key) => setValue("iconKey", key)}
+                  error={errors.iconKey?.message}
+                />
+              </FieldRow>
+              <FieldRow
+                label="Alt text"
+                note={errors.iconAlt ? "required with an upload" : undefined}
+              >
+                <LineInput
+                  placeholder="Describe the image"
+                  invalid={Boolean(errors.iconAlt)}
+                  {...register("iconAlt")}
+                />
+              </FieldRow>
             </>
           ) : null}
-          <FormTextField
-            label="Homepage order"
-            type="number"
-            error={errors.homepageOrder?.message}
-            inputProps={register("homepageOrder", { valueAsNumber: true })}
-          />
-          <FieldGroup>
-            <Controller
-              control={control}
-              name="showOnHomepage"
-              render={({ field }) => (
-                <Field orientation="horizontal">
-                  <div className="flex-1">
-                    <FieldLabel htmlFor="showOnHomepage">
-                      Show on homepage
-                    </FieldLabel>
-                    <FieldDescription>
-                      Counts toward the twelve-project homepage limit when
-                      published.
-                    </FieldDescription>
-                  </div>
-                  <Switch
-                    id="showOnHomepage"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </Field>
-              )}
-            />
-            <Controller
-              control={control}
-              name="published"
-              render={({ field }) => (
-                <Field orientation="horizontal">
-                  <div className="flex-1">
-                    <FieldLabel htmlFor="published">Published</FieldLabel>
-                    <FieldDescription>
-                      Visible on the public portfolio.
-                    </FieldDescription>
-                  </div>
-                  <Switch
-                    id="published"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </Field>
-              )}
-            />
-          </FieldGroup>
-        </FieldGroup>
-      </FieldSet>
 
-      <div className="flex flex-wrap justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancel
-        </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <LoaderCircle data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <Save data-icon="inline-start" />
-          )}
-          {project ? "Save changes" : "Create project"}
-        </Button>
-      </div>
-    </form>
+          <FieldNote>
+            {live
+              ? "Pin it from the projects list to show it on the homepage."
+              : "Posting puts this on the site. Pin it from the projects list afterwards to show it on the homepage."}
+          </FieldNote>
+        </div>
+      </form>
+
+      <LeaveGuard
+        open={leaving}
+        noun="project"
+        onOpenChange={setLeaving}
+        onDiscard={discard}
+        onSaveDraft={saveDraft}
+        saving={leavingBusy}
+      />
+    </AdminPage>
   );
 }
