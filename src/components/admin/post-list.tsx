@@ -1,24 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { deletePost } from "@/app/admin/actions/writing";
 import { EmptyState, ListRow } from "@/components/admin/admin-primitives";
 import { PinButton, PinnedMark } from "@/components/admin/pin-button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { DeleteAction, EditAction } from "@/components/admin/row-actions";
 import type { Post } from "@/db/schema";
 import { pinRank } from "@/lib/ordering";
 import { useAdminBase } from "@/lib/use-admin-base";
@@ -93,36 +81,18 @@ export function AdminPostList({
                     pinned={Boolean(post.pinnedAt)}
                   />
                 ) : null}
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`${base}/writing/${post.id}/edit`}>Edit</Link>
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={pending}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this post?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {post.title} and its links will be removed. Any images
-                        it used stay in storage.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => remove(post)}>
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <EditAction
+                  href={`${base}/writing/${post.id}/edit`}
+                  what={post.title}
+                />
+                <DeleteAction
+                  what={post.title}
+                  title="Delete this post?"
+                  description={`“${post.title}” and its links will be removed. Any images it used stay in storage.`}
+                  confirmLabel="Delete post"
+                  pending={pending}
+                  onConfirm={() => remove(post)}
+                />
               </>
             }
           />

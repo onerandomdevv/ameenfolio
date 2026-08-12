@@ -112,11 +112,6 @@ export function RecognitionForm({
   return (
     <AdminPage
       title={recognition ? "Edit recognition" : "Add recognition"}
-      description={
-        live
-          ? "This is on the site. Changes go live when you add."
-          : "Nothing appears on the site until it is added."
-      }
       actions={
         <>
           <Button type="button" variant="ghost" onClick={cancel}>

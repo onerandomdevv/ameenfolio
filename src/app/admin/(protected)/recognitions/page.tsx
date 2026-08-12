@@ -25,14 +25,18 @@ export default async function RecognitionsPage({
   return (
     <AdminPage
       title="Recognitions"
-      description="Hackathon placings and anything else worth showing. Pinned ones appear on the homepage, newest first."
       actions={
         <>
           <StatusFilter live={live.length} drafts={drafts.length} />
           <Button asChild size="sm">
             <Link href={`${base}/recognitions/new`}>
               <Plus data-icon="inline-start" />
-              Add recognition
+              {/* The filter and the button share one row on a phone, so the
+                  noun drops and the verb stays. Two whole labels rather than a
+                  hidden suffix: the button is a flex row, so a bare text node
+                  plus a span would be two flex items with a gap between them. */}
+              <span className="max-sm:hidden">Add recognition</span>
+              <span className="sm:hidden">Add</span>
             </Link>
           </Button>
         </>

@@ -5,30 +5,25 @@ import { cn } from "@/lib/utils";
 // a field row, and a list row. Keeping them here rather than per screen is what
 // stops the eight pages drifting apart again.
 
+// No sub-heading by design. A sentence under every title explained things the
+// screen already shows, and on a phone it wrapped to three lines above the
+// content. Anything genuinely worth saying belongs next to the control it is
+// about — a field note, or the line under a list.
 export function AdminPage({
   title,
-  description,
   actions,
   children,
 }: {
   title: string;
-  description?: string;
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
     <>
-      <header className="mb-6 flex flex-wrap items-end gap-4">
-        <div className="min-w-0">
-          <h1 className="text-[19px] font-semibold tracking-[-0.015em]">
-            {title}
-          </h1>
-          {description ? (
-            <p className="mt-1 max-w-[56ch] text-[13px] leading-6 text-muted-foreground">
-              {description}
-            </p>
-          ) : null}
-        </div>
+      <header className="mb-5 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <h1 className="min-w-0 text-[19px] font-semibold tracking-[-0.015em]">
+          {title}
+        </h1>
         {actions ? (
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {actions}

@@ -3,38 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SquareArrowOutUpRight } from "lucide-react";
 import {
-  Bot,
-  Clock,
-  Code2,
-  FileText,
-  Layers,
-  Settings,
-  SquareArrowOutUpRight,
-  Trophy,
-} from "lucide-react";
+  adminSections,
+  isCurrentSection,
+  mediaUrl,
+  publicSiteHref,
+} from "@/components/admin/admin-sections";
 import { SignOutButton } from "@/components/admin/sign-out-button";
 import { useAdminBase } from "@/lib/use-admin-base";
 import { cn } from "@/lib/utils";
-
-const links = [
-  { href: "/projects", label: "Projects", icon: Layers },
-  { href: "/writing", label: "Writing", icon: FileText },
-  { href: "/now", label: "Now", icon: Clock },
-  { href: "/recognitions", label: "Recognitions", icon: Trophy },
-  { href: "/tech-stack", label: "Tech Stack", icon: Code2 },
-  { href: "/bippy", label: "Bippy", icon: Bot },
-  { href: "/settings", label: "Settings", icon: Settings },
-] as const;
-
-// On an `admin.` host, `/` is rewritten to the admin, so a relative root link
-// sends "View site" back into the admin instead of the portfolio. The public
-// origin has to be named rather than inferred from the current one.
-const publicSiteHref = process.env.NEXT_PUBLIC_APP_URL || "/";
-const mediaBase = process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL?.replace(
-  /\/$/,
-  "",
-);
 
 export function AdminSidebar({
   counts,
@@ -47,25 +25,20 @@ export function AdminSidebar({
   const base = useAdminBase();
 
   return (
+    // Desktop only. A narrow icon rail was still stealing width from a phone
+    // and saying less than the top bar does, so below lg this is simply gone.
     // Fixed rather than sticky: the content column scrolls on its own, so the
     // navigation stays put however long a settings page gets.
-    <aside
-      className={cn(
-        "fixed inset-y-0 left-0 z-30 flex w-[62px] flex-col border-r border-border bg-background",
-        "lg:w-[216px]",
-      )}
-    >
-      <div className="flex h-[62px] shrink-0 items-center gap-2.5 px-3 max-lg:justify-center lg:px-4">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-[216px] flex-col border-r border-border bg-background lg:flex">
+      <div className="flex h-[62px] shrink-0 items-center gap-2.5 px-4">
         {/* The photo is the identity here, so it carries the mark rather than
             a wordmark repeating the site's name. */}
-        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-full bg-accent font-mono text-[11px] text-muted-foreground">
+        {/* Softened corners, not a circle — the same shape the photo has in
+            the top bar and in settings, so it reads as one face throughout. */}
+        <span className="grid size-8 shrink-0 place-items-center overflow-hidden rounded-md bg-accent font-mono text-[11px] text-muted-foreground">
           {profileImageKey ? (
             <Image
-              src={
-                mediaBase
-                  ? `${mediaBase}/${profileImageKey}`
-                  : `/media/${profileImageKey}`
-              }
+              src={mediaUrl(profileImageKey)}
               alt=""
               width={32}
               height={32}
@@ -76,19 +49,16 @@ export function AdminSidebar({
             "A"
           )}
         </span>
-        <span className="truncate font-mono text-[12px] tracking-[0.14em] max-lg:hidden">
+        <span className="truncate font-mono text-[12px] tracking-[0.14em]">
           AMEEN
         </span>
       </div>
 
       <nav className="flex-1 overflow-y-auto px-2 py-1.5" aria-label="Admin">
         <ul>
-          {links.map((link) => {
+          {adminSections.map((link) => {
             const href = `${base}${link.href}`;
-            // startsWith so a nested route — /writing/new, /projects/x/edit —
-            // keeps its section marked rather than leaving nothing selected.
-            const current =
-              pathname === href || pathname.startsWith(`${href}/`);
+            const current = isCurrentSection(pathname, base, link.href);
             const Icon = link.icon;
             const count = counts[link.href];
 
@@ -100,14 +70,13 @@ export function AdminSidebar({
                   className={cn(
                     "mb-0.5 flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors",
                     "hover:bg-accent hover:text-foreground",
-                    "max-lg:justify-center max-lg:px-0",
                     current && "bg-accent text-foreground",
                   )}
                 >
                   <Icon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="max-lg:sr-only">{link.label}</span>
+                  <span>{link.label}</span>
                   {typeof count === "number" ? (
-                    <span className="ml-auto font-mono text-[11px] tabular-nums text-muted-foreground max-lg:hidden">
+                    <span className="ml-auto font-mono text-[11px] tabular-nums text-muted-foreground">
                       {count}
                     </span>
                   ) : null}
@@ -123,13 +92,13 @@ export function AdminSidebar({
           href={publicSiteHref}
           target="_blank"
           rel="noreferrer"
-          className="mb-0.5 flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground max-lg:justify-center max-lg:px-0"
+          className="mb-0.5 flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
         >
           <SquareArrowOutUpRight
             className="size-4 shrink-0"
             aria-hidden="true"
           />
-          <span className="max-lg:sr-only">View site</span>
+          <span>View site</span>
         </a>
         <SignOutButton />
       </div>

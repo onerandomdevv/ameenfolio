@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { createElement } from "react";
 import { EmptyState, ListRow } from "@/components/admin/admin-primitives";
 import { DeleteProjectButton } from "@/components/admin/delete-project-button";
 import { PinButton, PinnedMark } from "@/components/admin/pin-button";
+import { EditAction } from "@/components/admin/row-actions";
 import { AssetIcon } from "@/components/portfolio/asset-icon";
-import { Button } from "@/components/ui/button";
 import { getProjectIcon } from "@/config/project-icons";
 import type { Project } from "@/db/schema";
 import { pinRank } from "@/lib/ordering";
@@ -97,9 +96,10 @@ export function AdminProjectList({
                     pinned={Boolean(project.pinnedAt)}
                   />
                 ) : null}
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`${base}/projects/${project.id}/edit`}>Edit</Link>
-                </Button>
+                <EditAction
+                  href={`${base}/projects/${project.id}/edit`}
+                  what={project.title}
+                />
                 <DeleteProjectButton id={project.id} title={project.title} />
               </>
             }

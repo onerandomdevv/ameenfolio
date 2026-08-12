@@ -1,5 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 import { AssetIcon } from "@/components/portfolio/asset-icon";
+import { getNowLinkIcon } from "@/config/now-link-icons";
 import { NowEmptyState } from "@/components/portfolio/now-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { nowFont } from "@/app/fonts";
@@ -38,10 +39,13 @@ export function NowSection({ section }: { section: PublicNow | null }) {
                       data-bippy-reaction="curious"
                       data-bippy-safe-zone
                     >
+                      {/* An uploaded image wins; otherwise the brand mark
+                          chosen in the admin, which defaults to the globe. */}
                       <AssetIcon
                         objectKey={item.iconKey}
                         alt={item.iconAlt ?? ""}
                         size="xs"
+                        fallbackIcon={getNowLinkIcon(item.iconName)}
                       />
                       {item.label}
                       <ArrowUpRight aria-hidden="true" />

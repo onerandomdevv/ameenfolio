@@ -3,7 +3,7 @@ import { Plus } from "lucide-react";
 import { getAdminProjects } from "@/db/queries";
 import { AdminPage } from "@/components/admin/admin-primitives";
 import { AdminProjectList } from "@/components/admin/project-list";
-import { StatusFilter } from "@/components/admin/status-filter";
+import { PinCount, StatusFilter } from "@/components/admin/status-filter";
 import { Button } from "@/components/ui/button";
 import { adminBasePath } from "@/lib/admin-path";
 import { MAX_PINNED_PROJECTS } from "@/lib/ordering";
@@ -27,14 +27,15 @@ export default async function AdminProjectsPage({
   return (
     <AdminPage
       title="Projects"
-      description="Posting puts a project on the site. Pin one to show it on the homepage."
       actions={
         <>
+          <PinCount used={pinned} max={MAX_PINNED_PROJECTS} />
           <StatusFilter live={live.length} drafts={drafts.length} />
           <Button asChild size="sm">
             <Link href={`${base}/projects/new`}>
               <Plus data-icon="inline-start" />
-              New project
+              <span className="max-sm:hidden">New project</span>
+              <span className="sm:hidden">New</span>
             </Link>
           </Button>
         </>
@@ -46,11 +47,6 @@ export default async function AdminProjectsPage({
         base={base}
         showing={showing}
       />
-      <p className="mt-3 text-[11.5px] leading-5 text-muted-foreground">
-        {pinned} of {MAX_PINNED_PROJECTS} pinned. Pinned projects appear on the
-        homepage newest first — the first 8 as cards, the rest as compact rows.
-        Taking one down is a delete.
-      </p>
     </AdminPage>
   );
 }

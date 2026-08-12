@@ -11,6 +11,7 @@ import {
   SectionHeading,
 } from "@/components/admin/admin-primitives";
 import { LineInput } from "@/components/admin/line-input";
+import { NowLinkDialog } from "@/components/admin/now-link-dialog";
 import { NowLinkRow } from "@/components/admin/now-link-row";
 import { Button } from "@/components/ui/button";
 import type { NowLink, NowSection } from "@/db/schema";
@@ -51,7 +52,6 @@ export function NowManager({
   return (
     <AdminPage
       title="Now"
-      description="What you are currently focused on, and where that work lives."
       actions={
         <Button onClick={save} disabled={saving}>
           {saving ? (
@@ -90,7 +90,7 @@ export function NowManager({
             </span>
           }
           action={
-            !atCap && !drafting ? (
+            !atCap ? (
               <Button
                 variant="ghost"
                 size="sm"
@@ -109,14 +109,21 @@ export function NowManager({
           {links.map((link) => (
             <NowLinkRow key={link.id} link={link} />
           ))}
-          {drafting ? <NowLinkRow onDone={() => setDrafting(false)} /> : null}
         </div>
 
-        {!links.length && !drafting ? (
+        {!links.length ? (
           <FieldNote>
             No links yet. Up to {MAX_NOW_LINKS} can sit under the copy.
           </FieldNote>
         ) : null}
+
+        {/* Adding uses the same dialog as editing, so both routes set the same
+            three facts in the same layout. */}
+        <NowLinkDialog
+          open={drafting}
+          onOpenChange={setDrafting}
+          displayOrder={links.length}
+        />
       </div>
     </AdminPage>
   );

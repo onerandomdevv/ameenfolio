@@ -85,7 +85,6 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
   return (
     <AdminPage
       title="Site settings"
-      description="Profile image, contact destinations, résumé, and SEO defaults."
       actions={
         <Button type="submit" form="settings-form" disabled={isSubmitting}>
           {isSubmitting ? (

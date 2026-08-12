@@ -137,10 +137,7 @@ export function TechStackManager({ items }: { items: TechStackItem[] }) {
   }
 
   return (
-    <AdminPage
-      title="Tech Stack"
-      description="The two groups shown on the homepage. Drag to reorder, or drag between groups to move one across."
-    >
+    <AdminPage title="Tech Stack">
       <div className="max-w-[720px]">
         {techStackGroups.map((group, index) => (
           <div key={group.value} className={cn(index > 0 && "mt-8")}>
@@ -246,7 +243,7 @@ export function TechStackManager({ items }: { items: TechStackItem[] }) {
           }
         }}
       >
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="admin-theme sm:max-w-sm">
           <DialogHeader>
             {/* Which group is not a question — it is the button that was
                 pressed. The heading says where it is going. */}

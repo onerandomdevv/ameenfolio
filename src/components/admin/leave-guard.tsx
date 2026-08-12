@@ -31,7 +31,9 @@ export function LeaveGuard({
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      {/* Portals to the body, outside the .admin-theme wrapper, so it carries
+          the class or it is painted in the public site's palette. */}
+      <AlertDialogContent className="admin-theme">
         <AlertDialogHeader>
           <AlertDialogTitle>Save this {noun} as a draft?</AlertDialogTitle>
           <AlertDialogDescription>

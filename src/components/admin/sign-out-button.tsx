@@ -4,10 +4,13 @@ import { createAuthClient } from "@neondatabase/auth/next";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useAdminBase } from "@/lib/use-admin-base";
+import { cn } from "@/lib/utils";
 
 const auth = createAuthClient();
 
-export function SignOutButton() {
+// `compact` is the top bar's form: it sits in a row of controls rather than a
+// column of links, so it shrinks to its own width instead of filling one.
+export function SignOutButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const base = useAdminBase();
 
@@ -18,15 +21,18 @@ export function SignOutButton() {
   }
 
   return (
-    // Shaped like the sidebar links beside it, including the icon-only form on
-    // the narrow rail, so the footer reads as part of the same list.
     <button
       type="button"
       onClick={signOut}
-      className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground max-lg:justify-center max-lg:px-0"
+      className={cn(
+        "flex h-9 items-center gap-2 rounded-lg text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+        compact
+          ? "h-8 shrink-0 px-2 text-[13px]"
+          : "w-full gap-2.5 px-2.5 text-sm",
+      )}
     >
       <LogOut className="size-4 shrink-0" aria-hidden="true" />
-      <span className="max-lg:sr-only">Sign out</span>
+      Sign out
     </button>
   );
 }

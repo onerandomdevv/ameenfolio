@@ -1,5 +1,6 @@
 import { count, eq } from "drizzle-orm";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { getDb } from "@/db/client";
 import { getAdminSettings } from "@/db/queries";
 import { posts, projects, recognitions, techStackItems } from "@/db/schema";
@@ -48,10 +49,12 @@ export default async function ProtectedAdminLayout({
         counts={counts}
         profileImageKey={settings.profileImageKey}
       />
+      <AdminTopbar profileImageKey={settings.profileImageKey} />
       {/* Padded rather than gridded, because the sidebar is fixed — a grid
-          column would scroll away with the content. */}
-      <div className="pl-[62px] lg:pl-[216px]">
-        <main className="w-full max-w-[940px] px-5 pb-24 pt-7 sm:px-7">
+          column would scroll away with the content. Below lg the bar is in the
+          flow instead, so there is nothing to pad around. */}
+      <div className="lg:pl-[216px]">
+        <main className="w-full max-w-[940px] px-5 pb-24 pt-6 sm:px-7 lg:pt-7">
           {children}
         </main>
       </div>

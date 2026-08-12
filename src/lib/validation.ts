@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { availabilityValues } from "@/config/availability";
+import { nowLinkIconValues } from "@/config/now-link-icons";
 import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
@@ -127,6 +128,7 @@ export const nowLinkSchema = z
     label: z.string().trim().min(1).max(80),
     url: z.url().startsWith("https://"),
     ...iconFields,
+    iconName: z.enum(nowLinkIconValues),
     displayOrder: z.number().int().min(0).max(999),
     visible: z.boolean(),
   })

@@ -1,8 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileText, LoaderCircle } from "lucide-react";
+import { Eye, FileText, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
+import {
+  compactAction,
+  compactActionLabel,
+  DeleteAction,
+} from "@/components/admin/row-actions";
 import { Button } from "@/components/ui/button";
 import { uploadFile } from "@/lib/storage/client";
 import { cn } from "@/lib/utils";
@@ -47,8 +52,8 @@ export function ResumeField({
   return (
     <div className="border-b border-border/60 py-2.5">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <span className="text-[13px] text-muted-foreground">Résumé PDF</span>
-
+        {/* No label: the section heading above already says Résumé, and the
+            file icon beside the name says which kind of file it is. */}
         <span className="flex min-w-0 flex-1 basis-[10rem] items-center gap-2">
           <FileText
             className={cn(
@@ -85,28 +90,40 @@ export function ResumeField({
             Upload file
           </Button>
 
+          {/* Off rather than hidden when there is nothing to view, so the row
+              keeps its shape either way. */}
           {fileKey ? (
-            <Button asChild variant="outline" size="sm">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className={compactAction}
+            >
               <a href="/resume?inline=1" target="_blank" rel="noreferrer">
-                View file
+                <Eye aria-hidden="true" />
+                <span className={compactActionLabel}>View file</span>
               </a>
             </Button>
           ) : (
-            <Button variant="outline" size="sm" disabled>
-              View file
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className={compactAction}
+            >
+              <Eye aria-hidden="true" />
+              <span className={compactActionLabel}>View file</span>
             </Button>
           )}
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
+          <DeleteAction
+            what="résumé"
             disabled={!fileKey || uploading}
-            onClick={() => onChange(undefined, undefined)}
-            className="text-destructive hover:text-destructive"
-          >
-            Delete
-          </Button>
+            title="Delete the résumé?"
+            description="The file is removed from this form now, and from the site when you save settings. The “view resume” link on the homepage stops working until you upload another."
+            confirmLabel="Delete résumé"
+            onConfirm={() => onChange(undefined, undefined)}
+          />
         </span>
       </div>
 

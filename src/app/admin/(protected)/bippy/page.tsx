@@ -14,10 +14,7 @@ export default async function AdminBippyPage() {
   const settings = await getAdminSettings();
 
   return (
-    <AdminPage
-      title="Bippy"
-      description="Private controls for testing the companion before it goes out."
-    >
+    <AdminPage title="Bippy">
       <BippyPlayground />
       <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
     </AdminPage>

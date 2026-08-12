@@ -1,15 +1,16 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { createElement, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Globe, LoaderCircle, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { deleteNowLink, saveNowLink } from "@/app/admin/actions/now";
-import { LineInput } from "@/components/admin/line-input";
+import { deleteNowLink } from "@/app/admin/actions/now";
+import { NowLinkDialog } from "@/components/admin/now-link-dialog";
+import { DeleteAction } from "@/components/admin/row-actions";
 import { Button } from "@/components/ui/button";
+import { getNowLinkIcon } from "@/config/now-link-icons";
 import type { NowLink } from "@/db/schema";
-import { uploadFile } from "@/lib/storage/client";
 
 const mediaBase = process.env.NEXT_PUBLIC_R2_PUBLIC_BASE_URL?.replace(
   /\/$/,
@@ -20,58 +21,15 @@ function iconSrc(key: string) {
   return mediaBase ? `${mediaBase}/${key}` : `/media/${key}`;
 }
 
-// An icon is optional. Until one is uploaded the row shows a web mark, so the
-// list never has a hole in it where a picture might go.
-export function NowLinkRow({
-  link,
-  onDone,
-}: {
-  link?: NowLink;
-  onDone?: () => void;
-}) {
+// A row is now a summary, not a form: the name, where it goes, and the mark it
+// shows. Editing happens in the dialog, so a phone-width row no longer has to
+// hold two inputs side by side.
+export function NowLinkRow({ link }: { link: NowLink }) {
   const router = useRouter();
-  const fileRef = useRef<HTMLInputElement | null>(null);
-  const [label, setLabel] = useState(link?.label ?? "");
-  const [url, setUrl] = useState(link?.url ?? "https://");
-  const [iconKey, setIconKey] = useState(link?.iconKey ?? undefined);
-  const [uploading, setUploading] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [busy, startTransition] = useTransition();
 
-  const dirty =
-    label !== (link?.label ?? "") ||
-    url !== (link?.url ?? "https://") ||
-    iconKey !== (link?.iconKey ?? undefined);
-
-  function save() {
-    startTransition(async () => {
-      const result = await saveNowLink(
-        {
-          label,
-          url,
-          iconKey,
-          // Alt text is required whenever an icon is set, and the label already
-          // names the thing — asking twice would be asking for the same fact.
-          iconAlt: iconKey ? label || "Link icon" : undefined,
-          displayOrder: link?.displayOrder ?? 0,
-          visible: true,
-        },
-        link?.id,
-      );
-      if (!result.ok) {
-        toast.error(result.message);
-        return;
-      }
-      toast.success(link ? "Link updated." : "Link added.");
-      onDone?.();
-      router.refresh();
-    });
-  }
-
   function remove() {
-    if (!link) {
-      onDone?.();
-      return;
-    }
     startTransition(async () => {
       const result = await deleteNowLink(link.id);
       toast[result.ok ? "success" : "error"](
@@ -81,30 +39,12 @@ export function NowLinkRow({
     });
   }
 
-  async function upload(file: File) {
-    setUploading(true);
-    try {
-      const { key } = await uploadFile("icon", file);
-      setIconKey(key);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Upload failed.");
-    } finally {
-      setUploading(false);
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-border/60 py-2.5">
+    <div className="flex items-center gap-3 border-b border-border/60 py-2.5">
       <span className="grid size-[26px] shrink-0 place-items-center overflow-hidden rounded-md bg-accent">
-        {uploading ? (
-          <LoaderCircle
-            className="size-3.5 animate-spin text-muted-foreground"
-            aria-hidden="true"
-          />
-        ) : iconKey ? (
+        {link.iconKey ? (
           <Image
-            src={iconSrc(iconKey)}
+            src={iconSrc(link.iconKey)}
             alt=""
             width={26}
             height={26}
@@ -112,66 +52,44 @@ export function NowLinkRow({
             className="size-full object-cover"
           />
         ) : (
-          <Globe
-            className="size-3.5 text-muted-foreground"
-            aria-hidden="true"
-          />
+          // createElement rather than <Icon />: a capitalised render-scoped
+          // variable trips react-hooks/static-components, which cannot tell a
+          // registry lookup from a component defined inline.
+          createElement(getNowLinkIcon(link.iconName), {
+            className: "size-3.5 text-foreground",
+          })
         )}
       </span>
 
-      <span className="w-[7.5rem] shrink-0">
-        <LineInput
-          value={label}
-          onChange={(event) => setLabel(event.target.value)}
-          placeholder="Name"
-        />
-      </span>
-      <span className="min-w-0 flex-1 basis-[11rem]">
-        <LineInput
-          mono
-          value={url}
-          onChange={(event) => setUrl(event.target.value)}
-          placeholder="https://"
-        />
-      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[13.5px] font-medium">{link.label}</p>
+        <p className="truncate font-mono text-[11px] text-muted-foreground">
+          {link.url}
+        </p>
+      </div>
 
-      <span className="ml-auto flex shrink-0 items-center gap-1">
-        {dirty ? (
-          <Button size="sm" onClick={save} disabled={busy}>
-            Save
-          </Button>
-        ) : null}
+      <span className="flex shrink-0 items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
+          onClick={() => setEditing(true)}
+          aria-label={`Edit ${link.label}`}
+          title="Edit link"
+          className="w-8 px-0 text-muted-foreground hover:text-foreground"
         >
-          {iconKey ? "Replace icon" : "Upload icon"}
+          <Pencil aria-hidden="true" />
         </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={remove}
-          disabled={busy}
-          aria-label={link ? `Remove ${link.label}` : "Discard this link"}
-          className="text-destructive hover:text-destructive"
-        >
-          <Trash2 aria-hidden="true" />
-        </Button>
+        <DeleteAction
+          what={link.label}
+          title="Delete this link?"
+          description={`“${link.label}” will be removed from the Now section.`}
+          confirmLabel="Delete link"
+          pending={busy}
+          onConfirm={remove}
+        />
       </span>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        className="sr-only"
-        tabIndex={-1}
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void upload(file);
-        }}
-      />
+      <NowLinkDialog link={link} open={editing} onOpenChange={setEditing} />
     </div>
   );
 }

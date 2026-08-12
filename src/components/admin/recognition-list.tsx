@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { createElement } from "react";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
@@ -8,18 +7,7 @@ import { toast } from "sonner";
 import { deleteRecognition } from "@/app/admin/actions/recognitions";
 import { EmptyState, ListRow } from "@/components/admin/admin-primitives";
 import { PinButton, PinnedMark } from "@/components/admin/pin-button";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
+import { DeleteAction, EditAction } from "@/components/admin/row-actions";
 import { getRecognitionIcon } from "@/config/recognition-icons";
 import type { Recognition } from "@/db/schema";
 import { pinRank } from "@/lib/ordering";
@@ -91,37 +79,18 @@ export function AdminRecognitionList({
                     pinned={Boolean(recognition.pinnedAt)}
                   />
                 ) : null}
-                <Button asChild variant="outline" size="sm">
-                  <Link href={`${base}/recognitions/${recognition.id}/edit`}>
-                    Edit
-                  </Link>
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={pending}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      Delete
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete this?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {recognition.title} will be removed from the site.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => remove(recognition)}>
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <EditAction
+                  href={`${base}/recognitions/${recognition.id}/edit`}
+                  what={recognition.title}
+                />
+                <DeleteAction
+                  what={recognition.title}
+                  title="Delete this recognition?"
+                  description={`“${recognition.title}” will be removed from the site.`}
+                  confirmLabel="Delete recognition"
+                  pending={pending}
+                  onConfirm={() => remove(recognition)}
+                />
               </>
             }
           />

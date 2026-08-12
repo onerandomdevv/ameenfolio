@@ -130,11 +130,6 @@ export function PostForm({ post, links }: { post?: Post; links?: PostLink[] }) {
   return (
     <AdminPage
       title={post ? "Edit post" : "New post"}
-      description={
-        live
-          ? "This post is on the site. Changes go live when you publish."
-          : "Write in Markdown. Nothing appears on the site until it is published."
-      }
       actions={
         <>
           <Button type="button" variant="ghost" onClick={cancel}>

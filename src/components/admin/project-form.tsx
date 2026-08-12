@@ -124,11 +124,6 @@ export function ProjectForm({ project }: { project?: Project }) {
   return (
     <AdminPage
       title={project ? "Edit project" : "New project"}
-      description={
-        live
-          ? "This project is on the site. Changes go live when you post."
-          : "Nothing appears on the site until it is posted."
-      }
       actions={
         <>
           <Button type="button" variant="ghost" onClick={cancel}>

@@ -144,6 +144,8 @@ export const nowLinks = pgTable(
     url: text("url").notNull(),
     iconKey: text("icon_key"),
     iconAlt: text("icon_alt"),
+    // The brand mark shown when no image is uploaded. 'web' is the globe.
+    iconName: text("icon_name").notNull().default("web"),
     displayOrder: integer("display_order").notNull().default(0),
     visible: boolean("visible").notNull().default(true),
     ...timestamps,
@@ -153,6 +155,10 @@ export const nowLinks = pgTable(
     check(
       "now_links_icon_alt_required",
       sql`${table.iconKey} is null or length(trim(${table.iconAlt})) > 0`,
+    ),
+    check(
+      "now_links_icon_name_known",
+      sql`${table.iconName} in ('web', 'github', 'x', 'instagram', 'youtube')`,
     ),
   ],
 );
