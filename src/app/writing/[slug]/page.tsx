@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/portfolio/theme-toggle";
+import { ArticleShareButton } from "@/components/writing/article-share-button";
 import { getPublishedPost } from "@/db/queries";
 import { getPostLinkIcon } from "@/config/post-link-icons";
 import { formatPostDate, toDateAttribute } from "@/lib/writing/format";
@@ -21,12 +22,19 @@ export async function generateMetadata({
 
   return {
     title: found.post.title,
+    description: found.post.title,
     alternates: { canonical: `/writing/${found.post.slug}` },
     openGraph: {
       title: found.post.title,
+      description: found.post.title,
       url: `/writing/${found.post.slug}`,
       type: "article",
       publishedTime: found.post.publishedAt.toISOString(),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: found.post.title,
+      description: found.post.title,
     },
   };
 }
@@ -80,7 +88,10 @@ export default async function PostPage({ params }: PageProps) {
             <ArrowLeft className="size-3.5" aria-hidden="true" />
             Writing
           </Link>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ArticleShareButton title={post.title} />
+            <ThemeToggle />
+          </div>
         </div>
 
         <header className="mt-8">
