@@ -30,11 +30,27 @@ export async function generateMetadata({
       url: `/writing/${found.post.slug}`,
       type: "article",
       publishedTime: found.post.publishedAt.toISOString(),
+      images: [
+        {
+          url: "/writing/opengraph-image.png",
+          width: 1254,
+          height: 1254,
+          alt: "Bippy writing an article",
+        },
+      ],
     },
     twitter: {
       card: "summary",
       title: found.post.title,
       description: found.post.title,
+      images: [
+        {
+          url: "/writing/twitter-image.png",
+          width: 1254,
+          height: 1254,
+          alt: "Bippy writing an article",
+        },
+      ],
     },
   };
 }
