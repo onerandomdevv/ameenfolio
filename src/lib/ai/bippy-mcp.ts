@@ -204,9 +204,7 @@ class PersistedOAuthProvider implements OAuthClientProvider {
   authorizationUrl?: URL;
   private data: StoredOAuthData;
 
-  constructor(
-    private connection: McpConnectionConfig & { id: string },
-  ) {
+  constructor(private connection: McpConnectionConfig & { id: string }) {
     this.data = decryptOAuthData(connection.encryptedCredential);
   }
 
@@ -292,23 +290,23 @@ class PersistedOAuthProvider implements OAuthClientProvider {
   }
 }
 
+function persistedOAuthProvider(connection: McpConnectionConfig) {
+  const id = connection.id;
+  if (!id) {
+    throw new Error("OAuth connection is missing its identifier.");
+  }
+  return new PersistedOAuthProvider({ ...connection, id });
+}
+
 async function withMcpClient<T>(
   connection: McpConnectionConfig,
   execute: (client: Client) => Promise<T>,
 ) {
   const client = new Client({ name: "ameenfolio-bippy", version: "1.0.0" });
-  if (connection.authType === "oauth" && !connection.id) {
-    throw new Error("OAuth connection is missing its identifier.");
-  }
   const transport = new StreamableHTTPClientTransport(
     new URL(connection.serverUrl),
     connection.authType === "oauth"
-      ? {
-          authProvider: new PersistedOAuthProvider({
-            ...connection,
-            id: connection.id,
-          }),
-        }
+      ? { authProvider: persistedOAuthProvider(connection) }
       : { requestInit: { headers: requestHeaders(connection) } },
   );
   try {
