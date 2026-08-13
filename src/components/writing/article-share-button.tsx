@@ -5,19 +5,26 @@ import { toast } from "sonner";
 
 type ArticleShareButtonProps = {
   title: string;
+  shareVersion: string;
 };
 
-export function ArticleShareButton({ title }: ArticleShareButtonProps) {
+export function ArticleShareButton({
+  title,
+  shareVersion,
+}: ArticleShareButtonProps) {
   async function shareArticle() {
-    const url = window.location.href;
+    const url = new URL(window.location.href);
+    url.hash = "";
+    url.searchParams.set("share", shareVersion);
+    const shareUrl = url.toString();
 
     try {
       if (navigator.share) {
-        await navigator.share({ title, url });
+        await navigator.share({ title, url: shareUrl });
         return;
       }
 
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(shareUrl);
       toast.success("Article link copied");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
