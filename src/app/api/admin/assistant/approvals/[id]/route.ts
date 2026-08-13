@@ -16,7 +16,13 @@ export async function POST(
 ) {
   await requireAdmin();
   const id = assistantThreadIdSchema.safeParse((await context.params).id);
-  const body = assistantDecisionSchema.safeParse(await request.json());
+  let raw: unknown;
+  try {
+    raw = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid decision." }, { status: 400 });
+  }
+  const body = assistantDecisionSchema.safeParse(raw);
   if (!id.success || !body.success) {
     return NextResponse.json({ error: "Invalid decision." }, { status: 400 });
   }

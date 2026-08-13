@@ -15,7 +15,7 @@ import {
   getAdminSettings,
   getTakenSlugs,
 } from "@/db/queries";
-import { requireAdmin } from "@/lib/auth/server";
+import { getAuthorizedAdmin } from "@/lib/auth/server";
 import { createApproval, recordToolCall } from "@/lib/ai/repository";
 import {
   listAssistantMemories,
@@ -51,13 +51,19 @@ function contextOf(context?: RunContext<PortfolioAgentContext>) {
   return context.context;
 }
 
+async function requireAuthorizedToolCall() {
+  if (!(await getAuthorizedAdmin())) {
+    throw new Error("Administrator authorization is required.");
+  }
+}
+
 async function audited<T>(
   context: RunContext<PortfolioAgentContext> | undefined,
   toolName: string,
   args: Record<string, unknown>,
   execute: () => Promise<T>,
 ) {
-  await requireAdmin();
+  await requireAuthorizedToolCall();
   const owner = contextOf(context);
   const { result } = await recordToolCall({
     threadId: owner.threadId,
@@ -77,7 +83,7 @@ async function proposed(
   payload: Record<string, unknown>,
   preview: Record<string, unknown>,
 ) {
-  await requireAdmin();
+  await requireAuthorizedToolCall();
   const owner = contextOf(context);
   const { result } = await recordToolCall({
     threadId: owner.threadId,
@@ -204,6 +210,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose deleting a remembered item by UUID after the administrator explicitly asks Bippy to forget it. Approval is always required.",
       parameters: z.object({ id: z.uuid() }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const memory = (await listAssistantMemories()).find(
           (item) => item.id === args.id,
         );
@@ -339,6 +346,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose replacing the editable fields of an existing project. The admin must approve before it is applied.",
       parameters: z.object({ id: z.uuid(), values: agentProjectSchema }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const before = await describeContent("project", args.id);
         if (!before) throw new Error("Project not found.");
         const payload = { id: args.id, values: projectInput(args.values) };
@@ -371,6 +379,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         links: z.array(postLinkSchema).max(6),
       }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const before = await describeContent("post", args.id);
         if (!before) throw new Error("Post not found.");
         return proposed(context, "propose_post_update", "update_post", args, {
@@ -386,6 +395,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose replacing an existing recognition. Approval is required.",
       parameters: z.object({ id: z.uuid(), values: agentRecognitionSchema }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const before = await describeContent("recognition", args.id);
         if (!before) throw new Error("Recognition not found.");
         const payload = { id: args.id, values: recognitionInput(args.values) };
@@ -413,6 +423,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         value: z.boolean(),
       }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const item = await describeContent(args.kind, args.id);
         if (!item) throw new Error("Content item not found.");
         const payload = { kind: args.kind, id: args.id, value: args.value };
@@ -434,6 +445,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose permanently deleting a project, post, or recognition. Deletion always requires approval.",
       parameters: z.object({ kind: contentKind, id: z.uuid() }),
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const item = await describeContent(args.kind, args.id);
         if (!item) throw new Error("Content item not found.");
         return proposed(
@@ -455,6 +467,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose changing the public Now description or visibility. Approval is required.",
       parameters: nowSectionSchema,
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const before = await getAdminNow();
         return proposed(context, "propose_now_update", "update_now", args, {
           title: "Update Now section",
@@ -469,6 +482,7 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
         "Propose changing the site's default SEO title and description. Approval is required.",
       parameters: seoSchema,
       execute: async (args, context) => {
+        await requireAuthorizedToolCall();
         const settings = await getAdminSettings();
         return proposed(context, "propose_seo_update", "update_seo", args, {
           title: "Update SEO defaults",

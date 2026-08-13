@@ -218,6 +218,13 @@
       "when": 1786575600000,
       "tag": "0030_mcp_connection_management",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786582800000,
+      "tag": "0031_agent_tool_call_integrity",
+      "breakpoints": true
     }
   ]
 }

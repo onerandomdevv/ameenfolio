@@ -437,7 +437,14 @@ export const agentToolCalls = pgTable(
       .defaultNow(),
     finishedAt: timestamp("finished_at", { withTimezone: true }),
   },
-  (table) => [index("agent_tool_calls_run_idx").on(table.runId)],
+  (table) => [
+    index("agent_tool_calls_run_idx").on(table.runId),
+    index("agent_tool_calls_thread_idx").on(table.threadId, table.createdAt),
+    check(
+      "agent_tool_calls_status_valid",
+      sql`${table.status} in ('running', 'completed', 'failed')`,
+    ),
+  ],
 );
 
 export const agentApprovals = pgTable(

@@ -23,7 +23,6 @@ export default async function McpAuthorizePage({ searchParams }: Props) {
   const params = Object.fromEntries(
     Object.entries(raw).map(([key, value]) => [key, first(value)]),
   );
-  const validated = await validateAuthorizationRequest(params);
   const user = await getAuthorizedAdmin();
   if (!user) {
     const query = new URLSearchParams(
@@ -34,6 +33,7 @@ export default async function McpAuthorizePage({ searchParams }: Props) {
       `${await adminHref("/login")}?next=${encodeURIComponent(returnPath)}`,
     );
   }
+  const validated = await validateAuthorizationRequest(params);
 
   return (
     <main className="admin-theme grid min-h-dvh place-items-center bg-background px-5 py-10 text-foreground">

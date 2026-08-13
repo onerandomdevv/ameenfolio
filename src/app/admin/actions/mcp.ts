@@ -8,8 +8,8 @@ import {
   disconnectMcpClient,
 } from "@/lib/mcp/connections";
 import {
-  authorizationRequestSchema,
   issueAuthorizationCode,
+  validateAuthorizationRequest,
 } from "@/lib/mcp/oauth";
 
 function refreshConnections() {
@@ -38,7 +38,7 @@ export async function cleanMcpCredentials() {
 
 export async function decideMcpAuthorization(formData: FormData) {
   const user = await requireAdmin();
-  const request = authorizationRequestSchema.parse({
+  const validated = await validateAuthorizationRequest({
     response_type: formData.get("response_type"),
     client_id: formData.get("client_id"),
     redirect_uri: formData.get("redirect_uri"),
@@ -48,6 +48,7 @@ export async function decideMcpAuthorization(formData: FormData) {
     resource: formData.get("resource"),
     scope: formData.get("scope"),
   });
+  const request = validated.input;
   const callback = new URL(request.redirect_uri);
   callback.searchParams.set("state", request.state);
 

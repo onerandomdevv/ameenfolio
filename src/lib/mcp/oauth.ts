@@ -299,12 +299,18 @@ export async function revokeMcpToken(rawToken: string, clientId?: string) {
     eq(mcpOAuthTokens.accessTokenHash, tokenHash),
     eq(mcpOAuthTokens.refreshTokenHash, tokenHash),
   );
+  const [token] = await getDb()
+    .select({ id: mcpOAuthTokens.id, clientId: mcpOAuthTokens.clientId })
+    .from(mcpOAuthTokens)
+    .where(tokenMatch)
+    .limit(1);
+  if (!token) return "unknown" as const;
+  if (clientId && token.clientId !== clientId)
+    return "client_mismatch" as const;
+
   await getDb()
     .update(mcpOAuthTokens)
     .set({ revokedAt: new Date(), updatedAt: new Date() })
-    .where(
-      clientId
-        ? and(eq(mcpOAuthTokens.clientId, clientId), tokenMatch)
-        : tokenMatch,
-    );
+    .where(eq(mcpOAuthTokens.id, token.id));
+  return "revoked" as const;
 }

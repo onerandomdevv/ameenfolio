@@ -43,17 +43,21 @@ async function handle(request: Request) {
     client: actor.client,
     scopes: actor.token.scopes,
   });
-  await server.connect(transport);
-  return transport.handleRequest(request, {
-    authInfo: {
-      token: actor.rawToken,
-      clientId: actor.client.clientId,
-      scopes: actor.token.scopes,
-      expiresAt: Math.floor(actor.token.accessExpiresAt.getTime() / 1000),
-      resource: new URL(actor.token.resource),
-      extra: { userId: actor.token.userId },
-    },
-  });
+  try {
+    await server.connect(transport);
+    return await transport.handleRequest(request, {
+      authInfo: {
+        token: actor.rawToken,
+        clientId: actor.client.clientId,
+        scopes: actor.token.scopes,
+        expiresAt: Math.floor(actor.token.accessExpiresAt.getTime() / 1000),
+        resource: new URL(actor.token.resource),
+        extra: { userId: actor.token.userId },
+      },
+    });
+  } finally {
+    await server.close();
+  }
 }
 
 export const GET = handle;

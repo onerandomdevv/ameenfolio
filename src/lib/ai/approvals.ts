@@ -13,6 +13,7 @@ import { deletePost, savePost } from "@/app/admin/actions/writing";
 import { requireAdmin } from "@/lib/auth/server";
 import { deleteAssistantMemory } from "@/lib/ai/memory";
 import {
+  approvalView,
   claimApproval,
   rejectApprovalWithPayload,
   resolveApproval,
@@ -136,7 +137,7 @@ export async function decideAssistantApproval(
     const rejected = await rejectApprovalWithPayload(id);
     if (!rejected) throw new Error("This approval is no longer pending.");
     await cleanupRejectedUpload(rejected);
-    return rejected;
+    return approvalView(rejected);
   }
 
   // The status transition is the lock: only one request can change pending to

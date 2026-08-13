@@ -255,11 +255,7 @@ export function PortfolioCopilot({
   const requestControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    if (!activeId) {
-      setDetail(null);
-      setLoadingThread(false);
-      return;
-    }
+    if (!activeId) return;
     const controller = new AbortController();
     let active = true;
     setLoadingThread(true);
@@ -309,6 +305,7 @@ export function PortfolioCopilot({
     if (sending) return;
     setActiveId(null);
     setDetail(null);
+    setLoadingThread(false);
     setPrompt("");
     setSelectedModel(defaultModel);
     setStreamingText("");
@@ -525,6 +522,7 @@ export function PortfolioCopilot({
     setThreads(remaining);
     setActiveId(remaining[0]?.id ?? null);
     setDetail(null);
+    setLoadingThread(Boolean(remaining[0]?.id));
   }
 
   return (
