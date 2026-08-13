@@ -80,8 +80,8 @@ export function WakaTimeActivityStrip() {
             className={cn(
               "rounded-[3px] border-0 px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.08em] shadow-none",
               isOnline
-                ? "bg-accent-lime text-black"
-                : "bg-zinc-700 text-zinc-200",
+                ? "bg-signal text-signal-foreground"
+                : "bg-muted text-muted-foreground",
             )}
           >
             {statusLabel}
@@ -118,8 +118,8 @@ export function WakaTimeActivityStrip() {
                     styles.bar,
                     "block w-full rounded-[2px]",
                     isOnline && bar.date === status?.todayDate
-                      ? "bg-accent-lime"
-                      : "bg-zinc-600",
+                      ? "bg-signal"
+                      : "bg-muted-foreground/40",
                     !status && "opacity-30",
                   )}
                   style={

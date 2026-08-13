@@ -28,22 +28,37 @@
   transform-origin: top left;
 }
 
+/* Always on, not only while he walks. His body is near-white, so on a light
+   page he had almost no edge of his own — the outline was doing the work of
+   separating him from the background and only appeared in the walk frames. */
+.companionScale {
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 55%))
+    drop-shadow(0 0 2px rgb(0 0 0 / 35%));
+}
+
+/* Blue while coding, replacing the lime. The glow is the one thing that says
+   "he is working", so it stays vivid — but lime is the dark theme's accent and
+   has no place on the light one. */
 .companionActor[data-coding="true"]::before {
   position: absolute;
   inset: 20px;
   border-radius: 32px;
-  background: rgb(165 239 48 / 18%);
+  background: rgb(59 130 246 / 18%);
   box-shadow:
-    0 0 18px rgb(165 239 48 / 28%),
-    0 0 34px rgb(165 239 48 / 16%);
+    0 0 18px rgb(59 130 246 / 32%),
+    0 0 34px rgb(59 130 246 / 18%);
   filter: blur(9px);
   pointer-events: none;
   content: "";
 }
 
+/* Keeps the outline above and adds the blue to it, rather than replacing it —
+   a filter declaration overwrites, it does not merge. */
 .companionActor[data-coding="true"] .companionScale {
-  filter: drop-shadow(0 0 6px rgb(165 239 48 / 48%))
-    drop-shadow(0 0 14px rgb(165 239 48 / 24%));
+  filter: drop-shadow(0 1px 0 rgb(0 0 0 / 55%))
+    drop-shadow(0 0 2px rgb(0 0 0 / 35%))
+    drop-shadow(0 0 6px rgb(59 130 246 / 55%))
+    drop-shadow(0 0 14px rgb(59 130 246 / 30%));
 }
 
 .companionMessage {

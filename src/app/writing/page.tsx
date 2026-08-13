@@ -7,6 +7,7 @@ import {
 } from "@/db/queries";
 import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { SectionHeading } from "@/components/portfolio/section-heading";
+import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { WritingIndexRow } from "@/components/portfolio/writing-index-row";
 
 export const dynamic = "force-dynamic";
@@ -26,14 +27,19 @@ export default async function WritingPage() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
-      <Link
-        href="/"
-        data-bippy-reaction="curious"
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="size-3.5" aria-hidden="true" />
-        Go back
-      </Link>
+      {/* The toggle sits where the nav's would be on the pages that have one,
+          so its position is the same wherever you are. */}
+      <div className="flex min-h-11 items-center justify-between gap-4">
+        <Link
+          href="/"
+          data-bippy-reaction="curious"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden="true" />
+          Go back
+        </Link>
+        <ThemeToggle />
+      </div>
 
       <header className="mt-8">
         <h1 className="text-xl font-semibold text-foreground">Writing</h1>

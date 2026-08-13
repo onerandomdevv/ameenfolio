@@ -133,3 +133,24 @@ export async function deletePost(id: string): Promise<ActionResult> {
     return { ok: false, message: "Could not delete the post." };
   }
 }
+
+/**
+ * Renders Markdown exactly as saving would, for the editor's preview.
+ *
+ * Deliberately the same `renderMarkdown` the save path uses, rather than a
+ * client-side renderer: a preview that goes through a different pipeline can
+ * disagree with the published post, which makes it worse than no preview. It
+ * also means the sanitiser runs here too, so what you see is what survives.
+ */
+export async function previewMarkdown(
+  markdown: string,
+): Promise<{ ok: true; html: string } | { ok: false; message: string }> {
+  await requireAdmin();
+  try {
+    const { html } = await renderMarkdown(markdown);
+    return { ok: true, html };
+  } catch (error) {
+    logServer("error", "admin.preview_failed", { error: String(error) });
+    return { ok: false, message: "Could not render that Markdown." };
+  }
+}

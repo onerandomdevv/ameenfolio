@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import "./globals.css";
-import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { Toaster } from "@/components/ui/sonner";
-import { getIdentitySettings, getPublicBippyEnabled } from "@/db/queries";
+import { getIdentitySettings } from "@/db/queries";
 import { resolveIdentity } from "@/lib/identity";
 import { inter } from "@/app/fonts";
 
@@ -55,15 +53,34 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const publicBippyEnabled = await getPublicBippyEnabled();
-
   return (
-    <html lang="en">
+    // suppressHydrationWarning because the script below edits this element's
+    // class before React sees it, so the server's markup and the client's
+    // first read of it legitimately differ.
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <head>
+        {/* Runs before first paint, which is the whole point: applying the
+            class after hydration means a white flash on every navigation.
+
+            Dark unless "light" was explicitly chosen — the site is dark by
+            design, so a visitor whose laptop happens to be in light mode still
+            arrives at the version it was built as. The OS preference is not
+            consulted; only the stored choice is.
+
+            Only the storage read is wrapped. With the whole block in the try,
+            a browser that blocks storage threw before the class was applied
+            and the page stayed on the light base — the opposite of the
+            default. The class is also rendered on the server, so the default
+            survives with no JavaScript at all; this script only has to take
+            it off for someone who chose light. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{var s=null;try{s=localStorage.getItem("theme")}catch(e){}var d=s!=="light";document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
         <div className="min-h-screen">{children}</div>
-        <Suspense fallback={null}>
-          <BippyCompanion enabled={publicBippyEnabled} />
-        </Suspense>
         <Toaster richColors position="bottom-center" />
       </body>
     </html>

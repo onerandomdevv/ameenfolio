@@ -52,7 +52,7 @@ export function ProjectRow({ project }: { project: Project }) {
         {project.shortDescription}
       </p>
       <ArrowUpRight
-        className="ml-auto size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-accent-lime group-focus-visible:text-accent-lime"
+        className="ml-auto size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-signal group-focus-visible:text-signal"
         aria-hidden="true"
       />
     </a>

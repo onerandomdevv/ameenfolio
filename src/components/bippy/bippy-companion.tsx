@@ -36,6 +36,7 @@ import { useWakaTimeStatus } from "@/components/bippy/use-wakatime-status";
 import styles from "@/components/bippy/bippy.module.css";
 import { useReducedMotion } from "@/components/bippy/use-reduced-motion";
 import { Button } from "@/components/ui/button";
+import { toggleTheme } from "@/lib/theme";
 
 const POSITION_STORAGE_KEY = "bippy-position-v1";
 const DESKTOP_SIZE = 128;
@@ -902,6 +903,17 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       onPointerCancel={stopDragging}
       onLostPointerCapture={stopDragging}
       onPointerEnter={celebrateOnHover}
+      // Double-click flips the theme. Undocumented on purpose: it is a thing
+      // to find, and the button in the nav is the discoverable way to do it.
+      //
+      // Scoped to his body. This element also wraps the speech bubble's link,
+      // its dismiss button and the reset control, and a double-click on any of
+      // those would otherwise bubble up here and change the theme.
+      onDoubleClick={(event) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest(`.${styles.companionScale}`)) return;
+        toggleTheme();
+      }}
       data-coding={wakaTimeStatus?.isCoding ? "true" : "false"}
       data-state={state}
       data-testid="bippy-companion"

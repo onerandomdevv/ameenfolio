@@ -72,7 +72,7 @@ export function ProjectCard({ project }: { project: Project }) {
               </Badge>
             ) : null}
           </div>
-          <CardAction className="text-muted-foreground transition-colors group-hover:text-accent-lime group-focus-visible:text-accent-lime">
+          <CardAction className="text-muted-foreground transition-colors group-hover:text-signal group-focus-visible:text-signal">
             <ArrowUpRight className="size-4" aria-hidden="true" />
           </CardAction>
         </CardHeader>
