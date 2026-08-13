@@ -30,8 +30,8 @@ import {
 } from "@/lib/validation";
 import { techStackGroupValues } from "@/config/tech-stack";
 import type { McpOAuthClient } from "@/db/schema";
-import { signUpload } from "@/lib/storage/server";
-import { validateUpload } from "@/lib/storage/rules";
+import { signPreviewDownload, signUpload } from "@/lib/storage/server";
+import { isManagedObjectKey, validateUpload } from "@/lib/storage/rules";
 
 const contentKind = z.enum(["project", "post", "recognition"]);
 const postLinkSchema = z.object({
@@ -223,6 +223,24 @@ async function proposal(
     },
     true,
   );
+}
+
+async function previewMarkdownImages(markdown: string) {
+  const keys = [
+    ...new Set(
+      [...markdown.matchAll(/\]\(\/media\/([^\s)]+)\)/g)]
+        .map((match) => match[1])
+        .filter(
+          (key): key is string => Boolean(key) && isManagedObjectKey(key),
+        ),
+    ),
+  ];
+  let preview = markdown;
+  for (const key of keys) {
+    const signedUrl = await signPreviewDownload(key);
+    preview = preview.replaceAll(`/media/${key}`, signedUrl);
+  }
+  return preview;
 }
 
 function result(data: unknown, summary: string) {
@@ -676,6 +694,7 @@ export function createBippyMcpServer(actor: McpActor) {
     async (args) => {
       requireScope(actor, "portfolio:draft");
       const values = postDraftSchema.parse(args);
+      const previewBody = await previewMarkdownImages(values.bodyMarkdown);
       const pending = await proposal(
         actor,
         "prepare_post_draft",
@@ -684,7 +703,7 @@ export function createBippyMcpServer(actor: McpActor) {
         {
           title: `Create writing draft: ${values.title}`,
           before: null,
-          after: values,
+          after: { ...values, bodyMarkdown: previewBody },
         },
       );
       return result(
@@ -814,6 +833,7 @@ export function createBippyMcpServer(actor: McpActor) {
       const before = await describeContent("post", args.id);
       if (!before) throw new Error("Post not found.");
       const values = postUpdateSchema.parse(args);
+      const previewBody = await previewMarkdownImages(values.bodyMarkdown);
       const pending = await proposal(
         actor,
         "prepare_post_update",
@@ -822,7 +842,7 @@ export function createBippyMcpServer(actor: McpActor) {
         {
           title: `Update post: ${contentTitle(before)}`,
           before,
-          after: values,
+          after: { ...values, bodyMarkdown: previewBody },
         },
       );
       return result(pending, "Writing update prepared for admin approval.");

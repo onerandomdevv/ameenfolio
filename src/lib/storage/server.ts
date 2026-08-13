@@ -55,6 +55,15 @@ export async function signUpload(
   return { key, uploadUrl, mediaPath: `/media/${key}` };
 }
 
+export async function signPreviewDownload(key: string) {
+  const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
+  return getSignedUrl(
+    getR2(),
+    new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }),
+    { expiresIn: 300 },
+  );
+}
+
 export async function getObject(key: string) {
   const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
   return getR2().send(
