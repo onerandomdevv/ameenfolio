@@ -60,9 +60,11 @@ Scopes:
 - `portfolio:propose` prepares edits, placement changes, deletions, Now changes,
   and SEO changes.
 
-Every MCP write creates a pending proposal in the dedicated MCP approval queue.
-Existing admin actions perform the actual mutation after review; proposal
-tools cannot publish, edit, or delete content directly.
+Every MCP write creates a pending proposal and returns its readable preview to
+the connected MCP conversation. The owner can explicitly approve or reject it
+there; the dedicated MCP approval queue remains an audit and recovery surface.
+Existing admin actions perform the actual mutation after review; proposal tools
+cannot publish, edit, or delete content directly.
 After the owner reviews a proposal in the connected MCP conversation, the
 owner may explicitly approve or reject that proposal through the MCP approval
 tool. The tool is restricted to the same authenticated MCP connection that
