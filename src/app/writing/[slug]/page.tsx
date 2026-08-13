@@ -32,7 +32,7 @@ export async function generateMetadata({
       publishedTime: found.post.publishedAt.toISOString(),
     },
     twitter: {
-      card: "summary_large_image",
+      card: "summary",
       title: found.post.title,
       description: found.post.title,
     },
