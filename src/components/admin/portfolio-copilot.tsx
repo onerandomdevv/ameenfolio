@@ -123,6 +123,12 @@ function PreviewValue({ value }: { value: unknown }) {
   }
   const content =
     typeof value === "string" ? value : JSON.stringify(value, null, 2);
+  if (
+    typeof value === "string" &&
+    /(^|\n)\s*!\[[^\]]*\]\([^\)]+\)/.test(value)
+  ) {
+    return <CopilotMarkdown>{value}</CopilotMarkdown>;
+  }
   return (
     <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words font-mono text-[10.5px] leading-5">
       {content}
@@ -179,7 +185,16 @@ function ApprovalRow({
               <p className="mb-1.5 font-mono text-[9.5px] uppercase tracking-wide">
                 Proposed
               </p>
-              <PreviewValue value={after} />
+              {after &&
+              typeof after === "object" &&
+              typeof (after as { bodyMarkdown?: unknown }).bodyMarkdown ===
+                "string" ? (
+                <CopilotMarkdown>
+                  {(after as { bodyMarkdown: string }).bodyMarkdown}
+                </CopilotMarkdown>
+              ) : (
+                <PreviewValue value={after} />
+              )}
             </div>
           </div>
         ) : (
