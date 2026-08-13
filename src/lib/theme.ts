@@ -3,6 +3,12 @@ import "client-only";
 // The same key the inline script in layout.tsx reads before first paint.
 const STORAGE_KEY = "theme";
 
+// Matches the duration in globals.css. Cleared on a timer rather than
+// transitionend, which fires once per property per element — thousands of times
+// on a full page.
+const TRANSITION_MS = 320;
+let clearTransition: number | undefined;
+
 /**
  * Flips the theme and remembers the choice.
  *
@@ -13,6 +19,15 @@ const STORAGE_KEY = "theme";
 export function toggleTheme() {
   const root = document.documentElement;
   const next = !root.classList.contains("dark");
+
+  // Colours cross-fade only while the theme is changing. A permanent global
+  // transition would also ease every hover and focus change, and make the
+  // first paint after navigation animate from the wrong colours.
+  root.dataset.themeTransition = "";
+  window.clearTimeout(clearTransition);
+  clearTransition = window.setTimeout(() => {
+    delete root.dataset.themeTransition;
+  }, TRANSITION_MS);
 
   root.classList.toggle("dark", next);
   // Keeps native UI — scrollbars, form controls — on the same side as the page.

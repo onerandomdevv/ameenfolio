@@ -146,6 +146,34 @@
   }
 }
 
+/* Only while the theme is switching, set by toggleTheme in lib/theme.ts.
+
+   Everything eases together rather than the body easing while its contents
+   snap, which is the tearing that makes a theme switch read as a flash. It is
+   scoped to that window so hovers and focus rings keep their own timing, and
+   so a fresh page never animates in from the previous theme's colours. */
+html[data-theme-transition],
+html[data-theme-transition] *,
+html[data-theme-transition] *::before,
+html[data-theme-transition] *::after {
+  transition:
+    background-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    color 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    fill 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    stroke 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    text-decoration-color 300ms cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-theme-transition],
+  html[data-theme-transition] *,
+  html[data-theme-transition] *::before,
+  html[data-theme-transition] *::after {
+    transition: none !important;
+  }
+}
+
 /* The admin is a control surface, not a second portfolio. Redefining the theme
    tokens on a wrapper rather than restyling each component means every input,
    card and badge inside inherits the change for free.

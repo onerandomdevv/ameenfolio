@@ -161,7 +161,11 @@ export function StatsStrip({
                     : "items-center justify-center text-center",
                 )}
               >
-                <span className="flex flex-wrap items-baseline gap-x-2">
+                {/* One line, note pushed to the right edge of the cell. It used
+                    to wrap: at four across the row has 99px and the pair needed
+                    102, so the date dropped under the figure. A smaller note
+                    and a tighter gap fit it back on the baseline. */}
+                <span className="flex items-baseline gap-x-1.5">
                   <span
                     className={cn(
                       "text-2xl font-medium tabular-nums",
@@ -171,7 +175,7 @@ export function StatsStrip({
                     {cell.value ?? "—"}
                   </span>
                   {valueNote ? (
-                    <span className="text-[11px] leading-4 text-muted-foreground">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
                       {valueNote}
                     </span>
                   ) : null}
