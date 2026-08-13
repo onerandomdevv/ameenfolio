@@ -297,6 +297,267 @@ export const postLinks = pgTable(
   ],
 );
 
+// Conversations and audit records for the private portfolio copilot. The AI
+// never owns application data: it can read through scoped tools and record a
+// proposed mutation here, while the existing admin actions remain the only
+// code allowed to change portfolio content.
+export const agentThreads = pgTable(
+  "agent_threads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    title: text("title").notNull().default("New conversation"),
+    provider: text("provider").notNull().default("openai"),
+    model: text("model").notNull().default("gpt-5.4-mini"),
+    ...timestamps,
+  },
+  (table) => [index("agent_threads_updated_idx").on(table.updatedAt)],
+);
+
+// Deliberately curated cross-conversation memory for Bippy. Memories are
+// separate from chat history so deleting a conversation does not silently
+// erase an explicit preference, and each item can be reviewed or forgotten.
+export const agentMemories = pgTable(
+  "agent_memories",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    label: text("label").notNull(),
+    content: text("content").notNull(),
+    category: text("category").notNull().default("preference"),
+    sourceThreadId: uuid("source_thread_id").references(() => agentThreads.id, {
+      onDelete: "set null",
+    }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("agent_memories_label_unique").on(table.label),
+    index("agent_memories_updated_idx").on(table.updatedAt),
+    check(
+      "agent_memories_category_valid",
+      sql`${table.category} in ('preference', 'fact', 'instruction')`,
+    ),
+  ],
+);
+
+// A readable, incremental checkpoint for long Bippy conversations. Original
+// messages remain untouched; this row only controls what is replayed to the
+// model when the verbatim transcript crosses the configured token budget.
+export const agentCompactions = pgTable(
+  "agent_compactions",
+  {
+    threadId: uuid("thread_id")
+      .primaryKey()
+      .references(() => agentThreads.id, { onDelete: "cascade" }),
+    summary: text("summary").notNull(),
+    compactedMessageCount: integer("compacted_message_count").notNull(),
+    sourceTokens: integer("source_tokens").notNull(),
+    summaryTokens: integer("summary_tokens").notNull(),
+    ...timestamps,
+  },
+  (table) => [
+    check(
+      "agent_compactions_message_count_valid",
+      sql`${table.compactedMessageCount} >= 0`,
+    ),
+    check(
+      "agent_compactions_token_counts_valid",
+      sql`${table.sourceTokens} >= 0 and ${table.summaryTokens} >= 0`,
+    ),
+  ],
+);
+
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => agentThreads.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    status: text("status").notNull().default("running"),
+    inputTokens: integer("input_tokens"),
+    outputTokens: integer("output_tokens"),
+    error: text("error"),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("agent_runs_thread_idx").on(table.threadId, table.startedAt),
+    check(
+      "agent_runs_status_valid",
+      sql`${table.status} in ('running', 'completed', 'failed')`,
+    ),
+  ],
+);
+
+export const agentMessages = pgTable(
+  "agent_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => agentThreads.id, { onDelete: "cascade" }),
+    runId: uuid("run_id").references(() => agentRuns.id, {
+      onDelete: "set null",
+    }),
+    role: text("role").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("agent_messages_thread_idx").on(table.threadId, table.createdAt),
+    check(
+      "agent_messages_role_valid",
+      sql`${table.role} in ('user', 'assistant')`,
+    ),
+  ],
+);
+
+export const agentToolCalls = pgTable(
+  "agent_tool_calls",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => agentThreads.id, { onDelete: "cascade" }),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: "cascade" }),
+    toolName: text("tool_name").notNull(),
+    arguments: jsonb("arguments").$type<Record<string, unknown>>().notNull(),
+    result: jsonb("result").$type<unknown>(),
+    status: text("status").notNull(),
+    requiresApproval: boolean("requires_approval").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("agent_tool_calls_run_idx").on(table.runId),
+    index("agent_tool_calls_thread_idx").on(table.threadId, table.createdAt),
+    check(
+      "agent_tool_calls_status_valid",
+      sql`${table.status} in ('running', 'completed', 'failed')`,
+    ),
+  ],
+);
+
+export const agentApprovals = pgTable(
+  "agent_approvals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    threadId: uuid("thread_id")
+      .notNull()
+      .references(() => agentThreads.id, { onDelete: "cascade" }),
+    runId: uuid("run_id")
+      .notNull()
+      .references(() => agentRuns.id, { onDelete: "cascade" }),
+    toolCallId: uuid("tool_call_id")
+      .notNull()
+      .references(() => agentToolCalls.id, { onDelete: "cascade" }),
+    actionType: text("action_type").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    preview: jsonb("preview").$type<Record<string, unknown>>().notNull(),
+    status: text("status").notNull().default("pending"),
+    resolutionNote: text("resolution_note"),
+    requestedAt: timestamp("requested_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("agent_approvals_thread_idx").on(table.threadId, table.requestedAt),
+    check(
+      "agent_approvals_status_valid",
+      sql`${table.status} in ('pending', 'approved', 'rejected', 'executed', 'failed')`,
+    ),
+  ],
+);
+
+// OAuth state for the private Bippy MCP resource. Only hashes of authorization
+// codes and bearer tokens are stored; a database leak cannot turn these rows
+// into usable credentials. Clients are public PKCE clients, so no client
+// secret is issued or persisted.
+export const mcpOAuthClients = pgTable(
+  "mcp_oauth_clients",
+  {
+    clientId: text("client_id").primaryKey(),
+    clientName: text("client_name").notNull(),
+    redirectUris: jsonb("redirect_uris").$type<string[]>().notNull(),
+    threadId: uuid("thread_id").references(() => agentThreads.id, {
+      onDelete: "set null",
+    }),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("mcp_oauth_clients_created_idx").on(table.createdAt),
+    index("mcp_oauth_clients_last_used_idx").on(table.lastUsedAt),
+  ],
+);
+
+export const mcpOAuthCodes = pgTable(
+  "mcp_oauth_codes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    codeHash: text("code_hash").notNull(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => mcpOAuthClients.clientId, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    ownerGithubUserId: text("owner_github_user_id").notNull(),
+    redirectUri: text("redirect_uri").notNull(),
+    codeChallenge: text("code_challenge").notNull(),
+    resource: text("resource").notNull(),
+    scopes: jsonb("scopes").$type<string[]>().notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("mcp_oauth_codes_hash_unique").on(table.codeHash),
+    index("mcp_oauth_codes_expiry_idx").on(table.expiresAt),
+  ],
+);
+
+export const mcpOAuthTokens = pgTable(
+  "mcp_oauth_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    accessTokenHash: text("access_token_hash").notNull(),
+    refreshTokenHash: text("refresh_token_hash").notNull(),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => mcpOAuthClients.clientId, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    ownerGithubUserId: text("owner_github_user_id").notNull(),
+    resource: text("resource").notNull(),
+    scopes: jsonb("scopes").$type<string[]>().notNull(),
+    accessExpiresAt: timestamp("access_expires_at", {
+      withTimezone: true,
+    }).notNull(),
+    refreshExpiresAt: timestamp("refresh_expires_at", {
+      withTimezone: true,
+    }).notNull(),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("mcp_oauth_tokens_access_unique").on(table.accessTokenHash),
+    uniqueIndex("mcp_oauth_tokens_refresh_unique").on(table.refreshTokenHash),
+    index("mcp_oauth_tokens_access_expiry_idx").on(table.accessExpiresAt),
+  ],
+);
+
 export type Project = typeof projects.$inferSelect;
 export type Recognition = typeof recognitions.$inferSelect;
 export type NowSection = typeof nowSection.$inferSelect;
@@ -306,3 +567,13 @@ export type StatsSnapshot = typeof statsSnapshot.$inferSelect;
 export type TechStackItem = typeof techStackItems.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type PostLink = typeof postLinks.$inferSelect;
+export type AgentThread = typeof agentThreads.$inferSelect;
+export type AgentMemory = typeof agentMemories.$inferSelect;
+export type AgentCompaction = typeof agentCompactions.$inferSelect;
+export type AgentMessage = typeof agentMessages.$inferSelect;
+export type AgentRun = typeof agentRuns.$inferSelect;
+export type AgentToolCall = typeof agentToolCalls.$inferSelect;
+export type AgentApproval = typeof agentApprovals.$inferSelect;
+export type McpOAuthClient = typeof mcpOAuthClients.$inferSelect;
+export type McpOAuthCode = typeof mcpOAuthCodes.$inferSelect;
+export type McpOAuthToken = typeof mcpOAuthTokens.$inferSelect;

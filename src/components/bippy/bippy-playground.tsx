@@ -9,7 +9,6 @@ import {
 } from "react";
 import { Activity, Laptop, Moon, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SectionHeading } from "@/components/admin/admin-primitives";
 import {
   bippyStateTimeouts,
   transitionBippy,
@@ -357,22 +356,10 @@ export function BippyPlayground() {
       }[performanceCheck.result.rating]
     : "Not tested";
 
+  // aria-label rather than aria-labelledby: the workspace navigation already
+  // names this screen, while this component is the interactive playground.
   return (
-    <section aria-labelledby="playground-heading" className="max-w-[720px]">
-      <SectionHeading
-        meta="States, movement and runtime health"
-        action={
-          <span
-            className="rounded-full border border-border px-2 py-0.5 font-mono text-[11px] text-muted-foreground"
-            aria-label={`Current state: ${state}`}
-          >
-            {state}
-          </span>
-        }
-      >
-        <span id="playground-heading">Playground</span>
-      </SectionHeading>
-
+    <section aria-label="Playground" className="max-w-[720px]">
       <div>
         {/* True black, not the admin grey: the arena stands in for the
             portfolio's own background, so he is tested against what he will
@@ -388,9 +375,50 @@ export function BippyPlayground() {
         >
           <div
             data-bippy-safe-zone
-            className="pointer-events-none absolute top-4 left-4 max-w-48 border border-white/10 bg-black/70 px-3 py-2 text-xs leading-5 text-muted-foreground"
+            className="absolute inset-x-0 top-0 z-10 flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 bg-black/80 px-3 py-2 font-mono text-[10px]"
           >
-            Hold and drag Bippy. He avoids this area while moving by himself.
+            <PerformanceMetric
+              label="Live FPS"
+              value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
+            />
+            <PerformanceMetric
+              label="Frame time"
+              value={
+                performanceCheck.frameTime
+                  ? `${performanceCheck.frameTime.toFixed(1)} ms`
+                  : "—"
+              }
+            />
+            <PerformanceMetric
+              label="Sprites"
+              value={
+                spriteStatus === "ready"
+                  ? "Ready"
+                  : spriteStatus === "error"
+                    ? "Load error"
+                    : "Loading"
+              }
+            />
+            <PerformanceMetric label="Result" value={ratingCopy} />
+            <span
+              className="text-white/55 capitalize"
+              aria-label={`Current state: ${state}`}
+            >
+              State: <span className="text-white/90">{state}</span>
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={performanceCheck.isRunning || !pageVisible}
+              onClick={performanceCheck.runTest}
+              className="ml-auto h-7 text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <Activity aria-hidden="true" />
+              {performanceCheck.isRunning
+                ? `${performanceCheck.remainingSeconds}s`
+                : "Run check"}
+            </Button>
           </div>
 
           <div ref={actorRef} className={styles.actor}>
@@ -458,72 +486,6 @@ export function BippyPlayground() {
             Reset
           </Button>
         </div>
-
-        <SectionHeading
-          className="mt-8"
-          meta="A local check. No metrics are stored."
-          action={
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={performanceCheck.isRunning || !pageVisible}
-              onClick={performanceCheck.runTest}
-            >
-              <Activity aria-hidden="true" />
-              {performanceCheck.isRunning
-                ? `Testing · ${performanceCheck.remainingSeconds}s`
-                : "Run 10s check"}
-            </Button>
-          }
-        >
-          Performance
-        </SectionHeading>
-
-        <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-px overflow-hidden border-y border-border bg-border sm:grid-cols-4">
-            <PerformanceMetric
-              label="Live FPS"
-              value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
-            />
-            <PerformanceMetric
-              label="Frame time"
-              value={
-                performanceCheck.frameTime
-                  ? `${performanceCheck.frameTime.toFixed(1)} ms`
-                  : "—"
-              }
-            />
-            <PerformanceMetric
-              label="Sprites"
-              value={
-                spriteStatus === "ready"
-                  ? "Ready"
-                  : spriteStatus === "error"
-                    ? "Load error"
-                    : "Loading"
-              }
-            />
-            <PerformanceMetric label="Result" value={ratingCopy} />
-          </div>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-            <span>Loop: {state === "moving" ? "active" : "resting"}</span>
-            <span>Tab: {pageVisible ? "visible" : "paused"}</span>
-            <span>Motion: {reducedMotion ? "reduced" : "full"}</span>
-            {performanceCheck.result ? (
-              <>
-                <span>
-                  Average: {performanceCheck.result.averageFps.toFixed(0)} FPS
-                </span>
-                <span>
-                  Slow frames:{" "}
-                  {performanceCheck.result.slowFramePercentage.toFixed(1)}%
-                </span>
-              </>
-            ) : null}
-          </div>
-        </div>
       </div>
 
       <p className="sr-only" aria-live="polite">
@@ -535,13 +497,8 @@ export function BippyPlayground() {
 
 function PerformanceMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-background px-3 py-2.5">
-      <p className="font-mono text-[10px] tracking-[0.1em] text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-1 font-mono text-[15px] tabular-nums text-foreground">
-        {value}
-      </p>
-    </div>
+    <span className="text-white/55">
+      {label}: <span className="tabular-nums text-white/90">{value}</span>
+    </span>
   );
 }

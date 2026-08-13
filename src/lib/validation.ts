@@ -26,18 +26,18 @@ const optionalHttpsUrl = z
 
 const optionalText = (max: number) => z.string().trim().max(max).optional();
 
-const iconObjectKey = z
+export const iconObjectKeySchema = z
   .string()
   .regex(/^icons\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/)
   .optional();
 
-const profileImageObjectKey = z
+export const profileImageObjectKeySchema = z
   .string()
   .regex(/^profiles\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/)
   .optional();
 
 const iconFields = {
-  iconKey: iconObjectKey,
+  iconKey: iconObjectKeySchema,
   iconAlt: optionalText(180),
 };
 
@@ -140,6 +140,21 @@ export const nowLinkSchema = z
 // Who you are and how to reach you. Split from the SEO pair because they are
 // two screens now, and each writes only its own columns — a shared schema would
 // make either save wipe the other's fields.
+export const contactLinksSchema = z.object({
+  github: optionalHttpsUrl,
+  x: optionalHttpsUrl,
+  instagram: optionalHttpsUrl,
+  tiktok: optionalHttpsUrl,
+  youtube: optionalHttpsUrl,
+  linkedin: optionalHttpsUrl,
+  whatsapp: optionalHttpsUrl,
+});
+
+export const resumeObjectKeySchema = z
+  .string()
+  .regex(/^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/)
+  .optional();
+
 export const profileSchema = z.object({
   // What the homepage shows under the photo. The introduction keeps its own
   // line breaks and carries its emphasis inline as **double asterisks**, so the
@@ -152,20 +167,9 @@ export const profileSchema = z.object({
     .min(1, "An introduction is required.")
     .max(600),
   email: z.email(),
-  contactLinks: z.object({
-    github: optionalHttpsUrl,
-    x: optionalHttpsUrl,
-    instagram: optionalHttpsUrl,
-    tiktok: optionalHttpsUrl,
-    youtube: optionalHttpsUrl,
-    linkedin: optionalHttpsUrl,
-    whatsapp: optionalHttpsUrl,
-  }),
-  profileImageKey: profileImageObjectKey,
-  resumeKey: z
-    .string()
-    .regex(/^resumes\/\d{4}\/[a-f0-9]{48}\.pdf$/)
-    .optional(),
+  contactLinks: contactLinksSchema,
+  profileImageKey: profileImageObjectKeySchema,
+  resumeKey: resumeObjectKeySchema,
   resumeFilename: optionalText(180),
   // Not derivable from anything the site stores, so the owner types it. Capped
   // at two digits because the strip gives the value one short line.

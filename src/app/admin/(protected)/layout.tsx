@@ -1,4 +1,5 @@
 import { count, eq } from "drizzle-orm";
+import { AdminContent } from "@/components/admin/admin-content";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { getDb } from "@/db/client";
@@ -50,14 +51,10 @@ export default async function ProtectedAdminLayout({
         profileImageKey={settings.profileImageKey}
       />
       <AdminTopbar profileImageKey={settings.profileImageKey} />
-      {/* Padded rather than gridded, because the sidebar is fixed — a grid
-          column would scroll away with the content. Below lg the bar is in the
-          flow instead, so there is nothing to pad around. */}
-      <div className="lg:pl-[216px]">
-        <main className="w-full max-w-[940px] px-5 pb-24 pt-6 sm:px-7 lg:pt-7">
-          {children}
-        </main>
-      </div>
+      {/* Normal screens keep the restrained content column. The assistant is
+          a route-sized workspace, so its canvas consumes the remaining
+          viewport and owns only the two intentional scroll regions. */}
+      <AdminContent>{children}</AdminContent>
     </div>
   );
 }

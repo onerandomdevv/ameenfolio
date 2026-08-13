@@ -6,6 +6,7 @@
 export function isAdminHostSharedPath(pathname: string) {
   return (
     pathname.startsWith("/api/") ||
+    pathname.startsWith("/.well-known/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/media/") ||
     pathname.startsWith("/bippy/") ||

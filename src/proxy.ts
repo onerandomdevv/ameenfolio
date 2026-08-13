@@ -34,7 +34,11 @@ export default async function proxy(request: NextRequest) {
     // platform URL cannot have an `admin.` sibling, so refusing this would make
     // the admin unreachable exactly when DNS is the thing that is broken.
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-      if (pathname === "/admin/login" || isServerAction(request)) {
+      if (
+        pathname === "/admin/login" ||
+        pathname === "/admin/mcp/authorize" ||
+        isServerAction(request)
+      ) {
         return NextResponse.next();
       }
       return getAuth().middleware({ loginUrl: "/admin/login" })(request);
@@ -50,11 +54,15 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.rewrite(new URL("/_not-found", request.url));
   }
 
-  const target = pathname === "/" ? "/admin/projects" : `/admin${pathname}`;
+  const target = pathname === "/" ? "/admin/assistant" : `/admin${pathname}`;
   const rewriteUrl = request.nextUrl.clone();
   rewriteUrl.pathname = target;
 
-  if (target === "/admin/login" || isServerAction(request)) {
+  if (
+    target === "/admin/login" ||
+    target === "/admin/mcp/authorize" ||
+    isServerAction(request)
+  ) {
     return NextResponse.rewrite(rewriteUrl);
   }
 

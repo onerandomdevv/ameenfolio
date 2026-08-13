@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
@@ -321,6 +321,39 @@ export async function isReferencedPublicMedia(key: string) {
   return Boolean(
     project[0] || (nowLink[0] && publishedNow[0]) || settings[0] || post[0],
   );
+}
+
+export async function isReferencedManagedObject(key: string) {
+  if (!canQueryDatabase()) return false;
+  const db = getDb();
+  const [project, nowLink, settings, post] = await Promise.all([
+    db
+      .select({ id: projects.id })
+      .from(projects)
+      .where(eq(projects.iconKey, key))
+      .limit(1),
+    db
+      .select({ id: nowLinks.id })
+      .from(nowLinks)
+      .where(eq(nowLinks.iconKey, key))
+      .limit(1),
+    db
+      .select({ id: siteSettings.id })
+      .from(siteSettings)
+      .where(
+        or(
+          eq(siteSettings.profileImageKey, key),
+          eq(siteSettings.resumeKey, key),
+        ),
+      )
+      .limit(1),
+    db
+      .select({ id: posts.id })
+      .from(posts)
+      .where(sql`position(${key} in ${posts.bodyMarkdown}) > 0`)
+      .limit(1),
+  ]);
+  return Boolean(project[0] || nowLink[0] || settings[0] || post[0]);
 }
 
 // --- Writing -------------------------------------------------------------

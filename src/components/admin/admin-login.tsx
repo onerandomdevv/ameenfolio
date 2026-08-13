@@ -9,7 +9,7 @@ import { useAdminBase } from "@/lib/use-admin-base";
 
 const auth = createAuthClient();
 
-export function AdminLogin() {
+export function AdminLogin({ callbackPath }: { callbackPath?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const base = useAdminBase();
@@ -20,7 +20,7 @@ export function AdminLogin() {
     const result = await auth.signIn.social({
       provider: "github",
       callbackURL: new URL(
-        `${base}/projects`,
+        callbackPath ?? `${base}/assistant`,
         window.location.origin,
       ).toString(),
     });

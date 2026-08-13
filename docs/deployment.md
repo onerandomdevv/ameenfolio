@@ -14,9 +14,26 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
+For private Bippy MCP, wait until the public and admin HTTPS origins resolve,
+apply the latest database migration, configure `MCP_RESOURCE_URL`,
+`MCP_AUTH_ISSUER`, and `MCP_AUTHORIZATION_URL`, then set `MCP_ENABLED=true`.
+Generate a 32-character-or-longer `MCP_MAINTENANCE_SECRET` and schedule a daily
+authenticated `POST /api/internal/mcp/cleanup`. The same cleanup remains
+available manually from **MCP** in the main admin sidebar.
+Keep MCP disabled on previews unless each preview has stable matching OAuth
+origins.
+
 `WAKATIME_API_KEY` is optional. When configured, keep it server-only; the public application receives only a cached, privacy-safe coding status, today and weekly totals, daily average, top language, seven-day breakdown, and timestamps. Project and branch names are excluded. Without the key, Bippy retains his normal idle behavior and the projects-page activity strip renders offline with empty totals.
 
 ## Admin host
+
+Portfolio Copilot is optional for the rest of the application. Set a
+project-scoped `OPENAI_API_KEY` as a server-only secret to enable messages. Set
+`OPENAI_DEFAULT_MODEL` and a comma-separated `OPENAI_ALLOWED_MODELS` containing
+only compatible models the OpenAI project can access. Set
+`OPENAI_COMPACTION_THRESHOLD_TOKENS` to the conversation budget at which older
+turns become a readable checkpoint; the default is 20,000. Without the key, the owner sees a configuration notice
+in Copilot while public routes and other admin features continue to work.
 
 The admin app has two mountings, both always live. A host whose first label is `admin.` serves it at the root — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Every other host serves it under `/admin`. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
 
