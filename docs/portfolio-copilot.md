@@ -18,8 +18,9 @@ different set of application permissions.
    selected OpenAI project can access.
 5. Apply the pending Drizzle migrations with `npm run db:migrate` before
    deploying the application code. `0026` creates the assistant audit tables,
-   `0027` adds curated cross-conversation memory, and `0032` adds persistent
-   conversation pinning.
+   `0027` adds curated cross-conversation memory, `0032` adds persistent
+   conversation pinning, and `0033` permanently separates ordinary chats from
+   MCP audit threads.
 
 If the key is absent, the Copilot page remains usable as a setup screen and no
 model request is attempted. The SDK resolves the key only when a message is
@@ -32,8 +33,9 @@ deployment default changes.
 The conversation sidebar deliberately shows names without dates. Its row menu
 can rename a chat, pin it above the normal recency order, or permanently delete
 the conversation and its cascading message/action history. MCP audit threads
-are excluded from this list and remain accessible only through their protected
-client Activity pages.
+carry a dedicated `mcp_audit` classification, are excluded from this list even
+after their OAuth client expires, and remain accessible only through protected
+client Activity pages while that client record exists.
 
 ## Private MCP connection
 

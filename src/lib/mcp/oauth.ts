@@ -106,6 +106,7 @@ async function ensureAuditThread(client: typeof mcpOAuthClients.$inferSelect) {
       title: `${client.clientName} · Bippy MCP`,
       provider: "openai",
       model: getServerEnv().OPENAI_DEFAULT_MODEL,
+      kind: "mcp_audit",
     })
     .returning({ id: agentThreads.id });
   await getDb()

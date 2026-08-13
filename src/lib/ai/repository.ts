@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, lt, notExists, sql } from "drizzle-orm";
+import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   agentApprovals,
@@ -9,7 +9,6 @@ import {
   agentRuns,
   agentThreads,
   agentToolCalls,
-  mcpOAuthClients,
 } from "@/db/schema";
 import type { ConversationState } from "@/lib/ai/provider";
 import type {
@@ -77,14 +76,7 @@ export async function listAssistantThreads() {
   const rows = await db
     .select()
     .from(agentThreads)
-    .where(
-      notExists(
-        db
-          .select({ clientId: mcpOAuthClients.clientId })
-          .from(mcpOAuthClients)
-          .where(eq(mcpOAuthClients.threadId, agentThreads.id)),
-      ),
-    )
+    .where(eq(agentThreads.kind, "chat"))
     .orderBy(
       sql`${agentThreads.pinnedAt} desc nulls last`,
       desc(agentThreads.updatedAt),
