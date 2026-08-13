@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PortfolioNavMenu } from "@/components/portfolio/portfolio-nav-menu";
+import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { cn } from "@/lib/utils";
 
 type PortfolioNavProps = {
@@ -46,6 +47,9 @@ export function PortfolioNav({ current }: PortfolioNavProps) {
         ))}
         <li className="flex items-center">
           <PortfolioNavMenu />
+        </li>
+        <li className="ml-2 flex items-center">
+          <ThemeToggle />
         </li>
       </ul>
     </nav>

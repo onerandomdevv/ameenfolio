@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { getPublishedPost } from "@/db/queries";
 import { getPostLinkIcon } from "@/config/post-link-icons";
 import { formatPostDate, toDateAttribute } from "@/lib/writing/format";
@@ -69,14 +70,18 @@ export default async function PostPage({ params }: PageProps) {
       ) : null}
 
       <main className="min-w-0 max-w-xl flex-1">
-        <Link
-          href="/writing"
-          data-bippy-reaction="curious"
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" aria-hidden="true" />
-          Writing
-        </Link>
+        {/* Same row, same place as the nav's toggle on the pages with a nav. */}
+        <div className="flex min-h-11 items-center justify-between gap-4">
+          <Link
+            href="/writing"
+            data-bippy-reaction="curious"
+            className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-3.5" aria-hidden="true" />
+            Writing
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <header className="mt-8">
           <h1 className="text-balance text-xl font-semibold leading-snug text-foreground">

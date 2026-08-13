@@ -1,10 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import "./globals.css";
-import { BippyCompanion } from "@/components/bippy/bippy-companion";
-import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
-import { getIdentitySettings, getPublicBippyEnabled } from "@/db/queries";
+import { getIdentitySettings } from "@/db/queries";
 import { resolveIdentity } from "@/lib/identity";
 import { inter } from "@/app/fonts";
 
@@ -56,8 +53,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const publicBippyEnabled = await getPublicBippyEnabled();
-
   return (
     // suppressHydrationWarning because the script below edits this element's
     // class before React sees it, so the server's markup and the client's
@@ -65,26 +60,23 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         {/* Runs before first paint, which is the whole point: applying the
-            class after hydration means a dark-mode reader gets a white flash
-            on every navigation. Reads the stored choice, falls back to the
-            system preference, and is wrapped because localStorage throws in
-            some privacy modes — unguarded, the theme would never apply at
-            all. */}
+            class after hydration means a white flash on every navigation.
+
+            Dark unless "light" was explicitly chosen — the site is dark by
+            design, so a visitor whose laptop happens to be in light mode still
+            arrives at the version it was built as. The OS preference is not
+            consulted; only the stored choice is.
+
+            Wrapped because localStorage throws in some privacy modes.
+            Unguarded, the theme would never apply at all. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{var s=localStorage.getItem("theme");var d=s==="dark"||(!s&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`,
+            __html: `(()=>{try{var s=localStorage.getItem("theme");var d=s!=="light";document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`,
           }}
         />
       </head>
       <body className={inter.className}>
-        {/* Here rather than in PortfolioNav, which only the homepage and the
-            projects page render — the writing pages had no toggle at all.
-            Fixed to the corner so its position is the same on every page. */}
-        <ThemeToggle />
         <div className="min-h-screen">{children}</div>
-        <Suspense fallback={null}>
-          <BippyCompanion enabled={publicBippyEnabled} />
-        </Suspense>
         <Toaster richColors position="bottom-center" />
       </body>
     </html>

@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { getPinnedPosts, getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
+import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ProjectRow } from "@/components/portfolio/project-row";
@@ -363,6 +364,12 @@ export default async function HomePage() {
       {/* No rule above it. The closing line already ends the page, and a
           divider between it and these icons read as the start of something
           else rather than the end of what came before. */}
+      {/* Mounted by the pages that want him rather than the root layout. The
+          layout wraps the admin too, and on the admin host the proxy serves
+          the admin's projects page at /projects — the same pathname this
+          companion keys on, so he was appearing over the admin. */}
+      <BippyCompanion enabled={settings.publicBippyEnabled} />
+
       <footer className="mt-5 font-mono text-xs text-muted-foreground">
         <nav aria-label="Footer social links">
           {/* Pulled left by the icon box's own padding, so the first glyph

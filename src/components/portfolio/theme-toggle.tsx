@@ -1,18 +1,15 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-
-// Kept in step with the inline script in layout.tsx, which sets the class
-// before first paint. Both read and write this one key.
-const STORAGE_KEY = "theme";
+import { toggleTheme } from "@/lib/theme";
 
 /**
  * Two states, not three.
  *
- * Until it is pressed, nothing is stored and the site follows the operating
- * system — so "system" is the default rather than a third position to hunt for.
- * Pressing it pins the choice, which is what someone reaching for a toggle
- * actually wants.
+ * The site is dark until someone says otherwise: the OS preference is not
+ * consulted, so a visitor whose laptop is in light mode still arrives at the
+ * version this was designed as. Pressing this stores the choice, and the
+ * pre-paint script in layout.tsx honours it from then on.
  *
  * Which icon shows is decided by CSS, not React state. The theme lives on the
  * document element before React exists, so any attempt to mirror it into state
@@ -23,26 +20,14 @@ const STORAGE_KEY = "theme";
  * the work.
  */
 export function ThemeToggle() {
-  function toggle() {
-    const next = !document.documentElement.classList.contains("dark");
-    document.documentElement.classList.toggle("dark", next);
-    document.documentElement.style.colorScheme = next ? "dark" : "light";
-    try {
-      localStorage.setItem(STORAGE_KEY, next ? "dark" : "light");
-    } catch {
-      // Storage throws in some privacy modes. The class is already set, so the
-      // choice still holds for this page.
-    }
-  }
-
   return (
     <button
       type="button"
-      onClick={toggle}
+      onClick={toggleTheme}
       aria-label="Toggle dark mode"
       data-bippy-safe-zone
       data-theme-toggle=""
-      className="fixed right-4 top-4 z-50 grid size-9 place-items-center rounded-full border border-border bg-background/70 text-muted-foreground backdrop-blur transition-colors hover:text-foreground focus-visible:text-foreground"
+      className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-background/70 text-muted-foreground backdrop-blur transition-colors hover:text-foreground focus-visible:text-foreground"
     >
       <Moon aria-hidden="true" className="size-4 dark:hidden" />
       <Sun aria-hidden="true" className="hidden size-4 dark:block" />

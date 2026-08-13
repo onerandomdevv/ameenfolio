@@ -1,7 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ImagePlus, LoaderCircle } from "lucide-react";
+import { Eye, ImagePlus, LoaderCircle, PenLine } from "lucide-react";
+import { previewMarkdown } from "@/app/admin/actions/writing";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -9,7 +10,6 @@ import {
   FieldError,
   FieldLabel,
 } from "@/components/ui/field";
-import { Textarea } from "@/components/ui/textarea";
 import { uploadFile } from "@/lib/storage/client";
 
 type MarkdownEditorProps = {
@@ -33,6 +33,26 @@ export function MarkdownEditor({
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [pending, setPending] = useState(false);
   const [uploadError, setUploadError] = useState<string>();
+  const [preview, setPreview] = useState<string | null>(null);
+  const [rendering, setRendering] = useState(false);
+
+  async function showPreview() {
+    setRendering(true);
+    setUploadError(undefined);
+    try {
+      // Rendered on the server by the same function the save path uses, so the
+      // preview cannot disagree with the published post — including what the
+      // sanitiser strips.
+      const result = await previewMarkdown(textareaRef.current?.value ?? value);
+      if (!result.ok) {
+        setUploadError(result.message);
+        return;
+      }
+      setPreview(result.html);
+    } finally {
+      setRendering(false);
+    }
+  }
 
   async function upload(file: File) {
     setPending(true);
@@ -78,31 +98,63 @@ export function MarkdownEditor({
     <Field data-invalid={invalid} data-disabled={pending}>
       <div className="flex items-center justify-between gap-3">
         <FieldLabel htmlFor="bodyMarkdown">Body</FieldLabel>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={pending}
-          onClick={() => fileRef.current?.click()}
-        >
-          {pending ? (
-            <LoaderCircle className="animate-spin" aria-hidden="true" />
-          ) : (
-            <ImagePlus aria-hidden="true" />
-          )}
-          Insert image
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pending || rendering}
+            onClick={() =>
+              preview !== null ? setPreview(null) : void showPreview()
+            }
+          >
+            {rendering ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : preview !== null ? (
+              <PenLine aria-hidden="true" />
+            ) : (
+              <Eye aria-hidden="true" />
+            )}
+            {preview !== null ? "Write" : "Preview"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={pending || preview !== null}
+            onClick={() => fileRef.current?.click()}
+          >
+            {pending ? (
+              <LoaderCircle className="animate-spin" aria-hidden="true" />
+            ) : (
+              <ImagePlus aria-hidden="true" />
+            )}
+            Insert image
+          </Button>
+        </div>
       </div>
-      <Textarea
-        id="bodyMarkdown"
-        ref={textareaRef}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        rows={22}
-        spellCheck
-        className="font-mono text-[13px] leading-6"
-        placeholder={"## A section\n\nWrite in Markdown."}
-      />
+      {preview !== null ? (
+        // The same class the published post uses, so this is the post's own
+        // styling rather than an approximation of it.
+        <article
+          className="post-body min-h-[24rem]"
+          dangerouslySetInnerHTML={{ __html: preview }}
+        />
+      ) : (
+        /* No box. What is being written becomes a page, so a bordered field
+           around it framed the text as form input rather than prose — and the
+           preview would then look nothing like the thing above it. */
+        <textarea
+          id="bodyMarkdown"
+          ref={textareaRef}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          rows={22}
+          spellCheck
+          className="w-full resize-y bg-transparent p-0 font-mono text-[13px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
+          placeholder={"## A section\n\nWrite in Markdown."}
+        />
+      )}
       <input
         ref={fileRef}
         type="file"
