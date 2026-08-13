@@ -23,6 +23,10 @@
      list this short is what stops it becoming general decoration. */
   --color-accent-lime: #7fff00;
 
+  /* Theme-aware, unlike the lime above: see --signal. */
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-foreground);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -55,8 +59,48 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
+/* Light is the base and dark is the override, which is the way round that
+   keeps the tokens honest: a value with no dark counterpart falls back to
+   something readable on white rather than to white-on-white.
+
+   The neutrals are a single family with no chroma, stepped the way kamran.fyi
+   steps them — nothing reaches pure black, so the page reads soft instead of
+   stark. */
 :root {
   --radius: 0.75rem;
+  --background: #ffffff;
+  --foreground: #171717;
+  --card: #fafafa;
+  --card-foreground: #171717;
+  --popover: #ffffff;
+  --popover-foreground: #171717;
+  --primary: #171717;
+  --primary-foreground: #ffffff;
+  --secondary: #f5f5f5;
+  --secondary-foreground: #171717;
+  --muted: #f5f5f5;
+  --muted-foreground: #737373;
+  --accent: #f5f5f5;
+  --accent-foreground: #171717;
+  --destructive: #dc2626;
+  --border: #e5e5e5;
+  --input: #d4d4d4;
+  --ring: rgba(23, 23, 23, 0.35);
+  /* What "live" or "active" is painted in. Lime carries it on black; on white
+     it would glare, so light mode signals with weight instead of hue. */
+  --signal: #171717;
+  --signal-foreground: #ffffff;
+  --sidebar: #fafafa;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #e5e5e5;
+  --sidebar-ring: rgba(23, 23, 23, 0.35);
+}
+
+.dark {
   --background: #000000;
   --foreground: #ffffff;
   --card: #09090b;
@@ -75,6 +119,8 @@
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.12);
   --ring: rgba(255, 255, 255, 0.45);
+  --signal: #7fff00;
+  --signal-foreground: #000000;
   --sidebar: #09090b;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #fafafa;
@@ -112,8 +158,22 @@
    directly, such as the base border-color above. */
 .admin-theme {
   --background: #151519;
+  --foreground: #ffffff;
   --card: #1e1e23;
   --border: rgba(255, 255, 255, 0.1);
+
+  /* Every token the admin relies on is named here, including the ones it used
+     to inherit from :root. That inheritance was fine while :root was dark; now
+     that :root is light, anything left out would arrive as black text or a
+     white surface on the admin's grey. The admin has no light mode and is not
+     meant to acquire one by omission. */
+  --color-foreground: #ffffff;
+  --color-primary: #fafafa;
+  --color-primary-foreground: #050505;
+  --color-destructive: #ef4444;
+  --color-ring: rgba(255, 255, 255, 0.45);
+  --color-signal: #7fff00;
+  --color-signal-foreground: #000000;
 
   --color-background: #151519;
   --color-card: #1e1e23;
@@ -149,8 +209,8 @@
 }
 
 body {
-  background-color: #000;
-  color: #fff;
+  background-color: var(--background);
+  color: var(--foreground);
   min-height: 100vh;
   overflow-x: hidden;
 }
@@ -166,9 +226,16 @@ body:has(.admin-theme) {
   background-color: #151519;
 }
 
+/* The toggle is rendered by the root layout, which wraps the admin too. The
+   admin is deliberately dark-only, so offering a switch there would promise a
+   light mode that does not exist. */
+body:has(.admin-theme) [data-theme-toggle] {
+  display: none;
+}
+
 ::selection {
-  background: #fafafa;
-  color: #000;
+  background: var(--foreground);
+  color: var(--background);
 }
 
 a,

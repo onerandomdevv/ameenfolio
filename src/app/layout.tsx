@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import { BippyCompanion } from "@/components/bippy/bippy-companion";
+import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { Toaster } from "@/components/ui/sonner";
 import { getIdentitySettings, getPublicBippyEnabled } from "@/db/queries";
 import { resolveIdentity } from "@/lib/identity";
@@ -58,8 +59,28 @@ export default async function RootLayout({
   const publicBippyEnabled = await getPublicBippyEnabled();
 
   return (
-    <html lang="en">
+    // suppressHydrationWarning because the script below edits this element's
+    // class before React sees it, so the server's markup and the client's
+    // first read of it legitimately differ.
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Runs before first paint, which is the whole point: applying the
+            class after hydration means a dark-mode reader gets a white flash
+            on every navigation. Reads the stored choice, falls back to the
+            system preference, and is wrapped because localStorage throws in
+            some privacy modes — unguarded, the theme would never apply at
+            all. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(()=>{try{var s=localStorage.getItem("theme");var d=s==="dark"||(!s&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`,
+          }}
+        />
+      </head>
       <body className={inter.className}>
+        {/* Here rather than in PortfolioNav, which only the homepage and the
+            projects page render — the writing pages had no toggle at all.
+            Fixed to the corner so its position is the same on every page. */}
+        <ThemeToggle />
         <div className="min-h-screen">{children}</div>
         <Suspense fallback={null}>
           <BippyCompanion enabled={publicBippyEnabled} />
