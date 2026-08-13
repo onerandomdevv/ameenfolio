@@ -940,12 +940,13 @@ export function createBippyMcpServer(actor: McpActor) {
       description:
         "Create a five-minute signed upload slot for a project icon or PDF résumé. Upload bytes with PUT, then use the returned object key in a prepared change.",
       inputSchema: {
-        resourceType: z.enum(["icon", "resume"]),
+        resourceType: z.enum(["icon", "post", "resume"]),
         filename: z.string().trim().min(1).max(180),
         contentType: z.enum([
           "image/png",
           "image/jpeg",
           "image/webp",
+          "image/gif",
           "application/pdf",
         ]),
         size: z.number().int().positive(),
