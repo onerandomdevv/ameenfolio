@@ -22,6 +22,7 @@ const serverEnvShape = z.object({
     .min(8_000)
     .max(100_000)
     .default(20_000),
+  BIPPY_MCP_ENCRYPTION_KEY: z.string().trim().min(1).optional(),
   MCP_ENABLED: z
     .enum(["true", "false"])
     .default("false")
@@ -75,6 +76,7 @@ export function requireServerEnv<
     | "R2_SECRET_ACCESS_KEY"
     | "R2_BUCKET_NAME"
     | "OPENAI_API_KEY"
+    | "BIPPY_MCP_ENCRYPTION_KEY"
     | "MCP_RESOURCE_URL"
     | "MCP_AUTH_ISSUER"
     | "MCP_AUTHORIZATION_URL"

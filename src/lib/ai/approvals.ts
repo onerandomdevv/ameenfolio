@@ -25,7 +25,9 @@ import {
   claimApproval,
   rejectApprovalWithPayload,
   resolveApproval,
+  updateApprovedToolCallResult,
 } from "@/lib/ai/repository";
+import { executeBippyMcpTool } from "@/lib/ai/bippy-mcp";
 import {
   nowSectionSchema,
   profileSchema,
@@ -384,6 +386,22 @@ async function executeApprovalDecision(
         actionError(await reorderTechStack(input.order));
         break;
       }
+      case "execute_bippy_mcp_tool": {
+        const input = z
+          .object({
+            connectionId: z.uuid(),
+            toolName: z.string().min(1).max(200),
+            arguments: z.record(z.string(), z.unknown()),
+          })
+          .parse(approval.payload);
+        const result = await executeBippyMcpTool(
+          input.connectionId,
+          input.toolName,
+          input.arguments,
+        );
+        await updateApprovedToolCallResult(approval.toolCallId, result);
+        break;
+      }
       default:
         throw new Error("Unknown approval action.");
     }
@@ -394,6 +412,13 @@ async function executeApprovalDecision(
       note: "Approved and applied.",
     });
   } catch (error) {
+    if (approval.actionType === "execute_bippy_mcp_tool") {
+      await updateApprovedToolCallResult(
+        approval.toolCallId,
+        { error: String(error) },
+        "failed",
+      );
+    }
     await cleanupRejectedUpload(approval);
     await resolveApproval({ id, status: "failed", note: String(error) });
     throw error;
