@@ -225,6 +225,13 @@
       "when": 1786582800000,
       "tag": "0031_agent_tool_call_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786590000000,
+      "tag": "0032_pinned_agent_threads",
+      "breakpoints": true
     }
   ]
 }

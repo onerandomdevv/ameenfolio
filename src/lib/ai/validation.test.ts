@@ -3,6 +3,7 @@ import {
   assistantDecisionSchema,
   assistantMessageSchema,
   assistantThreadIdSchema,
+  assistantThreadMutationSchema,
 } from "@/lib/ai/validation";
 
 describe("portfolio copilot request validation", () => {
@@ -42,5 +43,26 @@ describe("portfolio copilot request validation", () => {
       assistantDecisionSchema.parse({ decision: "execute" }),
     ).toThrow();
     expect(() => assistantThreadIdSchema.parse("../../settings")).toThrow();
+  });
+
+  it("validates conversation rename and pin actions", () => {
+    expect(
+      assistantThreadMutationSchema.parse({
+        action: "rename",
+        title: "  Portfolio launch  ",
+      }),
+    ).toEqual({ action: "rename", title: "Portfolio launch" });
+    expect(
+      assistantThreadMutationSchema.parse({
+        action: "set_pinned",
+        pinned: true,
+      }),
+    ).toEqual({ action: "set_pinned", pinned: true });
+    expect(() =>
+      assistantThreadMutationSchema.parse({ action: "rename", title: "   " }),
+    ).toThrow();
+    expect(() =>
+      assistantThreadMutationSchema.parse({ action: "delete" }),
+    ).toThrow();
   });
 });

@@ -13,6 +13,7 @@ export type AssistantThreadSummary = {
   title: string;
   provider: AssistantProvider;
   model: string;
+  pinnedAt: string | null;
   updatedAt: string;
 };
 

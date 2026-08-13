@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import { Activity, Cable, RefreshCw, Unplug } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import type { McpConnectionSummary } from "@/lib/mcp/connections";
+import { useAdminBase } from "@/lib/use-admin-base";
 
 function dateTime(value: string | null) {
   if (!value) return "Never used";
@@ -31,29 +33,9 @@ function dateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function readableName(value: string) {
-  return value
-    .replaceAll("_", " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function ActivityStatus({
-  status,
-}: {
-  status: "running" | "completed" | "failed";
-}) {
-  return (
-    <Badge
-      variant={status === "failed" ? "destructive" : "secondary"}
-      className="rounded-sm font-mono text-[9px] capitalize"
-    >
-      {status}
-    </Badge>
-  );
-}
-
 function ConnectionRow({ connection }: { connection: McpConnectionSummary }) {
   const router = useRouter();
+  const base = useAdminBase();
   const [pending, startTransition] = useTransition();
 
   function disconnect() {
@@ -102,78 +84,46 @@ function ConnectionRow({ connection }: { connection: McpConnectionSummary }) {
             Last activity: {dateTime(connection.lastUsedAt)} · Registered:{" "}
             {dateTime(connection.connectedAt)}
           </p>
-
-          <div className="mt-4">
-            <p className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted-foreground">
-              External activity
-            </p>
-            {connection.recentActivity.length ? (
-              <div className="mt-1.5 border-t border-border/60">
-                {connection.recentActivity.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border/60 py-2.5"
-                  >
-                    <Activity
-                      className="size-3.5 shrink-0 text-muted-foreground"
-                      aria-hidden="true"
-                    />
-                    <span className="text-[12px] font-medium">
-                      {readableName(item.toolName)}
-                    </span>
-                    <ActivityStatus status={item.status} />
-                    {item.approvalStatus ? (
-                      <Badge
-                        variant="outline"
-                        className="rounded-sm font-mono text-[9px] capitalize"
-                      >
-                        Approval {item.approvalStatus}
-                      </Badge>
-                    ) : null}
-                    <time
-                      dateTime={item.createdAt}
-                      className="ml-auto font-mono text-[9.5px] text-muted-foreground"
-                    >
-                      {dateTime(item.createdAt)}
-                    </time>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                No tool calls from this client yet.
-              </p>
-            )}
-          </div>
         </div>
-        {connection.active ? (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" size="sm" disabled={pending}>
-                <Unplug aria-hidden="true" />
-                Disconnect
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent size="sm">
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Disconnect {connection.clientName}?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Its access and refresh tokens will stop working immediately. A
-                  new owner-approved OAuth connection is required to restore
-                  access.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction variant="destructive" onClick={disconnect}>
+
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
+          {connection.active ? (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={pending}>
+                  <Unplug aria-hidden="true" />
                   Disconnect
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        ) : null}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent size="sm">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    Disconnect {connection.clientName}?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Its access and refresh tokens will stop working immediately.
+                    A new owner-approved OAuth connection is required to restore
+                    access.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction variant="destructive" onClick={disconnect}>
+                    Disconnect
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          ) : null}
+          <Button variant="ghost" size="sm" asChild>
+            <Link
+              href={`${base}/mcp/${encodeURIComponent(connection.clientId)}/activity`}
+            >
+              <Activity aria-hidden="true" />
+              Activity
+            </Link>
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -218,6 +168,7 @@ function ConnectionsContent({
           size="sm"
           onClick={clean}
           disabled={pending}
+          title="Remove expired credentials and abandoned inactive clients"
         >
           <RefreshCw
             className={pending ? "animate-spin" : undefined}

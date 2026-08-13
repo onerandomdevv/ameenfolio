@@ -12,6 +12,8 @@ export function BippyMobileWorkspaceSidebar({
   disabled,
   onNewChat,
   onSelectThread,
+  onThreadUpdated,
+  onThreadDeleted,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -20,6 +22,8 @@ export function BippyMobileWorkspaceSidebar({
   disabled?: boolean;
   onNewChat?: () => void;
   onSelectThread?: (id: string) => void;
+  onThreadUpdated?: (thread: AssistantThreadSummary) => void;
+  onThreadDeleted?: (id: string) => void;
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -52,6 +56,8 @@ export function BippyMobileWorkspaceSidebar({
                 }
               : undefined
           }
+          onThreadUpdated={onThreadUpdated}
+          onThreadDeleted={onThreadDeleted}
         />
       </SheetContent>
     </Sheet>

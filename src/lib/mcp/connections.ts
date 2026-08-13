@@ -2,10 +2,10 @@ import "server-only";
 
 import {
   and,
+  count,
   desc,
   eq,
   gt,
-  inArray,
   isNotNull,
   isNull,
   lt,
@@ -32,7 +32,9 @@ export type McpExternalActivitySummary = {
     | "executed"
     | "failed"
     | null;
+  actionType: string | null;
   createdAt: string;
+  finishedAt: string | null;
 };
 
 export type McpConnectionSummary = {
@@ -44,7 +46,6 @@ export type McpConnectionSummary = {
   lastUsedAt: string | null;
   active: boolean;
   status: "connected" | "inactive" | "pending";
-  recentActivity: McpExternalActivitySummary[];
 };
 
 export async function listMcpConnections(): Promise<McpConnectionSummary[]> {
@@ -53,28 +54,6 @@ export async function listMcpConnections(): Promise<McpConnectionSummary[]> {
     db.select().from(mcpOAuthClients),
     db.select().from(mcpOAuthTokens),
   ]);
-  const threadIds = clients.flatMap((client) =>
-    client.threadId ? [client.threadId] : [],
-  );
-  const activity = threadIds.length
-    ? await db
-        .select({
-          id: agentToolCalls.id,
-          threadId: agentToolCalls.threadId,
-          toolName: agentToolCalls.toolName,
-          status: agentToolCalls.status,
-          approvalStatus: agentApprovals.status,
-          createdAt: agentToolCalls.createdAt,
-        })
-        .from(agentToolCalls)
-        .leftJoin(
-          agentApprovals,
-          eq(agentApprovals.toolCallId, agentToolCalls.id),
-        )
-        .where(inArray(agentToolCalls.threadId, threadIds))
-        .orderBy(desc(agentToolCalls.createdAt))
-        .limit(200)
-    : [];
   const now = Date.now();
 
   return clients
@@ -101,19 +80,6 @@ export async function listMcpConnections(): Promise<McpConnectionSummary[]> {
         lastUsedAt: client.lastUsedAt?.toISOString() ?? null,
         active: activeTokens.length > 0,
         status,
-        recentActivity: client.threadId
-          ? activity
-              .filter((item) => item.threadId === client.threadId)
-              .slice(0, 10)
-              .map((item) => ({
-                id: item.id,
-                toolName: item.toolName,
-                status: item.status as McpExternalActivitySummary["status"],
-                approvalStatus:
-                  item.approvalStatus as McpExternalActivitySummary["approvalStatus"],
-                createdAt: item.createdAt.toISOString(),
-              }))
-          : [],
       };
     })
     .sort(
@@ -121,6 +87,65 @@ export async function listMcpConnections(): Promise<McpConnectionSummary[]> {
         new Date(b.lastUsedAt ?? b.connectedAt).getTime() -
         new Date(a.lastUsedAt ?? a.connectedAt).getTime(),
     );
+}
+
+export const MCP_ACTIVITY_PAGE_SIZE = 50;
+
+export async function getMcpConnectionActivity(
+  clientId: string,
+  requestedPage: number,
+) {
+  const connection = (await listMcpConnections()).find(
+    (item) => item.clientId === clientId,
+  );
+  if (!connection) return null;
+
+  const db = getDb();
+  const [client] = await db
+    .select({ threadId: mcpOAuthClients.threadId })
+    .from(mcpOAuthClients)
+    .where(eq(mcpOAuthClients.clientId, clientId))
+    .limit(1);
+  if (!client?.threadId) {
+    return { connection, activity: [], page: 1, totalPages: 1, total: 0 };
+  }
+
+  const [totalRows] = await db
+    .select({ value: count() })
+    .from(agentToolCalls)
+    .where(eq(agentToolCalls.threadId, client.threadId));
+  const total = Number(totalRows?.value ?? 0);
+  const totalPages = Math.max(1, Math.ceil(total / MCP_ACTIVITY_PAGE_SIZE));
+  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const rows = await db
+    .select({
+      id: agentToolCalls.id,
+      toolName: agentToolCalls.toolName,
+      status: agentToolCalls.status,
+      approvalStatus: agentApprovals.status,
+      actionType: agentApprovals.actionType,
+      createdAt: agentToolCalls.createdAt,
+      finishedAt: agentToolCalls.finishedAt,
+    })
+    .from(agentToolCalls)
+    .leftJoin(agentApprovals, eq(agentApprovals.toolCallId, agentToolCalls.id))
+    .where(eq(agentToolCalls.threadId, client.threadId))
+    .orderBy(desc(agentToolCalls.createdAt))
+    .limit(MCP_ACTIVITY_PAGE_SIZE)
+    .offset((page - 1) * MCP_ACTIVITY_PAGE_SIZE);
+
+  const activity: McpExternalActivitySummary[] = rows.map((item) => ({
+    id: item.id,
+    toolName: item.toolName,
+    status: item.status as McpExternalActivitySummary["status"],
+    approvalStatus:
+      item.approvalStatus as McpExternalActivitySummary["approvalStatus"],
+    actionType: item.actionType,
+    createdAt: item.createdAt.toISOString(),
+    finishedAt: item.finishedAt?.toISOString() ?? null,
+  }));
+
+  return { connection, activity, page, totalPages, total };
 }
 
 export async function disconnectMcpClient(clientId: string) {
