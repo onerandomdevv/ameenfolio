@@ -79,6 +79,9 @@
     "@esbuild-kit/core-utils": {
       "esbuild": "0.25.12"
     },
-    "better-auth": "1.6.26"
+    "better-auth": "1.6.26",
+    "postcss": {
+      "nanoid": "3.3.18"
+    }
   }
 }
