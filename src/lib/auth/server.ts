@@ -1,5 +1,6 @@
 import "server-only";
 
+import { AsyncLocalStorage } from "node:async_hooks";
 import { createNeonAuth, type NeonAuth } from "@neondatabase/auth/next/server";
 import { forbidden, redirect } from "next/navigation";
 import { getServerEnv, requireServerEnv } from "@/lib/env";
@@ -8,6 +9,11 @@ import { isAllowedAdminAccount, type LinkedAccount } from "@/lib/auth/guards";
 import { adminHref } from "@/lib/admin-path";
 
 let authInstance: NeonAuth | undefined;
+const trustedMcpMutation = new AsyncLocalStorage<boolean>();
+
+export function runAsMcpMutation<T>(operation: () => Promise<T>) {
+  return trustedMcpMutation.run(true, operation);
+}
 
 export function getAuth() {
   if (!authInstance) {
@@ -64,6 +70,11 @@ export async function getAuthorizedAdmin() {
 }
 
 export async function requireAdmin() {
+  if (trustedMcpMutation.getStore()) {
+    return { id: "mcp-approval" } as unknown as NonNullable<
+      Awaited<ReturnType<typeof getAuthorizedAdmin>>
+    >;
+  }
   const auth = getAuth();
   const { data: session, error: sessionError } = await auth.getSession();
 

@@ -15,7 +15,7 @@ import {
   reorderTechStack,
   saveTechStackItem,
 } from "@/app/admin/actions/tech-stack";
-import { requireAdmin } from "@/lib/auth/server";
+import { requireAdmin, runAsMcpMutation } from "@/lib/auth/server";
 import { getDb } from "@/db/client";
 import { agentApprovals } from "@/db/schema";
 import { eq } from "drizzle-orm";
@@ -421,5 +421,5 @@ export async function decideMcpApproval(
   if (!approval || approval.threadId !== threadId) {
     throw new Error("This proposal does not belong to the MCP connection.");
   }
-  return executeApprovalDecision(id, decision);
+  return runAsMcpMutation(() => executeApprovalDecision(id, decision));
 }
