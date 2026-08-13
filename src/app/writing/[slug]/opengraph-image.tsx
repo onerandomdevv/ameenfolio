@@ -28,10 +28,7 @@ export default async function ArticleOpenGraphImage({ params }: ImageProps) {
     ),
     readFile(join(process.cwd(), "src/app/icon.png")),
     readFile(
-      join(
-        process.cwd(),
-        "src/app/writing/[slug]/assets/bippy-writing.webp",
-      ),
+      join(process.cwd(), "src/app/writing/[slug]/assets/bippy-writing.webp"),
     ),
   ]);
 
