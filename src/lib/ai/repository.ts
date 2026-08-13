@@ -9,6 +9,7 @@ import {
   agentRuns,
   agentThreads,
   agentToolCalls,
+  mcpOAuthClients,
 } from "@/db/schema";
 import type { ConversationState } from "@/lib/ai/provider";
 import type {
@@ -17,6 +18,7 @@ import type {
   AssistantThreadDetail,
   AssistantThreadSummary,
   AssistantToolCallView,
+  McpPendingApproval,
 } from "@/lib/ai/types";
 
 function threadView(
@@ -83,6 +85,27 @@ export async function listAssistantThreads() {
     )
     .limit(50);
   return rows.map(threadView);
+}
+
+export async function listMcpPendingApprovals(): Promise<McpPendingApproval[]> {
+  const rows = await getDb()
+    .select({
+      approval: agentApprovals,
+      clientId: mcpOAuthClients.clientId,
+      clientName: mcpOAuthClients.clientName,
+    })
+    .from(agentApprovals)
+    .innerJoin(
+      mcpOAuthClients,
+      eq(mcpOAuthClients.threadId, agentApprovals.threadId),
+    )
+    .where(eq(agentApprovals.status, "pending"))
+    .orderBy(asc(agentApprovals.requestedAt));
+  return rows.map((row) => ({
+    ...approvalView(row.approval),
+    clientId: row.clientId,
+    clientName: row.clientName,
+  }));
 }
 
 export async function getAssistantThread(

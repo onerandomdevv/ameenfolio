@@ -1,10 +1,10 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getDb } from "@/db/client";
-import { agentRuns } from "@/db/schema";
+import { agentApprovals, agentRuns } from "@/db/schema";
 import {
   getAdminNow,
   getAdminPost,
@@ -15,6 +15,7 @@ import {
   getAdminSettings,
 } from "@/db/queries";
 import { createApproval, recordToolCall } from "@/lib/ai/repository";
+import { decideMcpApproval } from "@/lib/ai/approvals";
 import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
@@ -201,7 +202,7 @@ async function proposal(
         approvalId: approval.id,
         status: "pending",
         message:
-          "Review and approve this proposal in the Bippy admin conversation.",
+          "Review and approve this proposal in the MCP admin approvals area.",
       };
     },
     true,
@@ -225,7 +226,7 @@ export function createBippyMcpServer(actor: McpActor) {
     { name: "bippy-portfolio", version: "1.0.0" },
     {
       instructions:
-        "Bippy manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals and require approval in the portfolio admin.",
+        "Ameenfolio MCP manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals and require approval in the MCP admin approvals area.",
     },
   );
 
@@ -295,6 +296,100 @@ export function createBippyMcpServer(actor: McpActor) {
         },
       );
       return result(data, "Portfolio overview loaded.");
+    },
+  );
+
+  server.registerTool(
+    "approve_mcp_proposal",
+    {
+      title: "Approve MCP proposal",
+      description:
+        "Approve or reject a proposal created by this MCP connection after the owner has explicitly reviewed it.",
+      inputSchema: {
+        approvalId: z.uuid(),
+        decision: z.enum(["approve", "reject"]),
+      },
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:propose");
+      const applied = await audited(
+        actor,
+        "approve_mcp_proposal",
+        args,
+        async () => {
+          if (!actor.client.threadId) {
+            throw new Error("The MCP connection has no audit thread.");
+          }
+          return decideMcpApproval(
+            args.approvalId,
+            args.decision,
+            actor.client.threadId,
+          );
+        },
+      );
+      return result(
+        applied,
+        args.decision === "approve"
+          ? "MCP proposal approved and applied."
+          : "MCP proposal rejected.",
+      );
+    },
+  );
+
+  server.registerTool(
+    "list_mcp_pending_proposals",
+    {
+      title: "List pending MCP proposals",
+      description:
+        "List proposals created by this MCP connection so the owner can review one before explicitly approving or rejecting it.",
+      inputSchema: {},
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async () => {
+      requireScope(actor, "portfolio:propose");
+      const data = await audited(
+        actor,
+        "list_mcp_pending_proposals",
+        {},
+        async () => {
+          if (!actor.client.threadId)
+            throw new Error("The MCP connection has no audit thread.");
+          const rows = await getDb()
+            .select({
+              id: agentApprovals.id,
+              actionType: agentApprovals.actionType,
+              preview: agentApprovals.preview,
+              requestedAt: agentApprovals.requestedAt,
+            })
+            .from(agentApprovals)
+            .where(
+              and(
+                eq(agentApprovals.threadId, actor.client.threadId),
+                eq(agentApprovals.status, "pending"),
+              ),
+            );
+          return rows
+            .filter((row) => row.preview && row.id)
+            .map((row) => ({
+              id: row.id,
+              actionType: row.actionType,
+              preview: row.preview,
+              requestedAt: row.requestedAt.toISOString(),
+            }));
+        },
+      );
+      return result(data, "Pending MCP proposals loaded.");
     },
   );
 

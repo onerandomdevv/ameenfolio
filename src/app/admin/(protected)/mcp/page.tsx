@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { McpConnectionsWorkspace } from "@/components/admin/mcp-connections-workspace";
 import { listMcpConnections } from "@/lib/mcp/connections";
+import { listMcpPendingApprovals } from "@/lib/ai/repository";
 
 export const metadata: Metadata = {
   title: "MCP",
@@ -10,5 +11,8 @@ export const metadata: Metadata = {
 
 export default async function McpPage() {
   const connections = await listMcpConnections();
-  return <McpConnectionsWorkspace connections={connections} />;
+  const approvals = await listMcpPendingApprovals();
+  return (
+    <McpConnectionsWorkspace connections={connections} approvals={approvals} />
+  );
 }

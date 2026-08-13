@@ -11,6 +11,9 @@ import { setPinned, setPublished } from "@/app/admin/actions/placement";
 import { saveProfile, saveSeo } from "@/app/admin/actions/settings";
 import { deletePost, savePost } from "@/app/admin/actions/writing";
 import { requireAdmin } from "@/lib/auth/server";
+import { getDb } from "@/db/client";
+import { agentApprovals } from "@/db/schema";
+import { eq } from "drizzle-orm";
 import { deleteAssistantMemory } from "@/lib/ai/memory";
 import {
   approvalView,
@@ -128,11 +131,10 @@ function actionError(result: { ok: boolean; message?: string }) {
   if (!result.ok) throw new Error(result.message || "The action failed.");
 }
 
-export async function decideAssistantApproval(
+async function executeApprovalDecision(
   id: string,
   decision: "approve" | "reject",
 ) {
-  await requireAdmin();
   if (decision === "reject") {
     const rejected = await rejectApprovalWithPayload(id);
     if (!rejected) throw new Error("This approval is no longer pending.");
@@ -364,4 +366,28 @@ export async function decideAssistantApproval(
     await resolveApproval({ id, status: "failed", note: String(error) });
     throw error;
   }
+}
+
+export async function decideAssistantApproval(
+  id: string,
+  decision: "approve" | "reject",
+) {
+  await requireAdmin();
+  return executeApprovalDecision(id, decision);
+}
+
+export async function decideMcpApproval(
+  id: string,
+  decision: "approve" | "reject",
+  threadId: string,
+) {
+  const [approval] = await getDb()
+    .select({ threadId: agentApprovals.threadId })
+    .from(agentApprovals)
+    .where(eq(agentApprovals.id, id))
+    .limit(1);
+  if (!approval || approval.threadId !== threadId) {
+    throw new Error("This proposal does not belong to the MCP connection.");
+  }
+  return executeApprovalDecision(id, decision);
 }
