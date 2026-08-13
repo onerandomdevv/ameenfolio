@@ -30,7 +30,11 @@ import {
 } from "@/lib/validation";
 import { techStackGroupValues } from "@/config/tech-stack";
 import type { McpOAuthClient } from "@/db/schema";
-import { signPreviewDownload, signUpload } from "@/lib/storage/server";
+import {
+  getObject,
+  signPreviewDownload,
+  signUpload,
+} from "@/lib/storage/server";
 import { isManagedObjectKey, validateUpload } from "@/lib/storage/rules";
 
 const contentKind = z.enum(["project", "post", "recognition"]);
@@ -243,10 +247,46 @@ async function previewMarkdownImages(markdown: string) {
   return preview;
 }
 
-function result(data: unknown, summary: string) {
+async function articleImageContent(markdown: string) {
+  const keys = [
+    ...new Set(
+      [...markdown.matchAll(/\]\(\/media\/([^\s)]+)\)/g)]
+        .map((match) => match[1])
+        .filter(
+          (key): key is string => Boolean(key) && isManagedObjectKey(key),
+        ),
+    ),
+  ];
+  const blocks: Array<{
+    type: "image";
+    data: string;
+    mimeType: string;
+  }> = [];
+  for (const key of keys) {
+    try {
+      const object = await getObject(key);
+      if (!object.Body || !object.ContentType?.startsWith("image/")) continue;
+      const bytes = await object.Body.transformToByteArray();
+      blocks.push({
+        type: "image",
+        data: Buffer.from(bytes).toString("base64"),
+        mimeType: object.ContentType,
+      });
+    } catch {
+      // The text preview remains useful if an optional image is unavailable.
+    }
+  }
+  return blocks;
+}
+
+function result(
+  data: unknown,
+  summary: string,
+  images: Array<{ type: "image"; data: string; mimeType: string }> = [],
+) {
   return {
     structuredContent: jsonValue(data),
-    content: [{ type: "text" as const, text: summary }],
+    content: [{ type: "text" as const, text: summary }, ...images],
   };
 }
 
@@ -695,6 +735,7 @@ export function createBippyMcpServer(actor: McpActor) {
       requireScope(actor, "portfolio:draft");
       const values = postDraftSchema.parse(args);
       const previewBody = await previewMarkdownImages(values.bodyMarkdown);
+      const images = await articleImageContent(values.bodyMarkdown);
       const pending = await proposal(
         actor,
         "prepare_post_draft",
@@ -709,6 +750,7 @@ export function createBippyMcpServer(actor: McpActor) {
       return result(
         pending,
         "Writing draft proposal created for admin approval.",
+        images,
       );
     },
   );
@@ -834,6 +876,7 @@ export function createBippyMcpServer(actor: McpActor) {
       if (!before) throw new Error("Post not found.");
       const values = postUpdateSchema.parse(args);
       const previewBody = await previewMarkdownImages(values.bodyMarkdown);
+      const images = await articleImageContent(values.bodyMarkdown);
       const pending = await proposal(
         actor,
         "prepare_post_update",
@@ -845,7 +888,11 @@ export function createBippyMcpServer(actor: McpActor) {
           after: { ...values, bodyMarkdown: previewBody },
         },
       );
-      return result(pending, "Writing update prepared for admin approval.");
+      return result(
+        pending,
+        "Writing update prepared for admin approval.",
+        images,
+      );
     },
   );
 
