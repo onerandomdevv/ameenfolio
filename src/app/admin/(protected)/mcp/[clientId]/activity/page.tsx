@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { adminHref } from "@/lib/admin-path";
 import { getMcpConnectionActivity } from "@/lib/mcp/connections";
+import { listMcpPendingApprovalsForClient } from "@/lib/ai/repository";
+import { McpApprovalQueue } from "@/components/admin/mcp-connections-workspace";
 
 export const metadata: Metadata = {
   title: "MCP activity",
@@ -57,6 +59,8 @@ export default async function McpActivityPage({ params, searchParams }: Props) {
   );
   if (!result) notFound();
 
+  const approvals = await listMcpPendingApprovalsForClient(clientId);
+
   const mcpHref = await adminHref("/mcp");
   const activityHref = `${mcpHref}/${encodeURIComponent(clientId)}/activity`;
 
@@ -93,6 +97,7 @@ export default async function McpActivityPage({ params, searchParams }: Props) {
       </div>
 
       <div className="mt-5">
+        <McpApprovalQueue initialApprovals={approvals} />
         {result.activity.length ? (
           result.activity.map((item) => {
             const elapsed = duration(item.createdAt, item.finishedAt);

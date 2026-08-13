@@ -108,6 +108,34 @@ export async function listMcpPendingApprovals(): Promise<McpPendingApproval[]> {
   }));
 }
 
+export async function listMcpPendingApprovalsForClient(
+  clientId: string,
+): Promise<McpPendingApproval[]> {
+  const rows = await getDb()
+    .select({
+      approval: agentApprovals,
+      clientId: mcpOAuthClients.clientId,
+      clientName: mcpOAuthClients.clientName,
+    })
+    .from(agentApprovals)
+    .innerJoin(
+      mcpOAuthClients,
+      eq(mcpOAuthClients.threadId, agentApprovals.threadId),
+    )
+    .where(
+      and(
+        eq(mcpOAuthClients.clientId, clientId),
+        eq(agentApprovals.status, "pending"),
+      ),
+    )
+    .orderBy(asc(agentApprovals.requestedAt));
+  return rows.map((row) => ({
+    ...approvalView(row.approval),
+    clientId: row.clientId,
+    clientName: row.clientName,
+  }));
+}
+
 export async function getAssistantThread(
   id: string,
 ): Promise<AssistantThreadDetail | null> {

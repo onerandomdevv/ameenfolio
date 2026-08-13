@@ -337,15 +337,14 @@ function ConnectionsContent({
 
 export function McpConnectionsWorkspace({
   connections,
-  approvals,
 }: {
   connections: McpConnectionSummary[];
-  approvals: McpPendingApproval[];
 }) {
   return (
     <section aria-label="MCP connections">
-      <McpApprovalQueue initialApprovals={approvals} />
       <ConnectionsContent connections={connections} />
     </section>
   );
 }
+
+export { McpApprovalQueue };
