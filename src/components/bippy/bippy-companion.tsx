@@ -905,7 +905,15 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
       onPointerEnter={celebrateOnHover}
       // Double-click flips the theme. Undocumented on purpose: it is a thing
       // to find, and the button in the nav is the discoverable way to do it.
-      onDoubleClick={toggleTheme}
+      //
+      // Scoped to his body. This element also wraps the speech bubble's link,
+      // its dismiss button and the reset control, and a double-click on any of
+      // those would otherwise bubble up here and change the theme.
+      onDoubleClick={(event) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest(`.${styles.companionScale}`)) return;
+        toggleTheme();
+      }}
       data-coding={wakaTimeStatus?.isCoding ? "true" : "false"}
       data-state={state}
       data-testid="bippy-companion"

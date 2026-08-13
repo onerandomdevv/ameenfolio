@@ -57,7 +57,7 @@ export default async function RootLayout({
     // suppressHydrationWarning because the script below edits this element's
     // class before React sees it, so the server's markup and the client's
     // first read of it legitimately differ.
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         {/* Runs before first paint, which is the whole point: applying the
             class after hydration means a white flash on every navigation.
@@ -67,11 +67,15 @@ export default async function RootLayout({
             arrives at the version it was built as. The OS preference is not
             consulted; only the stored choice is.
 
-            Wrapped because localStorage throws in some privacy modes.
-            Unguarded, the theme would never apply at all. */}
+            Only the storage read is wrapped. With the whole block in the try,
+            a browser that blocks storage threw before the class was applied
+            and the page stayed on the light base — the opposite of the
+            default. The class is also rendered on the server, so the default
+            survives with no JavaScript at all; this script only has to take
+            it off for someone who chose light. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(()=>{try{var s=localStorage.getItem("theme");var d=s!=="light";document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`,
+            __html: `(()=>{var s=null;try{s=localStorage.getItem("theme")}catch(e){}var d=s!=="light";document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";})();`,
           }}
         />
       </head>

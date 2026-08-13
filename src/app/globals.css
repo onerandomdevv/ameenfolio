@@ -161,6 +161,11 @@
    Tailwind utilities, and the bare names drive the rules that read them
    directly, such as the base border-color above. */
 .admin-theme {
+  /* The root's colour scheme follows the public theme and inherits in here.
+     The admin is always dark, so without this a reader who has chosen light
+     gets light scrollbars, date pickers and select menus on its dark panels. */
+  color-scheme: dark;
+
   --background: #151519;
   --foreground: #ffffff;
   --card: #1e1e23;

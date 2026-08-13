@@ -121,7 +121,7 @@ export function MarkdownEditor({
             type="button"
             variant="outline"
             size="sm"
-            disabled={pending || preview !== null}
+            disabled={pending || rendering || preview !== null}
             onClick={() => fileRef.current?.click()}
           >
             {pending ? (
@@ -151,6 +151,11 @@ export function MarkdownEditor({
           onChange={(event) => onChange(event.target.value)}
           rows={22}
           spellCheck
+          // Locked while the render is in flight. The markdown is captured
+          // when Preview is pressed, so anything typed during the round trip
+          // would be missing from what comes back — a preview of text the box
+          // no longer holds.
+          readOnly={rendering}
           className="w-full resize-y bg-transparent p-0 font-mono text-[13px] leading-6 text-foreground outline-none placeholder:text-muted-foreground/70"
           placeholder={"## A section\n\nWrite in Markdown."}
         />
