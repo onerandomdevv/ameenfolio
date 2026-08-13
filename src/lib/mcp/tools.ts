@@ -216,8 +216,9 @@ async function proposal(
       return {
         approvalId: approval.id,
         status: "pending",
+        preview,
         message:
-          "Review and approve this proposal in the MCP admin approvals area.",
+          "Proposal ready for review in this conversation. Tell the MCP client to approve or reject it explicitly; the admin MCP page remains available as an audit fallback.",
       };
     },
     true,
@@ -241,7 +242,7 @@ export function createBippyMcpServer(actor: McpActor) {
     { name: "bippy-portfolio", version: "1.0.0" },
     {
       instructions:
-        "Ameenfolio MCP manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals and require approval in the MCP admin approvals area.",
+        "Ameenfolio MCP manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals; return the preview in the conversation and require the owner's explicit approval before applying it. The admin approvals page is an audit fallback.",
     },
   );
 
@@ -940,12 +941,13 @@ export function createBippyMcpServer(actor: McpActor) {
       description:
         "Create a five-minute signed upload slot for a project icon or PDF résumé. Upload bytes with PUT, then use the returned object key in a prepared change.",
       inputSchema: {
-        resourceType: z.enum(["icon", "resume"]),
+        resourceType: z.enum(["icon", "post", "resume"]),
         filename: z.string().trim().min(1).max(180),
         contentType: z.enum([
           "image/png",
           "image/jpeg",
           "image/webp",
+          "image/gif",
           "application/pdf",
         ]),
         size: z.number().int().positive(),
