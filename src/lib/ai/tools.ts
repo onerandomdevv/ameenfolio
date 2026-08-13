@@ -36,6 +36,10 @@ import {
 import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
+import {
+  getCurrentCodingActivityForBippy,
+  getWeeklyCodingActivityForBippy,
+} from "@/lib/wakatime/assistant";
 
 export type PortfolioAgentContext = {
   threadId: string;
@@ -276,6 +280,32 @@ export function createPortfolioTools(): Tool<PortfolioAgentContext>[] {
             })),
           };
         }),
+    }),
+    tool({
+      name: "read_current_coding_activity",
+      description:
+        "Read whether Aliameen is coding now, today's coding duration, and the last activity time from the configured WakaTime integration. This is read-only and excludes projects, branches, files, and machine details.",
+      parameters: z.object({}),
+      execute: async (_args, context) =>
+        audited(
+          context,
+          "read_current_coding_activity",
+          {},
+          getCurrentCodingActivityForBippy,
+        ),
+    }),
+    tool({
+      name: "read_weekly_coding_activity",
+      description:
+        "Read Aliameen's privacy-safe current-week WakaTime totals, active-day average, daily breakdown, and top programming language. This is read-only and excludes projects, branches, files, and machine details.",
+      parameters: z.object({}),
+      execute: async (_args, context) =>
+        audited(
+          context,
+          "read_weekly_coding_activity",
+          {},
+          getWeeklyCodingActivityForBippy,
+        ),
     }),
     tool({
       name: "read_content_item",

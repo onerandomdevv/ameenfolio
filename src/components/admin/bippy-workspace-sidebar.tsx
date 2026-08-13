@@ -7,6 +7,7 @@ import {
   Activity,
   BarChart3,
   Brain,
+  Cable,
   MessageSquarePlus,
   MoreHorizontal,
   PanelLeftClose,
@@ -79,10 +80,13 @@ export function BippyWorkspaceSidebar({
   const analyticsHref = `${chatHref}/analytics`;
   const tokensHref = `${chatHref}/tokens`;
   const memoryHref = `${chatHref}/memory`;
+  const connectionsHref = `${chatHref}/connections`;
   const analyticsActive = pathname === analyticsHref;
   const tokensActive = pathname === tokensHref;
   const memoryActive = pathname === memoryHref;
-  const chatActive = !analyticsActive && !tokensActive && !memoryActive;
+  const connectionsActive = pathname === connectionsHref;
+  const chatActive =
+    !analyticsActive && !tokensActive && !memoryActive && !connectionsActive;
   const [busyId, setBusyId] = useState<string | null>(null);
   const [renameThread, setRenameThread] =
     useState<AssistantThreadSummary | null>(null);
@@ -267,6 +271,17 @@ export function BippyWorkspaceSidebar({
         >
           <Brain className="size-4" aria-hidden="true" />
           Memory
+        </Link>
+        <Link
+          href={connectionsHref}
+          aria-current={connectionsActive ? "page" : undefined}
+          className={cn(
+            "flex h-9 items-center gap-2.5 rounded-md px-2.5 text-[13px] transition-colors hover:bg-accent",
+            connectionsActive && "bg-accent",
+          )}
+        >
+          <Cable className="size-4" aria-hidden="true" />
+          Connections
         </Link>
       </nav>
 

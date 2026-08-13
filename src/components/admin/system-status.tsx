@@ -54,6 +54,13 @@ export function SystemStatus() {
       icon: Sparkles,
     },
     {
+      label: "Bippy connections",
+      description: "Encrypted credentials for Bippy's external MCP tools",
+      ready: Boolean(env.BIPPY_MCP_ENCRYPTION_KEY),
+      optional: false,
+      icon: Cable,
+    },
+    {
       label: "Bippy MCP",
       description: "Private ChatGPT, Claude, and Codex connections",
       ready: Boolean(
@@ -74,7 +81,7 @@ export function SystemStatus() {
     },
     {
       label: "WakaTime",
-      description: "Public coding activity and working-hours data",
+      description: "Public activity and Bippy's private read-only summaries",
       ready: Boolean(env.WAKATIME_API_KEY),
       optional: true,
       icon: Activity,

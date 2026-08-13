@@ -25,7 +25,9 @@ import {
   claimApproval,
   rejectApprovalWithPayload,
   resolveApproval,
+  updateApprovedToolCallResult,
 } from "@/lib/ai/repository";
+import { executeBippyMcpTool } from "@/lib/ai/bippy-mcp";
 import {
   nowSectionSchema,
   profileSchema,
@@ -382,6 +384,22 @@ async function executeApprovalDecision(
           .object({ order: techStackOrderSchema })
           .parse(approval.payload);
         actionError(await reorderTechStack(input.order));
+        break;
+      }
+      case "execute_bippy_mcp_tool": {
+        const input = z
+          .object({
+            connectionId: z.uuid(),
+            toolName: z.string().min(1).max(200),
+            arguments: z.record(z.string(), z.unknown()),
+          })
+          .parse(approval.payload);
+        const result = await executeBippyMcpTool(
+          input.connectionId,
+          input.toolName,
+          input.arguments,
+        );
+        await updateApprovedToolCallResult(approval.toolCallId, result);
         break;
       }
       default:

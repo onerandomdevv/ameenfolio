@@ -239,6 +239,20 @@
       "when": 1786593600000,
       "tag": "0033_agent_thread_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786597200000,
+      "tag": "0034_bippy_outbound_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786600800000,
+      "tag": "0035_bippy_mcp_oauth",
+      "breakpoints": true
     }
   ]
 }

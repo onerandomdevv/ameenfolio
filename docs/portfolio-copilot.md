@@ -30,12 +30,53 @@ The model is selected in the composer before the first message. It is then
 stored on the conversation and remains fixed for every later turn, even if the
 deployment default changes.
 
+When `WAKATIME_API_KEY` is configured, Bippy also receives two native,
+read-only tools: current coding activity and the current-week summary. They use
+the same one-minute server cache and privacy-safe projection as the public
+activity UI. Bippy can see whether Aliameen is active, today's duration, the
+last activity time, weekly totals, active-day average, seven daily totals, and
+the top programming language. Project, branch, file, machine, and API-key data
+are never included.
+
 The conversation sidebar deliberately shows names without dates. Its row menu
 can rename a chat, pin it above the normal recency order, or permanently delete
 the conversation and its cascading message/action history. MCP audit threads
 carry a dedicated `mcp_audit` classification, are excluded from this list even
 after their OAuth client expires, and remain accessible only through protected
 client Activity pages while that client record exists.
+
+## Bippy outbound MCP connections
+
+**Bippy → Connections** lets the administrator connect Bippy to remote
+Streamable HTTP MCP servers. This is the opposite direction from the private
+Ameenfolio MCP resource below: Bippy is the client, and the connected service
+provides the tools.
+
+Set `BIPPY_MCP_ENCRYPTION_KEY` to 32 random bytes encoded as base64 and apply
+migrations `0034` and `0035` before adding a connection. Connection secrets are
+encrypted with AES-256-GCM and are never returned to the browser. Supported
+connection types are unauthenticated HTTPS, bearer-token HTTPS, and OAuth.
+
+OAuth connections use the MCP server's protected-resource and authorization
+server discovery, dynamic client registration, signed ten-minute state, and
+PKCE. The callback requires the signed-in portfolio administrator before it
+exchanges the authorization code. Access tokens, refresh tokens, registered
+client information, discovery state, and the temporary verifier are stored in
+the encrypted connection record. Providers that issue refresh tokens are
+refreshed automatically by the MCP transport. A server that does not support
+dynamic client registration must use a bearer token or receive a dedicated
+pre-registered provider adapter.
+
+Saving a connection verifies the server and discovers its tools. Discovery
+does not expose anything to the model. The administrator must separately
+allowlist tools, classify genuinely non-mutating tools as read-only, and enable
+the connection. Read-only calls execute immediately and are audited. Every
+other call becomes a normal Bippy approval and is executed only after approval;
+the connection and allowlist are checked again at execution time.
+
+Generate the encryption key with `openssl rand -base64 32`. Rotating this key
+requires reconnecting credentialed servers because existing ciphertext cannot
+be decrypted with the replacement key.
 
 ## Private MCP connection
 

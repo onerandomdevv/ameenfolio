@@ -418,6 +418,16 @@ export async function createApproval(input: {
   return approvalView(row);
 }
 
+export async function updateApprovedToolCallResult(
+  id: string,
+  result: unknown,
+) {
+  await getDb()
+    .update(agentToolCalls)
+    .set({ result, status: "completed", finishedAt: new Date() })
+    .where(eq(agentToolCalls.id, id));
+}
+
 export async function claimApproval(id: string) {
   const [row] = await getDb()
     .update(agentApprovals)

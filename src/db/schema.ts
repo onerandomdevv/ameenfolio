@@ -489,6 +489,57 @@ export const agentApprovals = pgTable(
   ],
 );
 
+export type BippyMcpToolDefinition = {
+  name: string;
+  title?: string;
+  description?: string;
+  inputSchema: {
+    type: "object";
+    properties?: Record<string, object>;
+    required?: string[];
+    [key: string]: unknown;
+  };
+  readOnlyHint: boolean;
+};
+
+// Remote MCP servers that Bippy may call. This is deliberately separate from
+// the mcp_oauth_* tables below: those describe clients connecting into
+// Ameenfolio, while these rows describe services Bippy connects out to.
+export const bippyMcpConnections = pgTable(
+  "bippy_mcp_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    serverUrl: text("server_url").notNull(),
+    authType: text("auth_type").notNull().default("none"),
+    encryptedCredential: text("encrypted_credential"),
+    enabled: boolean("enabled").notNull().default(false),
+    allowedTools: jsonb("allowed_tools")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    readOnlyTools: jsonb("read_only_tools")
+      .$type<string[]>()
+      .notNull()
+      .default([]),
+    discoveredTools: jsonb("discovered_tools")
+      .$type<BippyMcpToolDefinition[]>()
+      .notNull()
+      .default([]),
+    lastConnectedAt: timestamp("last_connected_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("bippy_mcp_connections_url_unique").on(table.serverUrl),
+    index("bippy_mcp_connections_enabled_idx").on(table.enabled),
+    check(
+      "bippy_mcp_connections_auth_type_valid",
+      sql`${table.authType} in ('none', 'bearer', 'oauth')`,
+    ),
+  ],
+);
+
 // OAuth state for the private Bippy MCP resource. Only hashes of authorization
 // codes and bearer tokens are stored; a database leak cannot turn these rows
 // into usable credentials. Clients are public PKCE clients, so no client
@@ -584,6 +635,7 @@ export type AgentMessage = typeof agentMessages.$inferSelect;
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type AgentToolCall = typeof agentToolCalls.$inferSelect;
 export type AgentApproval = typeof agentApprovals.$inferSelect;
+export type BippyMcpConnection = typeof bippyMcpConnections.$inferSelect;
 export type McpOAuthClient = typeof mcpOAuthClients.$inferSelect;
 export type McpOAuthCode = typeof mcpOAuthCodes.$inferSelect;
 export type McpOAuthToken = typeof mcpOAuthTokens.$inferSelect;
