@@ -44,6 +44,11 @@ export type AssistantApprovalView = {
   requestedAt: string;
 };
 
+export type McpPendingApproval = AssistantApprovalView & {
+  clientId: string;
+  clientName: string;
+};
+
 export type AssistantThreadDetail = {
   thread: AssistantThreadSummary;
   messages: AssistantMessageView[];

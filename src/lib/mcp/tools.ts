@@ -1,10 +1,10 @@
 import "server-only";
 
-import { eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { getDb } from "@/db/client";
-import { agentRuns } from "@/db/schema";
+import { agentApprovals, agentRuns } from "@/db/schema";
 import {
   getAdminNow,
   getAdminPost,
@@ -13,8 +13,10 @@ import {
   getAdminProjects,
   getAdminRecognitions,
   getAdminSettings,
+  getAdminTechStack,
 } from "@/db/queries";
 import { createApproval, recordToolCall } from "@/lib/ai/repository";
+import { decideMcpApproval } from "@/lib/ai/approvals";
 import { postLinkIconValues } from "@/config/post-link-icons";
 import { projectIconValues } from "@/config/project-icons";
 import { recognitionIconNames } from "@/config/recognition-icons";
@@ -23,7 +25,10 @@ import {
   projectSchema,
   recognitionSchema,
   seoSchema,
+  techStackItemSchema,
+  techStackOrderSchema,
 } from "@/lib/validation";
+import { techStackGroupValues } from "@/config/tech-stack";
 import type { McpOAuthClient } from "@/db/schema";
 import { signUpload } from "@/lib/storage/server";
 import { validateUpload } from "@/lib/storage/rules";
@@ -92,6 +97,17 @@ const projectIconUpdateSchema = z
     path: ["iconAlt"],
     message: "Alt text is required for an uploaded icon.",
   });
+
+const techStackUpdateSchema = z.object({
+  id: z.uuid(),
+  values: techStackItemSchema,
+});
+const techStackDeleteSchema = z.object({ id: z.uuid() });
+const techStackDraftSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  groupKey: z.enum(techStackGroupValues),
+  displayOrder: z.number().int().min(0).max(999).default(0),
+});
 
 type McpActor = {
   client: McpOAuthClient;
@@ -201,7 +217,7 @@ async function proposal(
         approvalId: approval.id,
         status: "pending",
         message:
-          "Review and approve this proposal in the Bippy admin conversation.",
+          "Review and approve this proposal in the MCP admin approvals area.",
       };
     },
     true,
@@ -225,7 +241,7 @@ export function createBippyMcpServer(actor: McpActor) {
     { name: "bippy-portfolio", version: "1.0.0" },
     {
       instructions:
-        "Bippy manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals and require approval in the portfolio admin.",
+        "Ameenfolio MCP manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals and require approval in the MCP admin approvals area.",
     },
   );
 
@@ -250,13 +266,14 @@ export function createBippyMcpServer(actor: McpActor) {
         "read_portfolio_overview",
         {},
         async () => {
-          const [settings, now, projects, posts, recognitions] =
+          const [settings, now, projects, posts, recognitions, techStack] =
             await Promise.all([
               getAdminSettings(),
               getAdminNow(),
               getAdminProjects(),
               getAdminPosts(),
               getAdminRecognitions(),
+              getAdminTechStack(),
             ]);
           return {
             profile: {
@@ -291,10 +308,114 @@ export function createBippyMcpServer(actor: McpActor) {
                 pinned: Boolean(pinnedAt),
               }),
             ),
+            techStack: techStack.map(
+              ({ id, name, groupKey, displayOrder, visible }) => ({
+                id,
+                name,
+                groupKey,
+                displayOrder,
+                visible,
+              }),
+            ),
           };
         },
       );
       return result(data, "Portfolio overview loaded.");
+    },
+  );
+
+  server.registerTool(
+    "approve_mcp_proposal",
+    {
+      title: "Approve MCP proposal",
+      description:
+        "Approve or reject a proposal created by this MCP connection after the owner has explicitly reviewed it.",
+      inputSchema: {
+        approvalId: z.uuid(),
+        decision: z.enum(["approve", "reject"]),
+      },
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:propose");
+      const applied = await audited(
+        actor,
+        "approve_mcp_proposal",
+        args,
+        async () => {
+          if (!actor.client.threadId) {
+            throw new Error("The MCP connection has no audit thread.");
+          }
+          return decideMcpApproval(
+            args.approvalId,
+            args.decision,
+            actor.client.threadId,
+          );
+        },
+      );
+      return result(
+        applied,
+        args.decision === "approve"
+          ? "MCP proposal approved and applied."
+          : "MCP proposal rejected.",
+      );
+    },
+  );
+
+  server.registerTool(
+    "list_mcp_pending_proposals",
+    {
+      title: "List pending MCP proposals",
+      description:
+        "List proposals created by this MCP connection so the owner can review one before explicitly approving or rejecting it.",
+      inputSchema: {},
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async () => {
+      requireScope(actor, "portfolio:propose");
+      const data = await audited(
+        actor,
+        "list_mcp_pending_proposals",
+        {},
+        async () => {
+          if (!actor.client.threadId)
+            throw new Error("The MCP connection has no audit thread.");
+          const rows = await getDb()
+            .select({
+              id: agentApprovals.id,
+              actionType: agentApprovals.actionType,
+              preview: agentApprovals.preview,
+              requestedAt: agentApprovals.requestedAt,
+            })
+            .from(agentApprovals)
+            .where(
+              and(
+                eq(agentApprovals.threadId, actor.client.threadId),
+                eq(agentApprovals.status, "pending"),
+              ),
+            )
+            .orderBy(asc(agentApprovals.requestedAt));
+          return rows
+            .filter((row) => row.preview && row.id)
+            .map((row) => ({
+              id: row.id,
+              actionType: row.actionType,
+              preview: row.preview,
+              requestedAt: row.requestedAt.toISOString(),
+            }));
+        },
+      );
+      return result(data, "Pending MCP proposals loaded.");
     },
   );
 
@@ -319,6 +440,187 @@ export function createBippyMcpServer(actor: McpActor) {
       );
       if (!item) throw new Error("Content item not found.");
       return result({ item }, "Content item loaded.");
+    },
+  );
+
+  server.registerTool(
+    "read_tech_stack",
+    {
+      title: "Read tech stack",
+      description:
+        "Read every technology managed in the admin Tech Stack area, including visibility and order.",
+      inputSchema: {},
+      ...security("portfolio:read"),
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async () => {
+      requireScope(actor, "portfolio:read");
+      const items = await audited(actor, "read_tech_stack", {}, () =>
+        getAdminTechStack(),
+      );
+      return result(items, "Tech Stack loaded.");
+    },
+  );
+
+  server.registerTool(
+    "prepare_tech_stack_item_draft",
+    {
+      title: "Prepare Tech Stack item",
+      description:
+        "Prepare a hidden Tech Stack item for owner approval. Visibility can be changed later with an approved update.",
+      inputSchema: techStackDraftSchema.shape,
+      ...security("portfolio:draft"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:draft");
+      const values = techStackItemSchema.parse({
+        ...techStackDraftSchema.parse(args),
+        visible: false,
+      });
+      const pending = await proposal(
+        actor,
+        "prepare_tech_stack_item_draft",
+        "create_tech_stack_draft",
+        values,
+        {
+          title: `Create Tech Stack item: ${values.name}`,
+          before: null,
+          after: values,
+        },
+      );
+      return result(
+        pending,
+        "Tech Stack item proposal created for admin approval.",
+      );
+    },
+  );
+
+  server.registerTool(
+    "prepare_tech_stack_item_update",
+    {
+      title: "Prepare Tech Stack update",
+      description:
+        "Prepare an update to an existing Tech Stack item for owner approval.",
+      inputSchema: techStackUpdateSchema.shape,
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:propose");
+      const values = techStackUpdateSchema.parse(args);
+      const current = (await getAdminTechStack()).find(
+        (item) => item.id === values.id,
+      );
+      if (!current) throw new Error("Tech Stack item not found.");
+      const pending = await proposal(
+        actor,
+        "prepare_tech_stack_item_update",
+        "update_tech_stack",
+        values,
+        {
+          title: `Update Tech Stack item: ${values.values.name}`,
+          before: current,
+          after: values.values,
+        },
+      );
+      return result(
+        pending,
+        "Tech Stack update proposal created for admin approval.",
+      );
+    },
+  );
+
+  server.registerTool(
+    "prepare_tech_stack_item_delete",
+    {
+      title: "Prepare Tech Stack deletion",
+      description: "Prepare deletion of a Tech Stack item for owner approval.",
+      inputSchema: techStackDeleteSchema.shape,
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: true,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:propose");
+      const values = techStackDeleteSchema.parse(args);
+      const current = (await getAdminTechStack()).find(
+        (item) => item.id === values.id,
+      );
+      if (!current) throw new Error("Tech Stack item not found.");
+      const pending = await proposal(
+        actor,
+        "prepare_tech_stack_item_delete",
+        "delete_tech_stack",
+        values,
+        {
+          title: `Delete Tech Stack item: ${current.name}`,
+          before: current,
+          after: null,
+        },
+      );
+      return result(
+        pending,
+        "Tech Stack deletion proposal created for admin approval.",
+      );
+    },
+  );
+
+  server.registerTool(
+    "prepare_tech_stack_reorder",
+    {
+      title: "Prepare Tech Stack reorder",
+      description:
+        "Prepare a Tech Stack group/order change for owner approval.",
+      inputSchema: { order: techStackOrderSchema },
+      ...security("portfolio:propose"),
+      annotations: {
+        readOnlyHint: false,
+        openWorldHint: false,
+        destructiveHint: false,
+      },
+    },
+    async (args) => {
+      requireScope(actor, "portfolio:propose");
+      const order = techStackOrderSchema.parse(args.order);
+      const current = await getAdminTechStack();
+      const knownIds = new Set(current.map((item) => item.id));
+      if (order.some((item) => !knownIds.has(item.id)))
+        throw new Error("Order includes an unknown Tech Stack item.");
+      const pending = await proposal(
+        actor,
+        "prepare_tech_stack_reorder",
+        "reorder_tech_stack",
+        { order },
+        {
+          title: "Reorder Tech Stack",
+          before: current.map(({ id, groupKey, displayOrder }) => ({
+            id,
+            groupKey,
+            displayOrder,
+          })),
+          after: order,
+        },
+      );
+      return result(
+        pending,
+        "Tech Stack reorder proposal created for admin approval.",
+      );
     },
   );
 

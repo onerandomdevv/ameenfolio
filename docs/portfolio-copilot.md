@@ -60,9 +60,13 @@ Scopes:
 - `portfolio:propose` prepares edits, placement changes, deletions, Now changes,
   and SEO changes.
 
-Every MCP write creates a pending approval card in a dedicated Bippy
-conversation. Existing admin actions perform the actual mutation after review;
-the MCP server cannot publish, edit, or delete content directly.
+Every MCP write creates a pending proposal in the dedicated MCP approval queue.
+Existing admin actions perform the actual mutation after review; proposal
+tools cannot publish, edit, or delete content directly.
+After the owner reviews a proposal in the connected MCP conversation, the
+owner may explicitly approve or reject that proposal through the MCP approval
+tool. The tool is restricted to the same authenticated MCP connection that
+created the proposal; publishing remains a separate action.
 
 The **MCP** page in the main admin sidebar lists registered clients, their
 callback origins, granted scopes, connection state, and last activity. Each
