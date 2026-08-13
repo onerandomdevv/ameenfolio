@@ -60,6 +60,21 @@ export function CopilotMarkdown({
                 {...props}
               />
             ),
+            img: ({ src, alt, ...props }) => {
+              const source = typeof src === "string" ? src : "";
+              const previewSource = source.startsWith("/media/")
+                ? `/api/admin/media-preview?key=${encodeURIComponent(source.slice("/media/".length))}`
+                : source;
+              return (
+                <img
+                  src={previewSource}
+                  alt={alt ?? ""}
+                  loading="lazy"
+                  className="my-3 max-h-96 max-w-full rounded-md border border-border/60 object-contain"
+                  {...props}
+                />
+              );
+            },
             code: ({ className: codeClassName, ...props }) => (
               <code
                 className={cn(
