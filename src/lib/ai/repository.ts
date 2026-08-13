@@ -421,10 +421,11 @@ export async function createApproval(input: {
 export async function updateApprovedToolCallResult(
   id: string,
   result: unknown,
+  status: "completed" | "failed" = "completed",
 ) {
   await getDb()
     .update(agentToolCalls)
-    .set({ result, status: "completed", finishedAt: new Date() })
+    .set({ result, status, finishedAt: new Date() })
     .where(eq(agentToolCalls.id, id));
 }
 

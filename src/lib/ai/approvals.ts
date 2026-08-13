@@ -412,6 +412,13 @@ async function executeApprovalDecision(
       note: "Approved and applied.",
     });
   } catch (error) {
+    if (approval.actionType === "execute_bippy_mcp_tool") {
+      await updateApprovedToolCallResult(
+        approval.toolCallId,
+        { error: String(error) },
+        "failed",
+      );
+    }
     await cleanupRejectedUpload(approval);
     await resolveApproval({ id, status: "failed", note: String(error) });
     throw error;

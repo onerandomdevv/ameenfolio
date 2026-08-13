@@ -185,7 +185,12 @@ export async function listBippyMcpConnections() {
   return rows.map(connectionView);
 }
 
-function requestHeaders(connection: BippyMcpConnection) {
+type McpConnectionConfig = Pick<
+  BippyMcpConnection,
+  "serverUrl" | "authType" | "encryptedCredential"
+> & { id?: string };
+
+function requestHeaders(connection: McpConnectionConfig) {
   if (connection.authType !== "bearer") return undefined;
   if (!connection.encryptedCredential) {
     throw new Error("This connection is missing its bearer token.");
@@ -199,7 +204,9 @@ class PersistedOAuthProvider implements OAuthClientProvider {
   authorizationUrl?: URL;
   private data: StoredOAuthData;
 
-  constructor(private connection: BippyMcpConnection) {
+  constructor(
+    private connection: McpConnectionConfig & { id: string },
+  ) {
     this.data = decryptOAuthData(connection.encryptedCredential);
   }
 
@@ -286,14 +293,22 @@ class PersistedOAuthProvider implements OAuthClientProvider {
 }
 
 async function withMcpClient<T>(
-  connection: BippyMcpConnection,
+  connection: McpConnectionConfig,
   execute: (client: Client) => Promise<T>,
 ) {
   const client = new Client({ name: "ameenfolio-bippy", version: "1.0.0" });
+  if (connection.authType === "oauth" && !connection.id) {
+    throw new Error("OAuth connection is missing its identifier.");
+  }
   const transport = new StreamableHTTPClientTransport(
     new URL(connection.serverUrl),
     connection.authType === "oauth"
-      ? { authProvider: new PersistedOAuthProvider(connection) }
+      ? {
+          authProvider: new PersistedOAuthProvider({
+            ...connection,
+            id: connection.id,
+          }),
+        }
       : { requestInit: { headers: requestHeaders(connection) } },
   );
   try {
@@ -319,6 +334,14 @@ function normalizeTools(
     }));
 }
 
+async function discoverTools(connection: McpConnectionConfig) {
+  return withMcpClient(connection, async (client) =>
+    normalizeTools(
+      (await client.listTools(undefined, { timeout: 15_000 })).tools,
+    ),
+  );
+}
+
 export async function saveAndDiscoverBippyMcpConnection(
   input: BippyMcpConnectionInput,
 ) {
@@ -341,26 +364,21 @@ export async function saveAndDiscoverBippyMcpConnection(
     ? encryptCredential(values.credential)
     : values.authType === "none"
       ? null
-      : existing?.encryptedCredential;
+      : existing?.authType === values.authType
+        ? existing.encryptedCredential
+        : null;
   if (values.authType === "bearer" && !encryptedCredential) {
     throw new Error("Enter a bearer token for this connection.");
   }
 
-  const pending: BippyMcpConnection = {
-    ...(existing ?? ({} as BippyMcpConnection)),
-    id: existing?.id ?? crypto.randomUUID(),
-    name: values.name,
+  const pending: McpConnectionConfig = {
     serverUrl: values.serverUrl,
     authType: values.authType,
     encryptedCredential: encryptedCredential ?? null,
   };
 
   try {
-    const discoveredTools = await withMcpClient(pending, async (client) =>
-      normalizeTools(
-        (await client.listTools(undefined, { timeout: 15_000 })).tools,
-      ),
-    );
+    const discoveredTools = await discoverTools(pending);
     const now = new Date();
     const rowValues = {
       name: values.name,
@@ -506,11 +524,7 @@ export async function finishBippyMcpOAuth(state: string, code: string) {
         .where(eq(bippyMcpConnections.id, connection.id))
         .limit(1)
     )[0];
-    const discoveredTools = await withMcpClient(refreshed, async (client) =>
-      normalizeTools(
-        (await client.listTools(undefined, { timeout: 15_000 })).tools,
-      ),
-    );
+    const discoveredTools = await discoverTools(refreshed);
     const [saved] = await getDb()
       .update(bippyMcpConnections)
       .set({
@@ -591,6 +605,7 @@ export async function executeBippyMcpTool(
   connectionId: string,
   toolName: string,
   args: Record<string, unknown>,
+  requireReadOnly = false,
 ) {
   const [connection] = await getDb()
     .select()
@@ -604,6 +619,9 @@ export async function executeBippyMcpTool(
     .limit(1);
   if (!connection || !connection.allowedTools.includes(toolName)) {
     throw new Error("That MCP tool is no longer enabled for Bippy.");
+  }
+  if (requireReadOnly && !connection.readOnlyTools.includes(toolName)) {
+    throw new Error("That MCP tool now requires administrator approval.");
   }
   return withMcpClient(connection, async (client) =>
     compactResult(
@@ -673,6 +691,7 @@ export async function createBippyMcpTools(): Promise<
                     connection.id,
                     definition.name,
                     args,
+                    true,
                   );
                 }
                 const approval = await createApproval({

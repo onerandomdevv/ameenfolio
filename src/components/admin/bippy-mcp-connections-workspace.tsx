@@ -80,9 +80,10 @@ const emptyForm: ConnectionForm = {
 
 function readableDate(value: Date | string | null) {
   if (!value) return "Never";
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "UTC",
   }).format(new Date(value));
 }
 
