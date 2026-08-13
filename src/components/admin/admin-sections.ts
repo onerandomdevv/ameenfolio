@@ -1,5 +1,5 @@
 import {
-  Bot,
+  Cable,
   Clock,
   Code2,
   FileText,
@@ -8,16 +8,18 @@ import {
   Trophy,
   UserRound,
 } from "lucide-react";
+import { BippyIcon } from "@/components/bippy/bippy-icon";
 
 // One list, two shapes: the rail on a desktop and the page picker on a phone
 // both read from here, so a new section can never appear in only one of them.
 export const adminSections = [
+  { href: "/assistant", label: "Bippy", icon: BippyIcon },
+  { href: "/mcp", label: "MCP", icon: Cable },
   { href: "/projects", label: "Projects", icon: Layers },
   { href: "/writing", label: "Writing", icon: FileText },
   { href: "/now", label: "Now", icon: Clock },
   { href: "/recognitions", label: "Recognitions", icon: Trophy },
   { href: "/tech-stack", label: "Tech Stack", icon: Code2 },
-  { href: "/bippy", label: "Bippy", icon: Bot },
   { href: "/profile", label: "Profile", icon: UserRound },
   { href: "/settings", label: "Settings", icon: Settings },
 ] as const;

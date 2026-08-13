@@ -14,6 +14,13 @@ Ameenfolio is a Next.js 16 App Router application with two public pages and a si
 
 ## Data ownership
 
+Portfolio Copilot is exposed only through `/api/admin/assistant/*`. Every route
+rechecks `requireAdmin`. Model providers receive named, Zod-validated portfolio
+tools rather than database, shell, storage, or arbitrary network access. Drafts
+may be created automatically; public, destructive, and existing-content edits
+are stored as approvals and execute through the normal admin actions only after
+the owner approves them.
+
 Neon Auth owns users and sessions in `neon_auth`. Application tables contain only portfolio content. `site_settings` is a database-enforced singleton. A PostgreSQL trigger prevents a ninth published homepage project, while Server Actions provide the same validation before writing.
 
 ## Cache invalidation
@@ -39,6 +46,16 @@ src/
 Route files coordinate requests and data. Reusable visual primitives live only in `components/ui` and stay aligned with the official shadcn registry. Application-specific components compose those primitives inside `admin`, `layout`, or `portfolio`; they do not reimplement buttons, fields, dialogs, alerts, cards, badges, tables, or empty states.
 
 Shared infrastructure is grouped by responsibility under `lib`. Server-only modules identify themselves explicitly and are imported directly rather than through barrel files, which keeps client/server boundaries visible and avoids accidental bundle expansion.
+
+The `lib/ai` boundary owns assistant providers, tools, approvals, and audit
+persistence. Provider implementations must reuse that tool layer so a future
+Claude or MCP client cannot acquire a different permission model.
+
+`/api/mcp` is the private Streamable HTTP MCP resource. OAuth 2.1 discovery,
+dynamic public-client registration, authorization code + PKCE, hashed bearer
+tokens, rotation, expiry, and owner consent protect it. MCP calls use a
+dedicated Bippy audit thread and can only read or create pending approval
+records. Existing admin actions remain the sole mutation boundary.
 
 ## Maintenance checks
 

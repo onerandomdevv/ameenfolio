@@ -183,6 +183,41 @@
       "when": 1786522462882,
       "tag": "0025_pinned_recognitions_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786536000000,
+      "tag": "0026_portfolio_copilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786540000000,
+      "tag": "0027_bippy_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786544000000,
+      "tag": "0028_bippy_conversation_compaction",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786572754991,
+      "tag": "0029_bippy_private_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786575600000,
+      "tag": "0030_mcp_connection_management",
+      "breakpoints": true
     }
   ]
 }

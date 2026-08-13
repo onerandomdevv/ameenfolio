@@ -13,6 +13,23 @@ const serverEnvShape = z.object({
   GITHUB_STATS_USERNAME: z.string().trim().optional(),
   GITHUB_STATS_TOKEN: z.string().trim().optional(),
   WAKATIME_API_KEY: z.string().trim().optional(),
+  OPENAI_API_KEY: z.string().trim().min(1).optional(),
+  OPENAI_DEFAULT_MODEL: z.string().trim().min(1).default("gpt-5.4-mini"),
+  OPENAI_ALLOWED_MODELS: z.string().trim().min(1).optional(),
+  OPENAI_COMPACTION_THRESHOLD_TOKENS: z.coerce
+    .number()
+    .int()
+    .min(8_000)
+    .max(100_000)
+    .default(20_000),
+  MCP_ENABLED: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
+  MCP_RESOURCE_URL: z.string().url().optional(),
+  MCP_AUTH_ISSUER: z.string().url().optional(),
+  MCP_AUTHORIZATION_URL: z.string().url().optional(),
+  MCP_MAINTENANCE_SECRET: z.string().trim().min(32).optional(),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
   CANONICAL_SITE_URL: z.string().url().default("http://localhost:3000"),
 });
@@ -57,6 +74,11 @@ export function requireServerEnv<
     | "R2_ACCESS_KEY_ID"
     | "R2_SECRET_ACCESS_KEY"
     | "R2_BUCKET_NAME"
+    | "OPENAI_API_KEY"
+    | "MCP_RESOURCE_URL"
+    | "MCP_AUTH_ISSUER"
+    | "MCP_AUTHORIZATION_URL"
+    | "MCP_MAINTENANCE_SECRET"
   >,
 >(...keys: K[]): ServerEnv & Record<K, string> {
   const env = getServerEnv();

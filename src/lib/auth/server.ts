@@ -44,6 +44,25 @@ export function getAuth() {
   return authInstance;
 }
 
+export async function getAuthorizedAdmin() {
+  const auth = getAuth();
+  const { data: session, error: sessionError } = await auth.getSession();
+  if (sessionError || !session?.user) return null;
+
+  const { data: accounts, error: accountsError } = await auth.listAccounts();
+  if (
+    accountsError ||
+    !accounts ||
+    !isAllowedAdminAccount(
+      accounts as LinkedAccount[],
+      getServerEnv().ADMIN_GITHUB_USER_ID,
+    )
+  ) {
+    return null;
+  }
+  return session.user;
+}
+
 export async function requireAdmin() {
   const auth = getAuth();
   const { data: session, error: sessionError } = await auth.getSession();

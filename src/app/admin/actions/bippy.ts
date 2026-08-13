@@ -1,6 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 import {
   refreshPublicContent,
   validationFailure,
@@ -9,6 +10,7 @@ import {
 import { getDb } from "@/db/client";
 import { siteSettings } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth/server";
+import { deleteAssistantMemory } from "@/lib/ai/memory";
 import { logServer } from "@/lib/logger";
 import {
   bippyVisibilitySchema,
@@ -47,5 +49,24 @@ export async function saveBippyVisibility(
       error: String(error),
     });
     return { ok: false, message: "Bippy visibility could not be saved." };
+  }
+}
+
+export async function forgetBippyMemory(id: string): Promise<ActionResult> {
+  await requireAdmin();
+  const parsed = z.uuid().safeParse(id);
+  if (!parsed.success) return { ok: false, message: "Invalid memory." };
+
+  try {
+    const deleted = await deleteAssistantMemory(parsed.data);
+    return deleted
+      ? { ok: true }
+      : { ok: false, message: "That memory no longer exists." };
+  } catch (error) {
+    logServer("error", "assistant.memory_delete_failed", {
+      memoryId: parsed.data,
+      error: String(error),
+    });
+    return { ok: false, message: "The memory could not be forgotten." };
   }
 }
