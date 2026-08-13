@@ -12,7 +12,6 @@ import {
   PanelLeftOpen,
   Square,
   Sparkles,
-  Trash2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -53,6 +52,7 @@ import type {
   AssistantThreadSummary,
   AssistantToolCallView,
 } from "@/lib/ai/types";
+import { orderAssistantThreads } from "@/lib/ai/thread-order";
 import { useAdminBase } from "@/lib/use-admin-base";
 import { cn } from "@/lib/utils";
 
@@ -398,10 +398,12 @@ export function PortfolioCopilot({
                   approvals: [],
                 },
             );
-            setThreads((rows) => [
-              item.thread,
-              ...rows.filter((row) => row.id !== item.thread.id),
-            ]);
+            setThreads((rows) =>
+              orderAssistantThreads([
+                item.thread,
+                ...rows.filter((row) => row.id !== item.thread.id),
+              ]),
+            );
           } else if (item.type === "delta") {
             setStreamingText((text) => text + item.text);
           } else if (item.type === "tool") {
@@ -509,20 +511,32 @@ export function PortfolioCopilot({
     }
   }
 
-  async function removeThread() {
-    if (!activeId || sending) return;
-    const response = await fetch(`/api/admin/assistant/threads/${activeId}`, {
-      method: "DELETE",
-    });
-    if (!response.ok) {
-      toast.error("Could not delete the conversation.");
-      return;
-    }
-    const remaining = threads.filter((thread) => thread.id !== activeId);
+  function updateThread(thread: AssistantThreadSummary) {
+    setThreads((rows) =>
+      orderAssistantThreads([
+        thread,
+        ...rows.filter((row) => row.id !== thread.id),
+      ]),
+    );
+    setDetail((current) =>
+      current?.thread.id === thread.id ? { ...current, thread } : current,
+    );
+  }
+
+  function removeThread(id: string) {
+    const remaining = threads.filter((thread) => thread.id !== id);
     setThreads(remaining);
-    setActiveId(remaining[0]?.id ?? null);
+    if (activeId !== id) return;
+    const nextId = remaining[0]?.id ?? null;
+    setActiveId(nextId);
     setDetail(null);
-    setLoadingThread(Boolean(remaining[0]?.id));
+    setLoadingThread(Boolean(nextId));
+    router.replace(
+      nextId
+        ? `${adminBase}/assistant?thread=${nextId}`
+        : `${adminBase}/assistant`,
+      { scroll: false },
+    );
   }
 
   return (
@@ -540,6 +554,8 @@ export function PortfolioCopilot({
         disabled={sending}
         onNewChat={newConversation}
         onSelectThread={selectConversation}
+        onThreadUpdated={updateThread}
+        onThreadDeleted={removeThread}
       />
       {threadsOpen ? (
         <div className="hidden min-h-0 lg:block">
@@ -551,6 +567,8 @@ export function PortfolioCopilot({
             onClose={() => setThreadsOpen(false)}
             onNewChat={newConversation}
             onSelectThread={selectConversation}
+            onThreadUpdated={updateThread}
+            onThreadDeleted={removeThread}
           />
         </div>
       ) : null}
@@ -591,18 +609,6 @@ export function PortfolioCopilot({
             >
               {pendingApprovals.length} pending
             </Badge>
-          ) : null}
-          {activeId ? (
-            <Button
-              className="ml-auto"
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Delete conversation"
-              onClick={removeThread}
-              disabled={sending}
-            >
-              <Trash2 aria-hidden="true" />
-            </Button>
           ) : null}
         </div>
 

@@ -17,3 +17,14 @@ export const assistantDecisionSchema = z.object({
 });
 
 export const assistantThreadIdSchema = z.uuid();
+
+export const assistantThreadMutationSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("rename"),
+    title: z.string().trim().min(1).max(80),
+  }),
+  z.object({
+    action: z.literal("set_pinned"),
+    pinned: z.boolean(),
+  }),
+]);

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, lt } from "drizzle-orm";
+import { and, asc, desc, eq, lt, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   agentApprovals,
@@ -27,6 +27,7 @@ function threadView(
     title: row.title,
     provider: "openai",
     model: row.model,
+    pinnedAt: row.pinnedAt?.toISOString() ?? null,
     updatedAt: row.updatedAt.toISOString(),
   };
 }
@@ -71,10 +72,15 @@ export function approvalView(
 }
 
 export async function listAssistantThreads() {
-  const rows = await getDb()
+  const db = getDb();
+  const rows = await db
     .select()
     .from(agentThreads)
-    .orderBy(desc(agentThreads.updatedAt))
+    .where(eq(agentThreads.kind, "chat"))
+    .orderBy(
+      sql`${agentThreads.pinnedAt} desc nulls last`,
+      desc(agentThreads.updatedAt),
+    )
     .limit(50);
   return rows.map(threadView);
 }
@@ -406,4 +412,22 @@ export async function deleteAssistantThread(id: string) {
     .where(eq(agentThreads.id, id))
     .returning({ id: agentThreads.id });
   return Boolean(row);
+}
+
+export async function renameAssistantThread(id: string, title: string) {
+  const [row] = await getDb()
+    .update(agentThreads)
+    .set({ title })
+    .where(eq(agentThreads.id, id))
+    .returning();
+  return row ? threadView(row) : null;
+}
+
+export async function setAssistantThreadPinned(id: string, pinned: boolean) {
+  const [row] = await getDb()
+    .update(agentThreads)
+    .set({ pinnedAt: pinned ? new Date() : null })
+    .where(eq(agentThreads.id, id))
+    .returning();
+  return row ? threadView(row) : null;
 }

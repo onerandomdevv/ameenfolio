@@ -308,9 +308,19 @@ export const agentThreads = pgTable(
     title: text("title").notNull().default("New conversation"),
     provider: text("provider").notNull().default("openai"),
     model: text("model").notNull().default("gpt-5.4-mini"),
+    kind: text("kind").notNull().default("chat"),
+    pinnedAt: timestamp("pinned_at", { withTimezone: true }),
     ...timestamps,
   },
-  (table) => [index("agent_threads_updated_idx").on(table.updatedAt)],
+  (table) => [
+    index("agent_threads_updated_idx").on(table.updatedAt),
+    index("agent_threads_pinned_idx").on(table.pinnedAt),
+    index("agent_threads_kind_updated_idx").on(table.kind, table.updatedAt),
+    check(
+      "agent_threads_kind_valid",
+      sql`${table.kind} in ('chat', 'mcp_audit')`,
+    ),
+  ],
 );
 
 // Deliberately curated cross-conversation memory for Bippy. Memories are

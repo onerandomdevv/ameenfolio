@@ -17,8 +17,10 @@ different set of application permissions.
    default is always added to the allowlist. Only add compatible models the
    selected OpenAI project can access.
 5. Apply the pending Drizzle migrations with `npm run db:migrate` before
-   deploying the application code. `0026` creates the assistant audit tables
-   and `0027` adds curated cross-conversation memory.
+   deploying the application code. `0026` creates the assistant audit tables,
+   `0027` adds curated cross-conversation memory, `0032` adds persistent
+   conversation pinning, and `0033` permanently separates ordinary chats from
+   MCP audit threads.
 
 If the key is absent, the Copilot page remains usable as a setup screen and no
 model request is attempted. The SDK resolves the key only when a message is
@@ -27,6 +29,13 @@ sent, so imports, CI, and production builds do not require it.
 The model is selected in the composer before the first message. It is then
 stored on the conversation and remains fixed for every later turn, even if the
 deployment default changes.
+
+The conversation sidebar deliberately shows names without dates. Its row menu
+can rename a chat, pin it above the normal recency order, or permanently delete
+the conversation and its cascading message/action history. MCP audit threads
+carry a dedicated `mcp_audit` classification, are excluded from this list even
+after their OAuth client expires, and remain accessible only through protected
+client Activity pages while that client record exists.
 
 ## Private MCP connection
 
@@ -56,12 +65,18 @@ conversation. Existing admin actions perform the actual mutation after review;
 the MCP server cannot publish, edit, or delete content directly.
 
 The **MCP** page in the main admin sidebar lists registered clients, their
-callback origins, granted scopes, connection state, and last activity. It also
-shows each client's ten most recent external tool calls, including completion
-or failure and any resulting approval status. Tool arguments, bearer tokens,
-and credentials are never displayed. Disconnecting a client immediately
-revokes all of its access and refresh tokens. The same page can remove expired
-OAuth records manually.
+callback origins, granted scopes, connection state, and last activity. Each
+client has a dedicated, paginated **Activity** page with its complete external
+tool-call audit history, including completion or failure and any resulting
+approval status. Tool arguments, results, bearer tokens, and credentials are
+never displayed. Disconnecting a client immediately revokes all of its access
+and refresh tokens.
+
+**Clean expired** is credential lifecycle maintenance, not an audit-log delete
+action. It removes expired authorization codes and tokens, old revoked tokens,
+and abandoned clients older than thirty days that have no usable credentials.
+A recent client with valid credentials remains listed even if an authorization
+or tool attempt failed; disconnect it first if its access should be revoked.
 
 Connected clients can also request a five-minute signed upload slot for a PNG,
 JPEG, or WebP project icon (2 MB maximum) or a PDF résumé (10 MB maximum). The
