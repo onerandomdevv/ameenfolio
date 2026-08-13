@@ -10,6 +10,11 @@ import { saveNowSection } from "@/app/admin/actions/now";
 import { setPinned, setPublished } from "@/app/admin/actions/placement";
 import { saveProfile, saveSeo } from "@/app/admin/actions/settings";
 import { deletePost, savePost } from "@/app/admin/actions/writing";
+import {
+  deleteTechStackItem,
+  reorderTechStack,
+  saveTechStackItem,
+} from "@/app/admin/actions/tech-stack";
 import { requireAdmin } from "@/lib/auth/server";
 import { getDb } from "@/db/client";
 import { agentApprovals } from "@/db/schema";
@@ -27,6 +32,8 @@ import {
   projectSchema,
   recognitionSchema,
   seoSchema,
+  techStackItemSchema,
+  techStackOrderSchema,
 } from "@/lib/validation";
 import { postLinkIconValues } from "@/config/post-link-icons";
 import {
@@ -350,6 +357,31 @@ async function executeApprovalDecision(
             false,
           ),
         );
+        break;
+      }
+      case "create_tech_stack_draft": {
+        actionError(
+          await saveTechStackItem(techStackItemSchema.parse(approval.payload)),
+        );
+        break;
+      }
+      case "update_tech_stack": {
+        const input = z
+          .object({ id: z.uuid(), values: techStackItemSchema })
+          .parse(approval.payload);
+        actionError(await saveTechStackItem(input.values, input.id));
+        break;
+      }
+      case "delete_tech_stack": {
+        const input = z.object({ id: z.uuid() }).parse(approval.payload);
+        actionError(await deleteTechStackItem(input.id));
+        break;
+      }
+      case "reorder_tech_stack": {
+        const input = z
+          .object({ order: techStackOrderSchema })
+          .parse(approval.payload);
+        actionError(await reorderTechStack(input.order));
         break;
       }
       default:

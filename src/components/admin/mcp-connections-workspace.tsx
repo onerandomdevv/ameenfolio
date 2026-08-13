@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { Activity, Cable, Check, RefreshCw, Unplug, X } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -149,6 +149,10 @@ function McpApprovalQueue({
   const router = useRouter();
   const [approvals, setApprovals] = useState(initialApprovals);
   const [busyId, setBusyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setApprovals(initialApprovals);
+  }, [initialApprovals]);
 
   async function decide(
     approval: McpPendingApproval,
