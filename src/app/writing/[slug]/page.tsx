@@ -21,7 +21,7 @@ export async function generateMetadata({
   if (!found) return { title: "Writing" };
   const shareVersion = found.post.updatedAt.getTime().toString(36);
   const shareUrl = `/writing/${found.post.slug}?share=${shareVersion}`;
-  const socialImageVersion = `?v=${shareVersion}`;
+  const socialImageUrl = `/writing/${found.post.slug}/social-card/${shareVersion}.jpg`;
 
   return {
     title: found.post.title,
@@ -35,9 +35,9 @@ export async function generateMetadata({
       publishedTime: found.post.publishedAt.toISOString(),
       images: [
         {
-          url: `/writing/opengraph-image.png${socialImageVersion}`,
-          width: 1254,
-          height: 1254,
+          url: socialImageUrl,
+          width: 800,
+          height: 800,
           alt: "Bippy writing an article",
         },
       ],
@@ -48,9 +48,9 @@ export async function generateMetadata({
       description: found.post.title,
       images: [
         {
-          url: `/writing/twitter-image.png${socialImageVersion}`,
-          width: 1254,
-          height: 1254,
+          url: socialImageUrl,
+          width: 800,
+          height: 800,
           alt: "Bippy writing an article",
         },
       ],
