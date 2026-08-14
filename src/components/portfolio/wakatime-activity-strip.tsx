@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { CalendarDays, LoaderCircle } from "lucide-react";
+import { CalendarDays, LoaderCircle, RotateCcw } from "lucide-react";
 import { useWakaTimeStatus } from "@/components/bippy/use-wakatime-status";
 import styles from "@/components/portfolio/wakatime-activity-strip.module.css";
 import { useWakaTimeHistory } from "@/components/portfolio/use-wakatime-history";
@@ -467,15 +467,19 @@ export function WakaTimeActivityStrip() {
             onChange={setDraftAnchor}
           />
 
-          <div className="flex items-center justify-between gap-3 border-t border-border pt-3">
+          {/* Both controls sit together on the right. Alone in the far corner
+              this one read as a caption rather than something pressable, which
+              is a poor fate for the only way back to the live week. */}
+          <div className="flex items-center justify-end gap-3 border-t border-border pt-3">
             <button
               type="button"
               onClick={() => {
                 setSelection(null);
                 setHistoryOpen(false);
               }}
-              className="font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-[0.08em] text-muted-foreground transition-colors hover:text-foreground"
             >
+              <RotateCcw className="size-3" aria-hidden="true" />
               This week
             </button>
             <button
