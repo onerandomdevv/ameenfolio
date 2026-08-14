@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
+import { shouldBypassAdminSessionMiddleware } from "@/lib/routing/admin-auth-path";
 import { isAdminHostSharedPath } from "@/lib/routing/admin-host";
 
 // Matched on the subdomain label rather than a full domain so the project stays
@@ -35,8 +36,10 @@ export default async function proxy(request: NextRequest) {
     // the admin unreachable exactly when DNS is the thing that is broken.
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
       if (
-        pathname === "/admin/login" ||
-        pathname === "/admin/mcp/authorize" ||
+        shouldBypassAdminSessionMiddleware(
+          pathname,
+          request.nextUrl.searchParams,
+        ) ||
         isServerAction(request)
       ) {
         return NextResponse.next();
@@ -59,8 +62,7 @@ export default async function proxy(request: NextRequest) {
   rewriteUrl.pathname = target;
 
   if (
-    target === "/admin/login" ||
-    target === "/admin/mcp/authorize" ||
+    shouldBypassAdminSessionMiddleware(target, request.nextUrl.searchParams) ||
     isServerAction(request)
   ) {
     return NextResponse.rewrite(rewriteUrl);

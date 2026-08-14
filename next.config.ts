@@ -21,7 +21,10 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "base-uri 'self'",
               "frame-ancestors 'none'",
-              "form-action 'self' https://github.com",
+              // GitHub owns admin sign-in. ChatGPT and Claude own the MCP
+              // callbacks reached after the owner approves consent; Claude's
+              // documented future callback host is included as well.
+              "form-action 'self' https://github.com https://chatgpt.com https://claude.ai https://claude.com",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
               "style-src 'self' 'unsafe-inline'",
