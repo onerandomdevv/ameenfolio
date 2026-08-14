@@ -260,21 +260,36 @@ export async function getIdentitySettings() {
   }
 }
 
-export async function getPublicBippyEnabled() {
-  if (!canQueryDatabase()) return true;
+export async function getPublicCompanionSettings() {
+  const fallback = {
+    enabled: true,
+    email: defaultSiteSettings.email,
+    whatsappUrl: defaultSiteSettings.contactLinks.whatsapp,
+  };
+  if (!canQueryDatabase()) return fallback;
 
   try {
     const rows = await getDb()
-      .select({ enabled: siteSettings.publicBippyEnabled })
+      .select({
+        enabled: siteSettings.publicBippyEnabled,
+        email: siteSettings.email,
+        contactLinks: siteSettings.contactLinks,
+      })
       .from(siteSettings)
       .where(eq(siteSettings.id, 1))
       .limit(1);
-    return rows[0]?.enabled ?? true;
+    const settings = rows[0];
+    if (!settings) return fallback;
+    return {
+      enabled: settings.enabled,
+      email: settings.email,
+      whatsappUrl: settings.contactLinks.whatsapp,
+    };
   } catch (error) {
-    logServer("error", "query.bippy_visibility_failed", {
+    logServer("error", "query.public_companion_settings_failed", {
       error: String(error),
     });
-    return true;
+    return fallback;
   }
 }
 
