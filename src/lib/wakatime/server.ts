@@ -9,21 +9,27 @@ import {
   inactiveWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
   retainLastKnownWakaTimeStats,
+  toPublicWakaTimeHistory,
   toPublicWakaTimeStatus,
+  type PublicWakaTimeHistory,
   type PublicWakaTimeStatus,
+  type WakaTimeHistoryMode,
 } from "@/lib/wakatime/status";
 
 const WAKATIME_API_URL = "https://wakatime.com/api/v1/users/current";
 const WAKATIME_TODAY_URL = `${WAKATIME_API_URL}/status_bar/today`;
 const REQUEST_TIMEOUT_MS = 8_000;
 const STATUS_CACHE_MS = 60_000;
+const HISTORY_CACHE_MAX_ENTRIES = 64;
 
 type CachedStatus = { value: PublicWakaTimeStatus; expiresAt: number };
+type CachedHistory = { value: PublicWakaTimeHistory; expiresAt: number };
 
 let cachedStatus: CachedStatus | null = null;
 let inFlight: Promise<PublicWakaTimeStatus> | null = null;
 let lastCompleteStatus: PublicWakaTimeStatus | null = null;
 let lastKnownTimeZone = "UTC";
+const historyCache = new Map<string, CachedHistory>();
 
 async function getJson(response: Response, endpoint: string) {
   if (!response.ok) {
@@ -75,6 +81,70 @@ export async function fetchWakaTimeStatus(
     summariesPayload,
     now,
   );
+}
+
+export async function fetchWakaTimeHistory(
+  apiKey: string,
+  mode: WakaTimeHistoryMode,
+  startDate: string,
+  endDate: string,
+) {
+  const authorization = `Basic ${Buffer.from(apiKey).toString("base64")}`;
+  const response = await fetch(
+    `${WAKATIME_API_URL}/summaries?start=${startDate}&end=${endDate}`,
+    {
+      headers: { authorization, accept: "application/json" },
+      cache: "no-store",
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+    },
+  );
+  const payload = await getJson(response, "history summaries endpoint");
+  return toPublicWakaTimeHistory(payload, mode, startDate, endDate);
+}
+
+export async function getPublicWakaTimeHistory(
+  mode: WakaTimeHistoryMode,
+  startDate: string,
+  endDate: string,
+) {
+  const env = getServerEnv();
+  if (!env.WAKATIME_API_KEY) throw new Error("WakaTime is not configured");
+
+  const cacheKey = `${mode}:${startDate}:${endDate}`;
+  const cached = historyCache.get(cacheKey);
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.value;
+    historyCache.delete(cacheKey);
+  }
+
+  try {
+    const value = await fetchWakaTimeHistory(
+      env.WAKATIME_API_KEY,
+      mode,
+      startDate,
+      endDate,
+    );
+    // The route is public and takes any anchor back to 2015, so one entry per
+    // distinct range would grow for the life of the process. Map iterates in
+    // insertion order, making the first key the oldest write.
+    if (historyCache.size >= HISTORY_CACHE_MAX_ENTRIES) {
+      const oldestKey = historyCache.keys().next().value;
+      if (oldestKey !== undefined) historyCache.delete(oldestKey);
+    }
+    historyCache.set(cacheKey, {
+      value,
+      expiresAt: Date.now() + 60 * 60 * 1_000,
+    });
+    return value;
+  } catch (error) {
+    logServer("warn", "wakatime.history_fetch_failed", {
+      mode,
+      startDate,
+      endDate,
+      error: String(error),
+    });
+    throw error;
+  }
 }
 
 async function refreshWakaTimeStatus() {

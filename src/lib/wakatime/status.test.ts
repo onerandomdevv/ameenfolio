@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   getWakaTimeHeartbeatDate,
+  getWakaTimeHistoryRange,
   getSundayWeekDates,
+  isPublicWakaTimeHistory,
   isPublicWakaTimeStatus,
   isRecentWakaTimeHeartbeat,
   retainLastKnownWakaTimeStats,
+  toPublicWakaTimeHistory,
   toPublicWakaTimeStatus,
 } from "@/lib/wakatime/status";
 
@@ -109,6 +112,62 @@ describe("WakaTime public status", () => {
       "2026-08-14",
       "2026-08-15",
     ]);
+  });
+
+  it("builds Sunday-first week and calendar-month history ranges", () => {
+    expect(getWakaTimeHistoryRange("week", "2026-08-12", "2026-08-14")).toEqual(
+      {
+        startDate: "2026-08-09",
+        endDate: "2026-08-14",
+      },
+    );
+    expect(
+      getWakaTimeHistoryRange("month", "2026-07-18", "2026-08-14"),
+    ).toEqual({
+      startDate: "2026-07-01",
+      endDate: "2026-07-31",
+    });
+    expect(
+      getWakaTimeHistoryRange("week", "2026-08-15", "2026-08-14"),
+    ).toBeNull();
+  });
+
+  it("sanitizes historical daily totals and languages", () => {
+    const history = toPublicWakaTimeHistory(
+      {
+        data: [
+          {
+            range: { date: "2026-08-02" },
+            grand_total: { total_seconds: 3_600 },
+            languages: [
+              { name: "TypeScript", total_seconds: 2_700 },
+              { name: "Markdown", total_seconds: 900 },
+            ],
+            projects: [{ name: "private-project" }],
+          },
+          {
+            range: { date: "2026-08-03" },
+            grand_total: { total_seconds: 7_200 },
+            languages: [{ name: "JavaScript", total_seconds: 7_200 }],
+          },
+        ],
+      },
+      "week",
+      "2026-08-02",
+      "2026-08-08",
+    );
+
+    expect(history).toMatchObject({
+      mode: "week",
+      startDate: "2026-08-02",
+      endDate: "2026-08-08",
+      totalSeconds: 10_800,
+      dailyAverageSeconds: 5_400,
+      topLanguage: { name: "JavaScript", percent: 73 },
+    });
+    expect(history.days).toHaveLength(7);
+    expect(isPublicWakaTimeHistory(history)).toBe(true);
+    expect(JSON.stringify(history)).not.toContain("private-project");
   });
 
   it("validates the sanitized browser response shape", () => {

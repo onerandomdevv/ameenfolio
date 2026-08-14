@@ -36,6 +36,7 @@ import { useWakaTimeStatus } from "@/components/bippy/use-wakatime-status";
 import styles from "@/components/bippy/bippy.module.css";
 import { useReducedMotion } from "@/components/bippy/use-reduced-motion";
 import { Button } from "@/components/ui/button";
+import { OPEN_SEND_MESSAGE_DIALOG_EVENT } from "@/lib/send-message-dialog";
 import { toggleTheme } from "@/lib/theme";
 
 const POSITION_STORAGE_KEY = "bippy-position-v1";
@@ -77,7 +78,7 @@ type SavedPosition = { x: number; y: number };
 type CompanionMessage = {
   text: string;
   kind?: "coding" | "reaction";
-  action?: { label: string; href: string };
+  action?: { label: string; href?: string };
 };
 
 function isMobileViewport() {
@@ -938,13 +939,29 @@ function BippyCompanionSurface({ pathname }: { pathname: string }) {
           <div className={styles.companionMessageBody}>
             <p>{message.text}</p>
             {message.action ? (
-              <Link
-                href={message.action.href}
-                className={styles.companionMessageAction}
-              >
-                {message.action.label}
-                <ArrowUpRight aria-hidden="true" />
-              </Link>
+              message.action.href ? (
+                <Link
+                  href={message.action.href}
+                  className={styles.companionMessageAction}
+                >
+                  {message.action.label}
+                  <ArrowUpRight aria-hidden="true" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    dismissDialogue();
+                    window.dispatchEvent(
+                      new Event(OPEN_SEND_MESSAGE_DIALOG_EVENT),
+                    );
+                  }}
+                  className={styles.companionMessageAction}
+                >
+                  {message.action.label}
+                  <ArrowUpRight aria-hidden="true" />
+                </button>
+              )
             ) : null}
           </div>
           {message.kind !== "coding" ? (

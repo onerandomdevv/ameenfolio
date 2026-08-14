@@ -36,9 +36,9 @@ export const bippyDialogues = {
     duration: 2_000,
   },
   "projects-dwell": {
-    text: "Want to build something thoughtful together?",
+    text: "Want to build something together?",
     duration: 6_000,
-    action: { label: "Start a conversation", href: "/#contact" },
+    action: { label: "Start a conversation" },
   },
 } as const;
 
