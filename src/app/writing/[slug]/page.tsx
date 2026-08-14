@@ -8,6 +8,7 @@ import { ArticleShareButton } from "@/components/writing/article-share-button";
 import { getPublishedPost } from "@/db/queries";
 import { getPostLinkIcon } from "@/config/post-link-icons";
 import { formatPostDate, toDateAttribute } from "@/lib/writing/format";
+import { getSocialPreviewVersion } from "@/lib/writing/social-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +20,7 @@ export async function generateMetadata({
   const { slug } = await params;
   const found = await getPublishedPost(slug);
   if (!found) return { title: "Writing" };
-  const shareVersion = found.post.updatedAt.getTime().toString(36);
+  const shareVersion = getSocialPreviewVersion(found.post.updatedAt);
   const shareUrl = `/writing/${found.post.slug}?share=${shareVersion}`;
   const socialImageUrl = `/writing/${found.post.slug}/social-card/${shareVersion}.jpg`;
 
@@ -64,7 +65,7 @@ export default async function PostPage({ params }: PageProps) {
   if (!found) notFound();
 
   const { post, links } = found;
-  const shareVersion = post.updatedAt.getTime().toString(36);
+  const shareVersion = getSocialPreviewVersion(post.updatedAt);
   // Only the top level: a contents list that mirrors every subheading stops
   // being a summary of the piece.
   const contents = post.headings.filter((heading) => heading.level === 2);

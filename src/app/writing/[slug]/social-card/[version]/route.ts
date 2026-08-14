@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { notFound } from "next/navigation";
 import { getPublishedPost } from "@/db/queries";
+import { getSocialPreviewVersion } from "@/lib/writing/social-preview";
 
 export const runtime = "nodejs";
 
@@ -14,7 +15,7 @@ export async function GET(_request: Request, { params }: RouteProps) {
   const found = await getPublishedPost(slug);
   if (!found) notFound();
 
-  const currentVersion = found.post.updatedAt.getTime().toString(36);
+  const currentVersion = getSocialPreviewVersion(found.post.updatedAt);
   if (version !== `${currentVersion}.jpg`) notFound();
 
   const image = await readFile(
