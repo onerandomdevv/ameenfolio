@@ -7,13 +7,14 @@ import {
   Database,
   LockKeyhole,
   RefreshCw,
-  Sparkles,
 } from "lucide-react";
 import {
   ListRow,
   RowMeta,
   SectionHeading,
 } from "@/components/admin/admin-primitives";
+import { BippyIcon } from "@/components/bippy/bippy-icon";
+import { OpenAIIcon } from "@/components/icons/brand-icons";
 import { Badge } from "@/components/ui/badge";
 import { getServerEnv } from "@/lib/env";
 
@@ -51,7 +52,7 @@ export function SystemStatus() {
       description: "Portfolio assistant conversations and actions",
       ready: Boolean(env.OPENAI_API_KEY),
       optional: false,
-      icon: Sparkles,
+      icon: OpenAIIcon,
     },
     {
       label: "Bippy connections",
@@ -70,7 +71,7 @@ export function SystemStatus() {
         env.MCP_AUTHORIZATION_URL,
       ),
       optional: true,
-      icon: Cable,
+      icon: BippyIcon,
     },
     {
       label: "MCP cleanup",

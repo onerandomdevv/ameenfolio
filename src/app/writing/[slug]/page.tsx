@@ -19,6 +19,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const found = await getPublishedPost(slug);
   if (!found) return { title: "Writing" };
+  const shareVersion = found.post.updatedAt.getTime().toString(36);
+  const shareUrl = `/writing/${found.post.slug}?share=${shareVersion}`;
+  const socialImageVersion = `?v=${shareVersion}`;
 
   return {
     title: found.post.title,
@@ -27,12 +30,12 @@ export async function generateMetadata({
     openGraph: {
       title: found.post.title,
       description: found.post.title,
-      url: `/writing/${found.post.slug}`,
+      url: shareUrl,
       type: "article",
       publishedTime: found.post.publishedAt.toISOString(),
       images: [
         {
-          url: "/writing/opengraph-image.png",
+          url: `/writing/opengraph-image.png${socialImageVersion}`,
           width: 1254,
           height: 1254,
           alt: "Bippy writing an article",
@@ -45,7 +48,7 @@ export async function generateMetadata({
       description: found.post.title,
       images: [
         {
-          url: "/writing/twitter-image.png",
+          url: `/writing/twitter-image.png${socialImageVersion}`,
           width: 1254,
           height: 1254,
           alt: "Bippy writing an article",
@@ -61,6 +64,7 @@ export default async function PostPage({ params }: PageProps) {
   if (!found) notFound();
 
   const { post, links } = found;
+  const shareVersion = post.updatedAt.getTime().toString(36);
   // Only the top level: a contents list that mirrors every subheading stops
   // being a summary of the piece.
   const contents = post.headings.filter((heading) => heading.level === 2);
@@ -105,7 +109,10 @@ export default async function PostPage({ params }: PageProps) {
             Writing
           </Link>
           <div className="flex items-center gap-2">
-            <ArticleShareButton title={post.title} />
+            <ArticleShareButton
+              title={post.title}
+              shareVersion={shareVersion}
+            />
             <ThemeToggle />
           </div>
         </div>
