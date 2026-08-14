@@ -20,6 +20,7 @@ const WAKATIME_API_URL = "https://wakatime.com/api/v1/users/current";
 const WAKATIME_TODAY_URL = `${WAKATIME_API_URL}/status_bar/today`;
 const REQUEST_TIMEOUT_MS = 8_000;
 const STATUS_CACHE_MS = 60_000;
+const HISTORY_CACHE_MAX_ENTRIES = 64;
 
 type CachedStatus = { value: PublicWakaTimeStatus; expiresAt: number };
 type CachedHistory = { value: PublicWakaTimeHistory; expiresAt: number };
@@ -111,7 +112,10 @@ export async function getPublicWakaTimeHistory(
 
   const cacheKey = `${mode}:${startDate}:${endDate}`;
   const cached = historyCache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) return cached.value;
+  if (cached) {
+    if (cached.expiresAt > Date.now()) return cached.value;
+    historyCache.delete(cacheKey);
+  }
 
   try {
     const value = await fetchWakaTimeHistory(
@@ -120,6 +124,13 @@ export async function getPublicWakaTimeHistory(
       startDate,
       endDate,
     );
+    // The route is public and takes any anchor back to 2015, so one entry per
+    // distinct range would grow for the life of the process. Map iterates in
+    // insertion order, making the first key the oldest write.
+    if (historyCache.size >= HISTORY_CACHE_MAX_ENTRIES) {
+      const oldestKey = historyCache.keys().next().value;
+      if (oldestKey !== undefined) historyCache.delete(oldestKey);
+    }
     historyCache.set(cacheKey, {
       value,
       expiresAt: Date.now() + 60 * 60 * 1_000,

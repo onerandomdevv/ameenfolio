@@ -29,8 +29,20 @@ export async function GET(request: Request) {
     );
   }
 
-  const status = await getPublicWakaTimeStatus();
-  const todayDate = status.todayDate ?? new Date().toISOString().slice(0, 10);
+  // Outside the try below this would escape as a bare 500 with an HTML body,
+  // and the client parses every failure as JSON. getServerEnv() throws on a
+  // failed parse and is reached from here, so the path is real.
+  let todayDate = new Date().toISOString().slice(0, 10);
+  try {
+    const status = await getPublicWakaTimeStatus();
+    todayDate = status.todayDate ?? todayDate;
+  } catch {
+    return NextResponse.json(
+      { error: "Coding history is temporarily unavailable." },
+      { status: 502 },
+    );
+  }
+
   const range = getWakaTimeHistoryRange(
     parsed.data.mode,
     parsed.data.anchor,

@@ -291,8 +291,11 @@ function enumerateDates(startDate: string, endDate: string) {
     return [];
   }
 
+  // Ascending, which callers rely on: groupDaysByWeek in the strip takes the
+  // last day it sees for a week as that week's end date.
   const dates: string[] = [];
-  for (const cursor = start; cursor <= end && dates.length < 31; ) {
+  const cursor = start;
+  while (cursor <= end && dates.length < 31) {
     dates.push(cursor.toISOString().slice(0, 10));
     cursor.setUTCDate(cursor.getUTCDate() + 1);
   }

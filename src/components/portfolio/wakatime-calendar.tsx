@@ -21,6 +21,15 @@ const monthLabels = [
   "Dec",
 ] as const;
 
+// Built once. A formatter per cell would rebuild it forty-odd times a render.
+const dayLabelFormat = new Intl.DateTimeFormat("en-GB", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
 /**
  * Every date here is UTC, matching the strip and the history API. A calendar
  * built on local time would show a visitor west of UTC a grid one day out of
@@ -108,7 +117,12 @@ export function WakaTimeCalendar({
         }).format(Date.parse(`${monthStart}T12:00:00.000Z`))} ${view.year}`
       : String(view.year);
 
-  const canGoBack = mode === "week" || view.year > 2015;
+  // Both modes stop at 2015, comfortably before WakaTime existed. Week mode
+  // could previously page back forever, into years that can only ever be empty.
+  const canGoBack =
+    mode === "week"
+      ? isoOf(view.year, view.month, 1) > "2015-01-01"
+      : view.year > 2015;
   const canGoForward =
     mode === "week"
       ? isoOf(view.year, view.month + 1, 1) <= today
@@ -187,6 +201,12 @@ export function WakaTimeCalendar({
                     if (outside) setView(partsOf(date, today));
                   }}
                   aria-pressed={inWeek}
+                  // The visible label is a bare number and the weekday header
+                  // is decorative, so without this a screen reader announces
+                  // "12" with no month or year behind it.
+                  aria-label={dayLabelFormat.format(
+                    Date.parse(`${date}T12:00:00.000Z`),
+                  )}
                   className={cn(
                     "h-7 rounded-[3px] text-center font-mono text-[10px] tabular-nums transition-colors",
                     "disabled:pointer-events-none disabled:opacity-25",
@@ -218,6 +238,10 @@ export function WakaTimeCalendar({
                 type="button"
                 disabled={future}
                 onClick={() => onChange(first)}
+                // Selection was carried by colour alone here, unlike the day
+                // cells, which have said `aria-pressed` from the start.
+                aria-pressed={selected}
+                aria-label={`${label} ${view.year}`}
                 className={cn(
                   "h-9 rounded-[3px] font-mono text-[10px] uppercase tracking-[0.08em] transition-colors",
                   "disabled:pointer-events-none disabled:opacity-25",

@@ -91,6 +91,13 @@ function periodLabel(startDate: string, endDate: string) {
   return `${format(start, !sameYear)} – ${format(end, true)}`;
 }
 
+/**
+ * Requires `days` in ascending date order — each week's `endDate` is simply the
+ * last day seen for that week. The history API builds its days from
+ * enumerateDates, which is ascending, so the contract holds; it is stated here
+ * because nothing in the types enforces it and a reordering would silently
+ * mislabel every week.
+ */
 function groupDaysByWeek(days: Array<{ date: string; totalSeconds: number }>) {
   const groups = new Map<
     string,
