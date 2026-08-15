@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
 import { shouldBypassAdminSessionMiddleware } from "@/lib/routing/admin-auth-path";
-import { isAdminHostSharedPath } from "@/lib/routing/admin-host";
+import {
+  isAdminHostSharedPath,
+  restoreAdminHostRedirect,
+} from "@/lib/routing/admin-host";
 
 // Matched on the subdomain label rather than a full domain so the project stays
 // host-neutral: any host beginning with `admin.` serves the admin app at its
@@ -82,8 +85,11 @@ export default async function proxy(request: NextRequest) {
     const location = authResponse.headers.get("location");
     const requestHost = request.headers.get("host");
     if (location && requestHost) {
-      const redirectUrl = new URL(location, request.url);
-      redirectUrl.host = requestHost;
+      const redirectUrl = restoreAdminHostRedirect(
+        location,
+        request.url,
+        requestHost,
+      );
       authResponse.headers.set("location", redirectUrl.toString());
     }
     return authResponse;
