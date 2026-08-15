@@ -66,6 +66,51 @@ describe("clientKeyFromHeaders", () => {
     expect(clientKeyFromHeaders(headers)).toBe("203.0.113.5");
   });
 
+  it("prefers an edge-set header over a forwarded chain the caller can write", () => {
+    // The attack this closes: x-forwarded-for is appended to, so its left-most
+    // entry is whatever the caller sent. Trusting it first would let one client
+    // mint a fresh key per request and walk straight past the limit.
+    const headers = new Headers({
+      "x-forwarded-for": "198.51.100.1",
+      "cf-connecting-ip": "203.0.113.5",
+    });
+    expect(clientKeyFromHeaders(headers)).toBe("203.0.113.5");
+  });
+
+  it("varying the forgeable header cannot change the key", () => {
+    const keys = new Set(
+      ["1.1.1.1", "2.2.2.2", "3.3.3.3"].map((spoofed) =>
+        clientKeyFromHeaders(
+          new Headers({
+            "x-forwarded-for": spoofed,
+            "x-vercel-forwarded-for": "203.0.113.5",
+          }),
+        ),
+      ),
+    );
+    expect([...keys]).toEqual(["203.0.113.5"]);
+  });
+
+  it("honours each supported edge header", () => {
+    for (const header of [
+      "cf-connecting-ip",
+      "x-vercel-forwarded-for",
+      "fly-client-ip",
+      "true-client-ip",
+    ]) {
+      expect(
+        clientKeyFromHeaders(new Headers({ [header]: "203.0.113.5" })),
+      ).toBe("203.0.113.5");
+    }
+  });
+
+  it("reads the client end of an edge header that carries a list", () => {
+    const headers = new Headers({
+      "cf-connecting-ip": "203.0.113.5, 198.51.100.9",
+    });
+    expect(clientKeyFromHeaders(headers)).toBe("203.0.113.5");
+  });
+
   it("falls back to x-real-ip, then to a shared bucket", () => {
     expect(
       clientKeyFromHeaders(new Headers({ "x-real-ip": "203.0.113.7" })),

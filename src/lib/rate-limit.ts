@@ -68,17 +68,51 @@ export function createRateLimiter({
 }
 
 /**
- * Best-effort client identity from proxy headers.
+ * Headers the edge sets on the request itself, overwriting or ignoring any
+ * copy the client sent. A caller cannot choose these values, so they are the
+ * only ones worth trusting to tell one visitor from another.
  *
- * These headers are trivially spoofable when a request reaches the app
- * directly, so this is not an identity control and must not be used as one.
- * Behind the reverse proxy every real deployment of this site sits behind, it
- * is good enough to tell one visitor from another — which is all the limiter
- * needs.
+ * Naming several platforms is not platform-specific configuration: whichever
+ * host is in front supplies its own, the rest are simply absent, and a
+ * deployment behind none of them still works via the fallback below.
+ */
+const verifiedClientIpHeaders = [
+  "cf-connecting-ip", // Cloudflare
+  "x-vercel-forwarded-for", // Vercel
+  "fly-client-ip", // Fly.io
+  "true-client-ip", // Akamai, Cloudflare Enterprise
+] as const;
+
+/**
+ * Best-effort client identity, preferring headers a client cannot forge.
+ *
+ * The subtlety worth stating: `x-forwarded-for` is *appended* to by each hop,
+ * so its left-most entry is whatever the original caller put there — including
+ * behind a reverse proxy. Reading it first would let one client mint a new
+ * identity per request simply by varying a header, which defeats the limiter
+ * that calls this.
+ *
+ * Taking the right-most entry instead would be forgery-resistant but wrong in
+ * a different direction: with more than one hop it yields a proxy's address,
+ * collapsing many real visitors into a single bucket and rate-limiting people
+ * who did nothing. Given what this protects — an upstream quota, not data —
+ * wrongly refusing real visitors is the worse failure, so the fallback stays
+ * left-most and best-effort.
+ *
+ * This remains unsuitable as an identity or authorization control.
  */
 export function clientKeyFromHeaders(headers: Headers) {
+  for (const header of verifiedClientIpHeaders) {
+    const verified = headers.get(header)?.trim();
+    // Some edges pass a list here too; the left-most is the client, and every
+    // entry originated at the edge rather than the caller.
+    if (verified) {
+      const first = verified.split(",")[0]?.trim();
+      if (first) return first;
+    }
+  }
+
   const forwarded = headers.get("x-forwarded-for");
-  // The left-most entry is the original client; the rest are proxy hops.
   if (forwarded) {
     const first = forwarded.split(",")[0]?.trim();
     if (first) return first;
