@@ -18,6 +18,28 @@ export const articleImageInputSchema = z.object({
 
 export type ArticleImageInput = z.infer<typeof articleImageInputSchema>;
 
+export const articleImageOutputSchema = z.object({
+  key: z.string().regex(/^posts\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp|gif)$/),
+  mediaPath: z
+    .string()
+    .regex(/^\/media\/posts\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp|gif)$/),
+  contentType: z.enum(["image/png", "image/jpeg", "image/webp", "image/gif"]),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(8 * 1024 * 1024),
+  markdown: z.string().min(1),
+});
+
+const articleImageToolInputSchema = {
+  // ChatGPT replaces a generated/local file reference with its temporary file
+  // object before invoking the tool. Keep this manifest boundary permissive and
+  // validate the transformed value with articleImageInputSchema in the handler.
+  file: z.any(),
+  altText: articleImageInputSchema.shape.altText,
+};
+
 export function articleImageToolMeta(scope: PortfolioMcpScope) {
   return {
     _meta: {
@@ -32,8 +54,9 @@ export function articleImageToolDefinition() {
   return {
     title: "Store article image",
     description:
-      "Store a generated or selected image privately for a writing draft and return ready-to-insert managed Markdown.",
-    inputSchema: articleImageInputSchema.shape,
+      "Use this when a generated or selected image must be stored for a writing draft. It returns the managed media path and ready-to-insert Markdown for prepare_post_draft or prepare_post_update.",
+    inputSchema: articleImageToolInputSchema,
+    outputSchema: articleImageOutputSchema.shape,
     _meta: {
       ..._meta,
       ui: { visibility: ["model", "app"] },
