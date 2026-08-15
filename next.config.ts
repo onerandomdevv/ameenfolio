@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "base-uri 'self'",
               "frame-ancestors 'none'",
+              // GitHub owns admin sign-in. MCP consent posts only to this
+              // application; the browser then navigates to the validated,
+              // dynamically registered client callback.
               "form-action 'self' https://github.com",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",

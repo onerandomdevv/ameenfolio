@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { decideMcpAuthorization } from "@/app/admin/actions/mcp";
-import { Button } from "@/components/ui/button";
+import { McpAuthorizationForm } from "@/components/admin/mcp-authorization-form";
 import { getAuthorizedAdmin } from "@/lib/auth/server";
 import { adminHref } from "@/lib/admin-path";
 import { isMcpEnabled } from "@/lib/mcp/config";
@@ -60,20 +59,12 @@ export default async function McpAuthorizePage({ searchParams }: Props) {
             </li>
           ))}
         </ul>
-        <form
-          action={decideMcpAuthorization}
-          className="mt-6 flex justify-end gap-2"
-        >
-          {Object.entries(validated.input).map(([name, value]) => (
-            <input key={name} type="hidden" name={name} value={String(value)} />
-          ))}
-          <Button type="submit" name="decision" value="deny" variant="outline">
-            Deny
-          </Button>
-          <Button type="submit" name="decision" value="approve">
-            Connect Bippy
-          </Button>
-        </form>
+        <McpAuthorizationForm
+          fields={Object.entries(validated.input).map(([name, value]) => ({
+            name,
+            value: String(value),
+          }))}
+        />
       </section>
     </main>
   );
