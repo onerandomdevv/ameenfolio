@@ -57,6 +57,44 @@ tokens, rotation, expiry, and owner consent protect it. MCP calls use a
 dedicated Bippy audit thread and can only read or create pending approval
 records. Existing admin actions remain the sole mutation boundary.
 
+### MCP article images
+
+File-capable MCP clients can call `store_article_image` with an attached or
+generated file and meaningful alt text. The tool uses the `portfolio:draft`
+scope and OpenAI's `openai/fileParams` extension while retaining the standard
+MCP JSON input and OAuth declaration. Clients without file-parameter support
+can continue using `request_media_upload` and its signed PUT URL.
+
+ChatGPT can also open `open_article_image_uploader`, a versioned MCP Apps
+resource that provides a compact fallback picker. Local files are uploaded to
+ChatGPT temporarily with `library: false`; the widget then calls the same
+`store_article_image` tool and displays its managed Markdown. The widget has no
+R2 credentials, direct storage access, external scripts, or network origins of
+its own. Hosts without ChatGPT's file APIs fall back to attaching the image in
+the conversation. After deploying a widget-contract change, reconnect or
+refresh the MCP connector so the host reloads the latest tool descriptor and
+resource.
+
+The server never trusts or persists the provider's temporary download URL. It
+resolves every HTTPS hop, rejects non-public network destinations, pins the
+connection to a validated address, follows no more than three validated
+redirects, stops after ten seconds or 8 MB, and verifies PNG, JPEG, WebP, or GIF
+binary signatures against declared MIME types. It then writes the bytes to the
+private R2 bucket and records only the managed object key, detected MIME, byte
+size, MCP client ID, and creation time in `agent_media_uploads`. Audit records
+contain a SHA-256 hash of the provider file ID rather than the ID or URL.
+
+The tool returns `![alt text](/media/posts/...)`. The MCP client inserts this
+Markdown into the existing writing draft or update proposal. Uploading alone
+does not make the object public: `/media/[...key]` requires a published post to
+reference the key. Approval previews keep using short-lived signed downloads.
+
+The authenticated MCP maintenance job removes an upload only when it is older
+than seven days and no saved post, including a private draft, references its
+managed path. Pending proposals do not extend retention. Cleanup deletes the
+R2 object before its tracking row; a storage failure keeps the row so the next
+daily run can retry.
+
 ## Maintenance checks
 
 Prettier formats application-owned source while `src/components/ui` remains in its upstream registry format. CI runs `format:check`, lint, type-checking, unit/integration tests, the production build, and browser tests. Empty legacy directories and static portfolio media are intentionally absent; managed content assets belong in R2.

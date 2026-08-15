@@ -20,6 +20,9 @@ apply the latest database migration, configure `MCP_RESOURCE_URL`,
 Generate a 32-character-or-longer `MCP_MAINTENANCE_SECRET` and schedule a daily
 authenticated `POST /api/internal/mcp/cleanup`. The same cleanup remains
 available manually from **MCP** in the main admin sidebar.
+The scheduled endpoint also removes MCP article images that have remained
+unreferenced by any saved writing draft for seven days. Apply migration `0036`
+before refreshing the connector or calling `store_article_image`.
 Keep MCP disabled on previews unless each preview has stable matching OAuth
 origins.
 

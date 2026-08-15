@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { getServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import { cleanupExpiredMcpCredentials } from "@/lib/mcp/connections";
+import { cleanupExpiredArticleImagesForMcp } from "@/lib/mcp/article-image-cleanup.server";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,15 @@ export async function POST(request: Request) {
   }
 
   try {
-    return Response.json({ removed: await cleanupExpiredMcpCredentials() });
+    const [credentials, articleImages] = await Promise.all([
+      cleanupExpiredMcpCredentials(),
+      cleanupExpiredArticleImagesForMcp(),
+    ]);
+    logServer("info", "mcp.cleanup_completed", {
+      ...credentials,
+      articleImages,
+    });
+    return Response.json({ removed: { ...credentials, articleImages } });
   } catch (error) {
     logServer("error", "mcp.cleanup_failed", { error: String(error) });
     return Response.json({ error: "cleanup_failed" }, { status: 500 });
