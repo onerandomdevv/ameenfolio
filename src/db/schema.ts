@@ -564,6 +564,32 @@ export const mcpOAuthClients = pgTable(
   ],
 );
 
+export const agentMediaUploads = pgTable(
+  "agent_media_uploads",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    objectKey: text("object_key").notNull(),
+    contentType: text("content_type").notNull(),
+    byteSize: integer("byte_size").notNull(),
+    clientId: text("client_id").references(() => mcpOAuthClients.clientId, {
+      onDelete: "set null",
+    }),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("agent_media_uploads_object_key_unique").on(table.objectKey),
+    index("agent_media_uploads_created_idx").on(table.createdAt),
+    check("agent_media_uploads_byte_size_positive", sql`${table.byteSize} > 0`),
+    check(
+      "agent_media_uploads_status_valid",
+      sql`${table.status} in ('pending', 'ready', 'deleting', 'deleted')`,
+    ),
+  ],
+);
+
 export const mcpOAuthCodes = pgTable(
   "mcp_oauth_codes",
   {
@@ -635,6 +661,7 @@ export type AgentMessage = typeof agentMessages.$inferSelect;
 export type AgentRun = typeof agentRuns.$inferSelect;
 export type AgentToolCall = typeof agentToolCalls.$inferSelect;
 export type AgentApproval = typeof agentApprovals.$inferSelect;
+export type AgentMediaUpload = typeof agentMediaUploads.$inferSelect;
 export type BippyMcpConnection = typeof bippyMcpConnections.$inferSelect;
 export type McpOAuthClient = typeof mcpOAuthClients.$inferSelect;
 export type McpOAuthCode = typeof mcpOAuthCodes.$inferSelect;

@@ -12,6 +12,7 @@ import { requireServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import {
   createObjectKey,
+  isPublicPostImageKey,
   UPLOAD_RULES,
   validateUpload,
 } from "@/lib/storage/rules";
@@ -73,6 +74,51 @@ export async function getObject(key: string) {
   );
 }
 
+export async function putObject(
+  resourceType: keyof typeof UPLOAD_RULES,
+  contentType: string,
+  bytes: Uint8Array,
+) {
+  if (!validateUpload(resourceType, contentType, bytes.byteLength)) {
+    throw new Error("The stored file type or size is not permitted.");
+  }
+  const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
+  const key = createObjectKey(resourceType, contentType);
+  await getR2().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      Body: bytes,
+      ContentLength: bytes.byteLength,
+      ContentType: contentType,
+    }),
+  );
+  return { key, mediaPath: `/media/${key}` };
+}
+
+export async function putArticleImageObject(
+  key: string,
+  contentType: string,
+  bytes: Uint8Array,
+) {
+  if (
+    !isPublicPostImageKey(key) ||
+    !validateUpload("post", contentType, bytes.byteLength)
+  ) {
+    throw new Error("The article image key, type, or size is not permitted.");
+  }
+  const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
+  await getR2().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      Body: bytes,
+      ContentLength: bytes.byteLength,
+      ContentType: contentType,
+    }),
+  );
+}
+
 export async function assertStoredUpload(
   key: string,
   resourceType: keyof typeof UPLOAD_RULES,
@@ -102,4 +148,11 @@ export async function deleteObject(key: string | null | undefined) {
   } catch (error) {
     logServer("error", "storage.cleanup_failed", { key, error: String(error) });
   }
+}
+
+export async function deleteObjectOrThrow(key: string) {
+  const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
+  await getR2().send(
+    new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }),
+  );
 }

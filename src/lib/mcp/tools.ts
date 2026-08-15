@@ -36,6 +36,18 @@ import {
   signUpload,
 } from "@/lib/storage/server";
 import { isManagedObjectKey, validateUpload } from "@/lib/storage/rules";
+import {
+  articleImageInputSchema,
+  articleImageToolDefinition,
+  redactArticleImageAuditArgs,
+} from "@/lib/mcp/article-image-contract";
+import { storeArticleImageForMcp } from "@/lib/mcp/article-image-service.server";
+import {
+  ARTICLE_IMAGE_WIDGET_MIME_TYPE,
+  ARTICLE_IMAGE_WIDGET_URI,
+  articleImageWidgetResource,
+  articleImageWidgetToolDefinition,
+} from "@/lib/mcp/article-image-widget";
 
 const contentKind = z.enum(["project", "post", "recognition"]);
 const postLinkSchema = z.object({
@@ -301,6 +313,30 @@ export function createBippyMcpServer(actor: McpActor) {
     {
       instructions:
         "Ameenfolio MCP manages Aliameen Kareem's portfolio. Read current content before preparing changes. Drafts and every public, destructive, placement, Now, or SEO change are recorded as proposals; return the preview in the conversation and require the owner's explicit approval before applying it. The admin approvals page is an audit fallback.",
+    },
+  );
+
+  server.registerResource(
+    "article-image-uploader",
+    ARTICLE_IMAGE_WIDGET_URI,
+    {
+      title: "Article image uploader",
+      description:
+        "Compact picker for storing an article image and receiving managed Markdown.",
+      mimeType: ARTICLE_IMAGE_WIDGET_MIME_TYPE,
+    },
+    async () => ({ contents: [articleImageWidgetResource()] }),
+  );
+
+  server.registerTool(
+    "open_article_image_uploader",
+    articleImageWidgetToolDefinition(),
+    async () => {
+      requireScope(actor, "portfolio:draft");
+      return result(
+        { ready: true },
+        "Article image uploader ready. Use the picker to store an image privately and receive managed Markdown.",
+      );
     },
   );
 
@@ -998,6 +1034,25 @@ export function createBippyMcpServer(actor: McpActor) {
         },
       );
       return result(pending, "Deletion prepared for admin approval.");
+    },
+  );
+
+  server.registerTool(
+    "store_article_image",
+    articleImageToolDefinition(),
+    async (args) => {
+      requireScope(actor, "portfolio:draft");
+      const input = articleImageInputSchema.parse(args);
+      const stored = await audited(
+        actor,
+        "store_article_image",
+        redactArticleImageAuditArgs(input),
+        async () => storeArticleImageForMcp(input, actor.client.clientId),
+      );
+      return result(
+        stored,
+        "Article image stored privately. Insert the returned Markdown into prepare_post_draft or prepare_post_update; the image becomes public only through an approved, published article.",
+      );
     },
   );
 
