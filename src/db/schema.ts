@@ -574,6 +574,7 @@ export const agentMediaUploads = pgTable(
     clientId: text("client_id").references(() => mcpOAuthClients.clientId, {
       onDelete: "set null",
     }),
+    status: text("status").notNull().default("pending"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -582,6 +583,10 @@ export const agentMediaUploads = pgTable(
     uniqueIndex("agent_media_uploads_object_key_unique").on(table.objectKey),
     index("agent_media_uploads_created_idx").on(table.createdAt),
     check("agent_media_uploads_byte_size_positive", sql`${table.byteSize} > 0`),
+    check(
+      "agent_media_uploads_status_valid",
+      sql`${table.status} in ('pending', 'ready', 'deleting', 'deleted')`,
+    ),
   ],
 );
 

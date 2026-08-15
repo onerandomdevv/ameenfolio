@@ -11,14 +11,12 @@ const upload = {
   objectKey: `posts/2026/${"a".repeat(48)}.png`,
 };
 
-function dependencies(
-  markdown: string[] = [],
-): ArticleImageCleanupDependencies {
+function dependencies(claimed = true): ArticleImageCleanupDependencies {
   return {
     selectExpired: vi.fn(async () => [upload]),
-    listSavedPostMarkdown: vi.fn(async () => markdown),
+    claimForDeletion: vi.fn(async () => claimed),
     deleteObject: vi.fn(async () => undefined),
-    deleteRow: vi.fn(async () => undefined),
+    markDeleted: vi.fn(async () => undefined),
     log: vi.fn(),
   };
 }
@@ -34,9 +32,7 @@ describe("MCP article image cleanup", () => {
   });
 
   it("retains images referenced by any saved draft or published post", async () => {
-    const deps = dependencies([
-      `Draft body\n\n![Architecture](/media/${upload.objectKey})`,
-    ]);
+    const deps = dependencies(false);
 
     await expect(cleanupExpiredArticleImages(now, deps)).resolves.toEqual({
       scanned: 1,
@@ -45,11 +41,11 @@ describe("MCP article image cleanup", () => {
       failed: 0,
     });
     expect(deps.deleteObject).not.toHaveBeenCalled();
-    expect(deps.deleteRow).not.toHaveBeenCalled();
+    expect(deps.markDeleted).not.toHaveBeenCalled();
   });
 
   it("does not treat an unsaved pending proposal as a retained reference", async () => {
-    const deps = dependencies([]);
+    const deps = dependencies(true);
 
     await expect(cleanupExpiredArticleImages(now, deps)).resolves.toEqual({
       scanned: 1,
@@ -58,7 +54,8 @@ describe("MCP article image cleanup", () => {
       failed: 0,
     });
     expect(deps.deleteObject).toHaveBeenCalledWith(upload.objectKey);
-    expect(deps.deleteRow).toHaveBeenCalledWith(upload.id);
+    expect(deps.claimForDeletion).toHaveBeenCalledWith(upload);
+    expect(deps.markDeleted).toHaveBeenCalledWith(upload.id);
   });
 
   it("keeps the tracking row when R2 deletion fails so cleanup can retry", async () => {
@@ -71,7 +68,7 @@ describe("MCP article image cleanup", () => {
       retained: 0,
       failed: 1,
     });
-    expect(deps.deleteRow).not.toHaveBeenCalled();
+    expect(deps.markDeleted).not.toHaveBeenCalled();
     expect(deps.log).toHaveBeenCalledWith(
       "error",
       "mcp.article_image_expiry_failed",

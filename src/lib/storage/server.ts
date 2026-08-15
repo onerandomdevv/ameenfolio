@@ -12,6 +12,7 @@ import { requireServerEnv } from "@/lib/env";
 import { logServer } from "@/lib/logger";
 import {
   createObjectKey,
+  isPublicPostImageKey,
   UPLOAD_RULES,
   validateUpload,
 } from "@/lib/storage/rules";
@@ -93,6 +94,29 @@ export async function putObject(
     }),
   );
   return { key, mediaPath: `/media/${key}` };
+}
+
+export async function putArticleImageObject(
+  key: string,
+  contentType: string,
+  bytes: Uint8Array,
+) {
+  if (
+    !isPublicPostImageKey(key) ||
+    !validateUpload("post", contentType, bytes.byteLength)
+  ) {
+    throw new Error("The article image key, type, or size is not permitted.");
+  }
+  const { R2_BUCKET_NAME } = requireServerEnv("R2_BUCKET_NAME");
+  await getR2().send(
+    new PutObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      Body: bytes,
+      ContentLength: bytes.byteLength,
+      ContentType: contentType,
+    }),
+  );
 }
 
 export async function assertStoredUpload(

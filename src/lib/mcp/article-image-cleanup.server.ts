@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, lt } from "drizzle-orm";
+import { and, eq, lt, ne, notExists, or, sql } from "drizzle-orm";
 import { getDb } from "@/db/client";
 import { agentMediaUploads, posts } from "@/db/schema";
 import { logServer } from "@/lib/logger";
@@ -17,16 +17,53 @@ export function cleanupExpiredArticleImagesForMcp(now = new Date()) {
           objectKey: agentMediaUploads.objectKey,
         })
         .from(agentMediaUploads)
-        .where(lt(agentMediaUploads.createdAt, cutoff)),
-    listSavedPostMarkdown: async () => {
-      const rows = await db
-        .select({ bodyMarkdown: posts.bodyMarkdown })
-        .from(posts);
-      return rows.map((row) => row.bodyMarkdown);
+        .where(
+          and(
+            lt(agentMediaUploads.createdAt, cutoff),
+            ne(agentMediaUploads.status, "deleted"),
+          ),
+        ),
+    claimForDeletion: async (upload) => {
+      const mediaPath = `/media/${upload.objectKey}`;
+      const lock = db
+        .select({
+          locked: sql`pg_advisory_xact_lock(hashtextextended(${upload.objectKey}, 0))`,
+        })
+        .from(sql`(select 1) as article_image_lock`);
+      const claim = db
+        .update(agentMediaUploads)
+        .set({ status: "deleting" })
+        .where(
+          and(
+            eq(agentMediaUploads.id, upload.id),
+            ne(agentMediaUploads.status, "deleted"),
+            or(
+              eq(agentMediaUploads.status, "pending"),
+              eq(agentMediaUploads.status, "deleting"),
+              and(
+                eq(agentMediaUploads.status, "ready"),
+                notExists(
+                  db
+                    .select({ id: posts.id })
+                    .from(posts)
+                    .where(
+                      sql`position(${mediaPath} in ${posts.bodyMarkdown}) > 0`,
+                    ),
+                ),
+              ),
+            ),
+          ),
+        )
+        .returning({ id: agentMediaUploads.id });
+      const [, claimed] = await db.batch([lock, claim]);
+      return claimed.length > 0;
     },
     deleteObject: deleteObjectOrThrow,
-    deleteRow: async (id) => {
-      await db.delete(agentMediaUploads).where(eq(agentMediaUploads.id, id));
+    markDeleted: async (id) => {
+      await db
+        .update(agentMediaUploads)
+        .set({ status: "deleted" })
+        .where(eq(agentMediaUploads.id, id));
     },
     log: logServer,
   });

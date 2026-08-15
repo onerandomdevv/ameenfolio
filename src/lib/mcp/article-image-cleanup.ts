@@ -7,9 +7,9 @@ type ExpiredArticleImage = {
 
 export type ArticleImageCleanupDependencies = {
   selectExpired: (cutoff: Date) => Promise<ExpiredArticleImage[]>;
-  listSavedPostMarkdown: () => Promise<string[]>;
+  claimForDeletion: (upload: ExpiredArticleImage) => Promise<boolean>;
   deleteObject: (key: string) => Promise<void>;
-  deleteRow: (id: string) => Promise<void>;
+  markDeleted: (id: string) => Promise<void>;
   log: (
     level: "error",
     event: string,
@@ -22,10 +22,7 @@ export async function cleanupExpiredArticleImages(
   dependencies: ArticleImageCleanupDependencies,
 ) {
   const cutoff = new Date(now.getTime() - ARTICLE_IMAGE_RETENTION_MS);
-  const [uploads, markdownBodies] = await Promise.all([
-    dependencies.selectExpired(cutoff),
-    dependencies.listSavedPostMarkdown(),
-  ]);
+  const uploads = await dependencies.selectExpired(cutoff);
   const result = {
     scanned: uploads.length,
     deleted: 0,
@@ -34,15 +31,14 @@ export async function cleanupExpiredArticleImages(
   };
 
   for (const upload of uploads) {
-    const mediaPath = `/media/${upload.objectKey}`;
-    if (markdownBodies.some((body) => body.includes(mediaPath))) {
+    if (!(await dependencies.claimForDeletion(upload))) {
       result.retained += 1;
       continue;
     }
 
     try {
       await dependencies.deleteObject(upload.objectKey);
-      await dependencies.deleteRow(upload.id);
+      await dependencies.markDeleted(upload.id);
       result.deleted += 1;
     } catch (error) {
       result.failed += 1;

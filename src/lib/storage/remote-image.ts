@@ -307,7 +307,13 @@ export async function downloadRemoteArticleImage(
     if (redirectStatus(response.statusCode)) {
       response.destroy();
       const location = response.headers.location;
-      if (!location || redirects >= 3) {
+      if (!location) {
+        throw new RemoteImageError(
+          "download_failed",
+          "The image server returned a redirect without a Location header.",
+        );
+      }
+      if (redirects >= 3) {
         throw new RemoteImageError(
           "download_failed",
           "The image download exceeded the redirect limit.",

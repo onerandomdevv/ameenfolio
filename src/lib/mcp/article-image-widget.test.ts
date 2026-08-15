@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ARTICLE_IMAGE_WIDGET_MIME_TYPE,
+  ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES,
+  ARTICLE_IMAGE_WIDGET_MAX_BYTES,
   ARTICLE_IMAGE_WIDGET_URI,
   articleImageWidgetHtml,
   articleImageWidgetResource,
@@ -33,8 +35,9 @@ describe("MCP article image uploader widget", () => {
   });
 
   it("binds a read-only render tool to the widget resource", () => {
-    expect(articleImageWidgetToolDefinition()).toMatchObject({
-      inputSchema: {},
+    const definition = articleImageWidgetToolDefinition();
+    expect(definition.inputSchema).toEqual({});
+    expect(definition).toMatchObject({
       _meta: {
         securitySchemes: [{ type: "oauth2", scopes: ["portfolio:draft"] }],
         ui: { resourceUri: ARTICLE_IMAGE_WIDGET_URI },
@@ -53,19 +56,22 @@ describe("MCP article image uploader widget", () => {
   it("contains the complete secure fallback upload workflow", () => {
     const html = articleImageWidgetHtml();
 
-    expect(html).toContain(
-      'accept="image/png,image/jpeg,image/webp,image/gif"',
-    );
-    expect(html).toContain("const MAX_BYTES = 8 * 1024 * 1024");
+    expect(ARTICLE_IMAGE_WIDGET_MAX_BYTES).toBe(8 * 1024 * 1024);
+    expect(ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES).toEqual([
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+    ]);
+    expect(html).toContain(`"maxBytes":${ARTICLE_IMAGE_WIDGET_MAX_BYTES}`);
+    for (const contentType of ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES) {
+      expect(html).toContain(contentType);
+    }
     expect(html).toContain('maxlength="180"');
     expect(html).toContain("library: false");
     expect(html).toContain("selectFiles");
     expect(html).toContain("getFileDownloadUrl");
     expect(html).toContain('callTool("store_article_image"');
-    expect(html).toContain("download_url: downloadUrl");
-    expect(html).toContain("file_id: selected.fileId");
-    expect(html).toContain("mime_type: selected.mimeType");
-    expect(html).toContain("file_name: selected.fileName");
     expect(html).toContain("attach the image in the conversation");
     expect(html).not.toMatch(/<script[^>]+src=/);
     expect(html).not.toContain("r2.cloudflarestorage.com");

@@ -91,9 +91,13 @@ reference the key. Approval previews keep using short-lived signed downloads.
 
 The authenticated MCP maintenance job removes an upload only when it is older
 than seven days and no saved post, including a private draft, references its
-managed path. Pending proposals do not extend retention. Cleanup deletes the
-R2 object before its tracking row; a storage failure keeps the row so the next
-daily run can retry.
+managed path. Pending proposals do not extend retention. Uploads receive a
+durable pending row before R2 receives bytes, and become ready only after the
+write succeeds. Post saves and cleanup share a per-object database lock;
+cleanup claims an unreferenced object before deleting it, preventing a post
+from gaining the reference during deletion. A storage failure leaves the claim
+available for the next daily retry, while successful deletion retains a small
+tombstone that prevents a stale key from being reused.
 
 ## Maintenance checks
 

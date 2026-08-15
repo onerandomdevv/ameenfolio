@@ -79,6 +79,7 @@ describe("remote article image validation", () => {
     ["2001::1", 6],
     ["2001:db8::1", 6],
     ["2002:7f00:1::1", 6],
+    ["3fff::1", 6],
   ] as const)("rejects non-public address %s", (address, family) => {
     expect(() => assertPublicAddresses([{ address, family }])).toThrow(
       /public/i,
@@ -199,6 +200,16 @@ describe("remote article image downloader", () => {
     expect(deps.request).toHaveBeenCalledTimes(4);
   });
 
+  it("rejects a redirect without a Location header", async () => {
+    const deps = dependencies([{ statusCode: 302 }]);
+    await expect(
+      downloadRemoteArticleImage(
+        { downloadUrl: "https://cdn.example.test/image.png" },
+        deps,
+      ),
+    ).rejects.toThrow("redirect without a Location header");
+  });
+
   it("rejects oversized declared and streamed bodies", async () => {
     const declared = dependencies([
       {
@@ -226,6 +237,21 @@ describe("remote article image downloader", () => {
       ),
     ).rejects.toMatchObject({ code: "too_large" });
   });
+
+  it.each(["abc", "-1"])(
+    "rejects invalid declared content length %s",
+    async (contentLength) => {
+      const deps = dependencies([
+        { statusCode: 200, headers: { "content-length": contentLength } },
+      ]);
+      await expect(
+        downloadRemoteArticleImage(
+          { downloadUrl: "https://cdn.example.test/image.png" },
+          deps,
+        ),
+      ).rejects.toThrow("invalid content length");
+    },
+  );
 
   it("rejects timeout, encoded, failed, and MIME-mismatched responses", async () => {
     const timeout = dependencies([]);

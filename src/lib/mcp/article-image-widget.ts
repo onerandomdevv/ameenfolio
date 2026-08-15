@@ -1,6 +1,13 @@
 export const ARTICLE_IMAGE_WIDGET_URI =
   "ui://ameenfolio/article-image-uploader-v1.html";
 export const ARTICLE_IMAGE_WIDGET_MIME_TYPE = "text/html;profile=mcp-app";
+export const ARTICLE_IMAGE_WIDGET_MAX_BYTES = 8 * 1024 * 1024;
+export const ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES = [
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/gif",
+] as const;
 
 const oauthSecurity = [
   { type: "oauth2" as const, scopes: ["portfolio:draft"] },
@@ -28,6 +35,10 @@ export function articleImageWidgetToolDefinition() {
 }
 
 export function articleImageWidgetHtml() {
+  const widgetConfig = JSON.stringify({
+    maxBytes: ARTICLE_IMAGE_WIDGET_MAX_BYTES,
+    allowedTypes: ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES,
+  });
   return String.raw`<!doctype html>
 <html lang="en">
   <head>
@@ -76,7 +87,7 @@ export function articleImageWidgetHtml() {
         <div class="actions">
           <label class="file-button" id="local-label">
             Choose image
-            <input id="local-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" />
+            <input id="local-file" type="file" accept="${ARTICLE_IMAGE_WIDGET_ALLOWED_TYPES.join(",")}" />
           </label>
           <button id="chatgpt-file" type="button" hidden>Choose from ChatGPT</button>
         </div>
@@ -111,8 +122,8 @@ export function articleImageWidgetHtml() {
 
     <script>
       (() => {
-        const MAX_BYTES = 8 * 1024 * 1024;
-        const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
+        const WIDGET_CONFIG = ${widgetConfig};
+        const ALLOWED_TYPES = new Set(WIDGET_CONFIG.allowedTypes);
         const openai = window.openai;
         const localInput = document.getElementById("local-file");
         const localLabel = document.getElementById("local-label");
@@ -162,7 +173,7 @@ export function articleImageWidgetHtml() {
 
         function validateFile(file) {
           if (!file || file.size < 1) throw new Error("Choose a non-empty image.");
-          if (file.size > MAX_BYTES) throw new Error("The image must be 8 MB or smaller.");
+          if (file.size > WIDGET_CONFIG.maxBytes) throw new Error("The image must be 8 MB or smaller.");
           if (!ALLOWED_TYPES.has(file.type)) throw new Error("Use a PNG, JPEG, WebP, or GIF image.");
         }
 

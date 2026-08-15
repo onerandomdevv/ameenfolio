@@ -5,12 +5,12 @@ import {
 } from "@/lib/mcp/article-image-contract";
 
 type StoredArticleImage = {
+  id: string;
   key: string;
   mediaPath: string;
 };
 
-type TrackedArticleImage = {
-  objectKey: string;
+type ArticleImageReservation = {
   contentType: string;
   byteSize: number;
   clientId: string;
@@ -21,13 +21,15 @@ export type ArticleImageServiceDependencies = {
     downloadUrl: string;
     declaredMimeType?: string;
   }) => Promise<{ bytes: Uint8Array; contentType: string }>;
+  reserveUpload: (
+    values: ArticleImageReservation,
+  ) => Promise<StoredArticleImage>;
   putObject: (
-    resourceType: "post",
+    key: string,
     contentType: string,
     bytes: Uint8Array,
-  ) => Promise<StoredArticleImage>;
-  insertUpload: (values: TrackedArticleImage) => Promise<void>;
-  deleteObject: (key: string) => Promise<void>;
+  ) => Promise<void>;
+  markReady: (id: string) => Promise<void>;
   log: (
     level: "error",
     event: string,
@@ -45,33 +47,34 @@ export async function storeArticleImage(
     downloadUrl: input.file.download_url,
     declaredMimeType: input.file.mime_type,
   });
-  const stored = await dependencies.putObject(
-    "post",
-    downloaded.contentType,
-    downloaded.bytes,
-  );
+  let stored: StoredArticleImage;
 
   try {
-    await dependencies.insertUpload({
-      objectKey: stored.key,
+    stored = await dependencies.reserveUpload({
       contentType: downloaded.contentType,
       byteSize: downloaded.bytes.byteLength,
       clientId,
     });
   } catch (error) {
-    dependencies.log("error", "mcp.article_image_tracking_failed", {
+    dependencies.log("error", "mcp.article_image_reservation_failed", {
+      error: String(error),
+    });
+    throw new Error("The article image could not be reserved for storage.");
+  }
+
+  try {
+    await dependencies.putObject(
+      stored.key,
+      downloaded.contentType,
+      downloaded.bytes,
+    );
+    await dependencies.markReady(stored.id);
+  } catch (error) {
+    dependencies.log("error", "mcp.article_image_finalization_failed", {
       key: stored.key,
       error: String(error),
     });
-    try {
-      await dependencies.deleteObject(stored.key);
-    } catch (cleanupError) {
-      dependencies.log("error", "mcp.article_image_cleanup_failed", {
-        key: stored.key,
-        error: String(cleanupError),
-      });
-    }
-    throw new Error("The article image was stored but could not be tracked.");
+    throw new Error("The article image could not be finalized for use.");
   }
 
   return {
