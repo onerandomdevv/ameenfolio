@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/server";
 import {
   cleanupExpiredMcpCredentials,
@@ -58,10 +57,10 @@ export async function decideMcpAuthorization(formData: FormData) {
       "error_description",
       "The owner declined the Bippy MCP connection.",
     );
-    redirect(callback.toString());
+    return { redirectUrl: callback.toString() };
   }
 
   const code = await issueAuthorizationCode({ request, userId: user.id });
   callback.searchParams.set("code", code);
-  redirect(callback.toString());
+  return { redirectUrl: callback.toString() };
 }
