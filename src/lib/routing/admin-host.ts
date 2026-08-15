@@ -16,3 +16,24 @@ export function isAdminHostSharedPath(pathname: string) {
     pathname === "/sitemap.xml"
   );
 }
+
+/**
+ * Convert an auth-middleware redirect from the hidden `/admin` route tree back
+ * to the URL a browser uses on an `admin.` host.
+ */
+export function restoreAdminHostRedirect(
+  location: string,
+  requestUrl: string,
+  requestHost: string,
+) {
+  const redirectUrl = new URL(location, requestUrl);
+  redirectUrl.host = requestHost;
+
+  if (redirectUrl.pathname === "/admin") {
+    redirectUrl.pathname = "/";
+  } else if (redirectUrl.pathname.startsWith("/admin/")) {
+    redirectUrl.pathname = redirectUrl.pathname.slice("/admin".length);
+  }
+
+  return redirectUrl;
+}
