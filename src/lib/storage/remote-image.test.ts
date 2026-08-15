@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   assertPublicAddresses,
+  createPinnedLookup,
   detectArticleImage,
   downloadRemoteArticleImage,
   type RemoteImageDependencies,
@@ -133,6 +134,17 @@ function dependencies(
 }
 
 describe("remote article image downloader", () => {
+  it("returns the pinned address in Node's all-address lookup mode", () => {
+    const lookup = createPinnedLookup({ address: "8.8.8.8", family: 4 });
+    const callback = vi.fn();
+
+    lookup("cdn.example.test", { all: true }, callback);
+
+    expect(callback).toHaveBeenCalledWith(null, [
+      { address: "8.8.8.8", family: 4 },
+    ]);
+  });
+
   it("downloads through a pinned public address and validates MIME", async () => {
     const deps = dependencies([
       {

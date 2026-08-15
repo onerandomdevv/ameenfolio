@@ -1,4 +1,5 @@
 import { BlockList, isIP } from "node:net";
+import type { LookupAddress, LookupOptions } from "node:dns";
 import { lookup } from "node:dns/promises";
 import { request as httpsRequest } from "node:https";
 
@@ -211,6 +212,25 @@ function headerValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+export function createPinnedLookup(address: ResolvedAddress) {
+  return (
+    _hostname: string,
+    options: LookupOptions,
+    callback: (
+      error: NodeJS.ErrnoException | null,
+      result: string | LookupAddress[],
+      family?: number,
+    ) => void,
+  ) => {
+    if (options.all) {
+      callback(null, [address]);
+      return;
+    }
+
+    callback(null, address.address, address.family);
+  };
+}
+
 async function requestPinnedAddress(
   url: URL,
   address: ResolvedAddress,
@@ -227,8 +247,7 @@ async function requestPinnedAddress(
           "Accept-Encoding": "identity",
           "User-Agent": "Ameenfolio-MCP/1.0",
         },
-        lookup: (_hostname, _options, callback) =>
-          callback(null, address.address, address.family),
+        lookup: createPinnedLookup(address),
         servername: isIP(normalizedHostname(url.hostname))
           ? undefined
           : normalizedHostname(url.hostname),
