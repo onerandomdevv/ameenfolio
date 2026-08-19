@@ -106,6 +106,13 @@ export const recognitionSchema = z.object({
  * can change them.
  */
 export const recognitionFormSchema = recognitionSchema.extend({
+  // The picker says "none" with an empty string, and the form holds exactly
+  // that rather than writing `undefined` back into form state. saveRecognition
+  // already stores a falsy value as null, so "" needs no conversion on the way
+  // out; it only has to be a legal value on the way in.
+  //
+  // The AI-facing schema keeps its plain uuid, since no picker is involved.
+  articlePostId: z.union([z.uuid(), z.literal("")]).optional(),
   images: z
     .array(recognitionImageSchema)
     .max(MAX_RECOGNITION_IMAGES)

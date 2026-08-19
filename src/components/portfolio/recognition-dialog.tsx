@@ -1,12 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import {
-  ArrowUpRight,
-  ChevronLeft,
-  ChevronRight,
-  Newspaper,
-} from "lucide-react";
+import { ArrowUpRight, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -68,9 +63,12 @@ export function RecognitionDialog({
  *
  * Swiping, momentum, and keyboard scrolling are what the browser already does
  * with an overflow container; a library would reimplement them in JavaScript to
- * arrive at the same place. The arrows below drive it with scrollTo, so the
- * scroll position stays the single source of truth and nothing can disagree
- * with what is on screen.
+ * arrive at the same place. Nothing drives the strip but the reader, so the
+ * scroll position is the only state and nothing can disagree with what is on
+ * screen.
+ *
+ * There are no prev/next buttons: the dots beneath already say there is more
+ * to see, and on a touch screen the gesture is the obvious one.
  */
 function Carousel({
   images,
@@ -83,16 +81,8 @@ function Carousel({
   const [index, setIndex] = useState(0);
   const single = images.length === 1;
 
-  function scrollToIndex(next: number) {
-    const track = trackRef.current;
-    if (!track) return;
-    const clamped = Math.min(images.length - 1, Math.max(0, next));
-    track.scrollTo({ left: clamped * track.clientWidth, behavior: "smooth" });
-  }
-
-  // Derived from the scroll offset rather than tracked separately, so a swipe
-  // and an arrow press cannot leave the dots describing a different image than
-  // the one being shown.
+  // Derived from the scroll offset rather than tracked separately, so the dots
+  // cannot end up describing a different image than the one on screen.
   function syncIndex() {
     const track = trackRef.current;
     if (!track || !track.clientWidth) return;
@@ -101,58 +91,39 @@ function Carousel({
 
   return (
     <div className="grid gap-3">
-      <div className="relative">
-        <ul
-          ref={trackRef}
-          onScroll={syncIndex}
-          // tabIndex so the strip is reachable by keyboard: an overflow
-          // container scrolls with arrow keys only once it can hold focus.
-          tabIndex={single ? undefined : 0}
-          aria-label={single ? undefined : `${images.length} images`}
-          className={cn(
-            "flex snap-x snap-mandatory overflow-x-auto rounded-lg",
-            "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-            "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
-          )}
-        >
-          {images.map((image, index) => (
-            <li key={image.objectKey} className="w-full shrink-0 snap-center">
-              {/* Every image is stored square at a known size, so the frame is
-                  reserved before anything loads and the dialog never jumps. */}
-              <Image
-                src={`/media/${image.objectKey}`}
-                alt={recognitionImageAlt({
-                  alt: image.alt,
-                  title,
-                  index,
-                  total: images.length,
-                })}
-                width={RECOGNITION_IMAGE_SIZE}
-                height={RECOGNITION_IMAGE_SIZE}
-                sizes="(min-width: 640px) 28rem, 100vw"
-                className="aspect-square w-full bg-muted object-cover"
-              />
-            </li>
-          ))}
-        </ul>
-
-        {single ? null : (
-          <>
-            <CarouselArrow
-              side="left"
-              label="Previous image"
-              disabled={index === 0}
-              onClick={() => scrollToIndex(index - 1)}
-            />
-            <CarouselArrow
-              side="right"
-              label="Next image"
-              disabled={index === images.length - 1}
-              onClick={() => scrollToIndex(index + 1)}
-            />
-          </>
+      <ul
+        ref={trackRef}
+        onScroll={syncIndex}
+        // tabIndex so the strip is reachable by keyboard: an overflow
+        // container scrolls with arrow keys only once it can hold focus.
+        tabIndex={single ? undefined : 0}
+        aria-label={single ? undefined : `${images.length} images`}
+        className={cn(
+          "flex snap-x snap-mandatory overflow-x-auto rounded-lg",
+          "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
         )}
-      </div>
+      >
+        {images.map((image, index) => (
+          <li key={image.objectKey} className="w-full shrink-0 snap-center">
+            {/* Every image is stored square at a known size, so the frame is
+                  reserved before anything loads and the dialog never jumps. */}
+            <Image
+              src={`/media/${image.objectKey}`}
+              alt={recognitionImageAlt({
+                alt: image.alt,
+                title,
+                index,
+                total: images.length,
+              })}
+              width={RECOGNITION_IMAGE_SIZE}
+              height={RECOGNITION_IMAGE_SIZE}
+              sizes="(min-width: 640px) 28rem, 100vw"
+              className="aspect-square w-full bg-muted object-cover"
+            />
+          </li>
+        ))}
+      </ul>
 
       {single ? null : (
         <ul className="flex justify-center gap-1.5" aria-hidden="true">
@@ -168,39 +139,6 @@ function Carousel({
         </ul>
       )}
     </div>
-  );
-}
-
-function CarouselArrow({
-  side,
-  label,
-  disabled,
-  onClick,
-}: {
-  side: "left" | "right";
-  label: string;
-  disabled: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "absolute top-1/2 flex size-8 -translate-y-1/2 items-center justify-center",
-        "rounded-full bg-background/80 text-foreground backdrop-blur",
-        "transition-opacity hover:bg-background disabled:pointer-events-none disabled:opacity-0",
-        side === "left" ? "left-2" : "right-2",
-      )}
-    >
-      {side === "left" ? (
-        <ChevronLeft className="size-4" aria-hidden="true" />
-      ) : (
-        <ChevronRight className="size-4" aria-hidden="true" />
-      )}
-    </button>
   );
 }
 

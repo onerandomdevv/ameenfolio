@@ -67,7 +67,7 @@ export function RecognitionForm({
           title: recognition.title,
           iconName: recognition.iconName,
           verificationUrl: recognition.verificationUrl ?? undefined,
-          articlePostId: recognition.articlePostId ?? undefined,
+          articlePostId: recognition.articlePostId ?? "",
           images,
         }
       : emptyRecognition,
@@ -247,10 +247,9 @@ export function RecognitionForm({
                 <OptionPicker
                   title="Choose an article"
                   value={field.value ?? ""}
-                  // "" is the picker's way of saying none; the column is
-                  // nullable, so it has to go back as undefined rather than an
-                  // empty string that would fail the uuid check.
-                  onChange={(next) => field.onChange(next || undefined)}
+                  // Stored as given: "" is a real value meaning none, which the
+                  // schema turns into undefined when the form is submitted.
+                  onChange={field.onChange}
                   options={postOptions.map((option) => ({
                     value: option.id,
                     label: option.title,
