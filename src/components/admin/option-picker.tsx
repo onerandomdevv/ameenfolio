@@ -64,6 +64,12 @@ export function OptionPicker({
       <button
         type="button"
         onClick={() => setOpen(true)}
+        // The visible label is the value alone — often just "None" — which
+        // tells a screen reader nothing about which field it belongs to. The
+        // title names the field, so the two together read as one control.
+        aria-label={`${title}: ${selected?.label ?? placeholder}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={cn(
           "flex w-full items-center gap-2 bg-transparent p-0 text-left text-[13px] outline-none",
           selected ? "text-foreground" : "text-muted-foreground/70",

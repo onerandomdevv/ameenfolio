@@ -56,14 +56,18 @@ export function RecognitionImagesField({
     [sourceUrl],
   );
 
-  // Revoked together on unmount rather than as each is replaced: a thumbnail
-  // may still be painting from one when its row moves, and a URL revoked out
-  // from under a live <img> blanks it.
+  // Whatever previews survive to unmount are revoked together. The ref keeps
+  // that cleanup out of the dependency list — depending on `previews` would
+  // run it on every upload and revoke the one just added.
   //
-  // The ref keeps the cleanup out of the dependency list — depending on
-  // `previews` would run this on every upload and revoke the one just added.
+  // Synced in an effect rather than during render: React may replay or discard
+  // a render, so a write made there is not guaranteed to reflect committed
+  // state. The cleanup below runs after every commit, so it still sees the
+  // latest.
   const previewsRef = useRef(previews);
-  previewsRef.current = previews;
+  useEffect(() => {
+    previewsRef.current = previews;
+  }, [previews]);
   useEffect(
     () => () => {
       Object.values(previewsRef.current).forEach(URL.revokeObjectURL);
@@ -165,6 +169,16 @@ export function RecognitionImagesField({
 
   async function removeImage(objectKey: string) {
     commit(value.filter((image) => image.objectKey !== objectKey));
+    // Safe to revoke here, unlike on reorder: the row is gone from the list, so
+    // nothing is left painting from this URL.
+    setPreviews((current) => {
+      const preview = current[objectKey];
+      if (!preview) return current;
+      URL.revokeObjectURL(preview);
+      const rest = { ...current };
+      delete rest[objectKey];
+      return rest;
+    });
     // Only objects this session uploaded are cleaned up. Deleting one that was
     // already saved would strand the recognition's live image if the form is
     // then abandoned rather than saved.

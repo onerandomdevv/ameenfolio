@@ -17,6 +17,7 @@ import {
   SectionHeading,
 } from "@/components/admin/admin-primitives";
 import { LeaveGuard } from "@/components/admin/leave-guard";
+import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { LineInput } from "@/components/admin/line-input";
 import { OptionPicker } from "@/components/admin/option-picker";
 import {
@@ -117,11 +118,27 @@ export function RecognitionForm({
     router.refresh();
   }
 
-  function cancel() {
+  /**
+   * Deletes the objects this session uploaded and is now walking away from.
+   *
+   * Only keys absent from `initialImageKeys`: those were already live before
+   * the form opened, so leaving without saving must not touch them. Awaited
+   * before navigating away, since the component unmounts on push and a
+   * pending request would be cancelled with it.
+   */
+  async function discardSessionUploads() {
+    const stranded = (getValues("images") ?? [])
+      .map((image) => image.objectKey)
+      .filter((key) => !initialImageKeys.includes(key));
+    await Promise.all(stranded.map((key) => cleanupUpload(key)));
+  }
+
+  async function cancel() {
     // Already on the site, or nothing written: leaving needs no decision.
     // The link counts as written work too — checking only the title threw away
     // a typed verification URL without asking.
     if (live || !hasContent) {
+      await discardSessionUploads();
       router.push(`${base}/recognitions`);
       return;
     }
@@ -151,6 +168,7 @@ export function RecognitionForm({
     setLeavingBusy(true);
     try {
       setLeaving(false);
+      await discardSessionUploads();
       if (recognition) await deleteRecognition(recognition.id);
       router.push(`${base}/recognitions`);
       router.refresh();
@@ -164,7 +182,7 @@ export function RecognitionForm({
       title={recognition ? "Edit recognition" : "Add recognition"}
       actions={
         <>
-          <Button type="button" variant="ghost" onClick={cancel}>
+          <Button type="button" variant="ghost" onClick={() => void cancel()}>
             Cancel
           </Button>
           <Button type="submit" form="recognition-form" disabled={isSubmitting}>

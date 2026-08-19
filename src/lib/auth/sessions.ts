@@ -33,9 +33,13 @@ export type AdminSessionsResult = {
 // Says which of the two it was, because the difference decides what the reader
 // should do: wait and retry, or go looking. The cause itself stays in the log —
 // a status code in front of an admin is noise.
+//
+// The transient wording avoids claiming the service did not respond: a 429 or
+// a 500 is transient and did respond, so naming the cause would be wrong for
+// half the cases it covers.
 function bannerFor(failure: AuthFailure) {
   return failure.kind === "transient"
-    ? "Active sessions could not be loaded — the auth service did not respond. Refreshing usually clears it."
+    ? "Active sessions could not be loaded — the auth service is temporarily unavailable. Refreshing usually clears it."
     : "Active sessions could not be loaded. Try refreshing the page.";
 }
 
@@ -58,18 +62,33 @@ export async function getAdminSessions(): Promise<AdminSessionsResult> {
     // Whichever call actually carries a reason wins; a result that merely came
     // back empty falls through to the placeholder so the log never records two
     // undefined messages and calls that a diagnosis.
-    const apiFailure =
-      describeApiError(currentResult.error) ??
-      describeApiError(sessionsResult.error);
+    const currentFailure = describeApiError(currentResult.error);
+    const sessionsFailure = describeApiError(sessionsResult.error);
+    const apiFailure = currentFailure ?? sessionsFailure;
 
     if (apiFailure || !currentResult.data || !sessionsResult.data) {
-      const failure = apiFailure ?? missingDataFailure;
-      logAuthFailure("auth.sessions_list_failed", failure, {
-        failedCall: describeApiError(currentResult.error)
-          ? "getSession"
-          : "listSessions",
-      });
-      return { sessions: [], error: bannerFor(failure) };
+      // Derived from what actually went wrong rather than from whichever
+      // branch was checked first: when neither call reported an error and the
+      // data is simply absent, naming one of them would be a guess printed as
+      // a fact — the exact failure this logging was written to stop.
+      const failedCall =
+        currentFailure || !currentResult.data
+          ? sessionsFailure || !sessionsResult.data
+            ? "both"
+            : "getSession"
+          : "listSessions";
+
+      logAuthFailure(
+        "auth.sessions_list_failed",
+        apiFailure ?? missingDataFailure,
+        {
+          failedCall,
+        },
+      );
+      return {
+        sessions: [],
+        error: bannerFor(apiFailure ?? missingDataFailure),
+      };
     }
 
     const currentSessionId = currentResult.data.session.id;
