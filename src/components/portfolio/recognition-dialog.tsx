@@ -4,12 +4,7 @@ import { useRef, useState } from "react";
 import { ArrowUpRight, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { RECOGNITION_IMAGE_SIZE } from "@/lib/image/crop";
 import { recognitionImageAlt } from "@/lib/recognition";
 import { cn } from "@/lib/utils";
@@ -40,13 +35,15 @@ export function RecognitionDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-left text-base leading-6">
-            {title}
-          </DialogTitle>
-        </DialogHeader>
-
         {images.length ? <Carousel images={images} title={title} /> : null}
+
+        {/* Under the carousel rather than above it: the image is what the
+            reader opened this for, and the title reads as its caption.
+            DialogHeader is not used — its sm:text-left would undo the
+            centring, and it exists only to stack a title and description. */}
+        <DialogTitle className="text-center text-base leading-6 text-balance">
+          {title}
+        </DialogTitle>
 
         <RecognitionActions
           articleSlug={articleSlug}
