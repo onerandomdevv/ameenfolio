@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAdminHostSharedPath } from "./admin-host";
+import { isAdminHostSharedPath, restoreAdminHostRedirect } from "./admin-host";
 
 describe("isAdminHostSharedPath", () => {
   it("keeps the Bippy playground on the protected admin route", () => {
@@ -15,5 +15,23 @@ describe("isAdminHostSharedPath", () => {
     expect(isAdminHostSharedPath("/admin/icon.png")).toBe(true);
     expect(isAdminHostSharedPath("/admin")).toBe(false);
     expect(isAdminHostSharedPath("/admin/projects")).toBe(false);
+  });
+
+  it("restores the browser-facing path after an admin-host auth exchange", () => {
+    expect(
+      restoreAdminHostRedirect(
+        "https://onerandomdev.cv/admin/mcp/authorize?state=kept",
+        "https://admin.onerandomdev.cv/mcp/authorize",
+        "admin.onerandomdev.cv",
+      ).toString(),
+    ).toBe("https://admin.onerandomdev.cv/mcp/authorize?state=kept");
+
+    expect(
+      restoreAdminHostRedirect(
+        "https://onerandomdev.cv/admin/assistant",
+        "https://admin.onerandomdev.cv/assistant",
+        "admin.onerandomdev.cv",
+      ).toString(),
+    ).toBe("https://admin.onerandomdev.cv/assistant");
   });
 });

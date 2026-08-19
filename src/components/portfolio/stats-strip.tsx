@@ -1,10 +1,14 @@
 import type { ReactNode } from "react";
+import { Github } from "lucide-react";
 import { StarGlyph } from "@/components/icons/glyph-icons";
 import type { StatsSnapshot } from "@/db/schema";
 import { cn } from "@/lib/utils";
 
 type StatCell = {
   label: string;
+  // Marks where the number comes from. Only the GitHub-sourced cells carry
+  // one, so the icon says something rather than decorating every label.
+  icon?: ReactNode;
   value: string | null;
   // Sits on the value's baseline rather than under it, for a qualifier that
   // belongs to the number itself — the dates the streak actually covers.
@@ -65,11 +69,13 @@ export function StatsStrip({
       // a real measurement — a broken streak or a quiet year — and rendering it
       // as a dash claims the data is missing when it is simply zero.
       label: "Contributions",
+      icon: <Github className="size-3 shrink-0" aria-hidden="true" />,
       value: snapshot ? snapshot.contributions.toLocaleString("en-US") : null,
       subs: [sinceLabel(snapshot?.firstContributionAt ?? null)],
     },
     {
       label: "Current streak",
+      icon: <Github className="size-3 shrink-0" aria-hidden="true" />,
       value: snapshot ? `${snapshot.currentStreak}d` : null,
       valueNote: dateRange(
         snapshot?.currentStreakStart ?? null,
@@ -136,7 +142,12 @@ export function StatsStrip({
 
           return (
             <div key={cell.label} className="flex flex-col bg-card px-4 py-5">
-              <dt className="font-mono text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+              {/* Tracking is tighter than the other mono-caps headings on the
+                  page: the icon costs 16px of a 98.6px cell, and without it
+                  "Current streak" wraps to a second line, which drops that one
+                  cell's value below the other three. */}
+              <dt className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.03em] text-muted-foreground">
+                {cell.icon}
                 {cell.label}
               </dt>
               {/* A cell with a sub-line stacks under the label. One without has
@@ -150,17 +161,21 @@ export function StatsStrip({
                     : "items-center justify-center text-center",
                 )}
               >
-                <span className="flex flex-wrap items-baseline gap-x-2">
+                {/* One line, note pushed to the right edge of the cell. It used
+                    to wrap: at four across the row has 99px and the pair needed
+                    102, so the date dropped under the figure. A smaller note
+                    and a tighter gap fit it back on the baseline. */}
+                <span className="flex items-baseline gap-x-1.5">
                   <span
                     className={cn(
                       "text-2xl font-medium tabular-nums",
-                      cell.value ? "text-accent-lime" : "text-muted-foreground",
+                      cell.value ? "text-foreground" : "text-muted-foreground",
                     )}
                   >
                     {cell.value ?? "—"}
                   </span>
                   {valueNote ? (
-                    <span className="text-[11px] leading-4 text-muted-foreground">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-[10px] leading-4 text-muted-foreground">
                       {valueNote}
                     </span>
                   ) : null}

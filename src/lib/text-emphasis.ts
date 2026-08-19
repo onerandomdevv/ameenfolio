@@ -3,24 +3,29 @@ export type TextSegment = {
   emphasized: boolean;
 };
 
-/**
- * Splits `text` into runs, marking the ones that match a term. Lets a config
- * string stay a plain string — the alternative is either markup in the config
- * or the copy hardcoded into the component that styles it.
- */
-export function splitEmphasis(
-  text: string,
-  terms: readonly string[],
-): TextSegment[] {
-  // Longest first, so a term that contains another does not lose to it.
-  const candidates = [...terms]
-    .filter((term) => term.length > 0)
-    .sort((a, b) => b.length - a.length);
+// Deliberately not a Markdown parser. The introduction is one paragraph with
+// one kind of emphasis, and pulling in a renderer would also bring links,
+// headings and lists into a field that has no use for them.
+const MARKER = "**";
 
-  if (!candidates.length) return text ? [{ text, emphasized: false }] : [];
+/**
+ * Splits `text` into runs, marking the ones wrapped in `**double asterisks**`.
+ *
+ * The emphasis travels with the sentence. It used to be a separate list of
+ * phrases matched literally, which meant editing the sentence silently dropped
+ * the emphasis unless the list was edited to match — and that list could not be
+ * exposed in the admin without asking for the same words twice.
+ *
+ * An unclosed marker is left as written rather than emphasising the rest of the
+ * paragraph: while someone is typing, every other keystroke is a half-open
+ * marker, and text that flickers bold as you type reads as a bug.
+ */
+export function splitEmphasis(text: string): TextSegment[] {
+  if (!text) return [];
 
   const segments: TextSegment[] = [];
   let plain = "";
+  let index = 0;
 
   const flush = () => {
     if (plain) {
@@ -29,18 +34,27 @@ export function splitEmphasis(
     }
   };
 
-  for (let index = 0; index < text.length; ) {
-    const match = candidates.find((term) => text.startsWith(term, index));
-
-    if (match) {
-      flush();
-      segments.push({ text: match, emphasized: true });
-      index += match.length;
+  while (index < text.length) {
+    if (!text.startsWith(MARKER, index)) {
+      plain += text[index];
+      index += 1;
       continue;
     }
 
-    plain += text[index];
-    index += 1;
+    const closing = text.indexOf(MARKER, index + MARKER.length);
+    const inner =
+      closing === -1 ? "" : text.slice(index + MARKER.length, closing);
+
+    // `****` carries no text, so there is nothing to emphasise.
+    if (closing === -1 || !inner) {
+      plain += MARKER;
+      index += MARKER.length;
+      continue;
+    }
+
+    flush();
+    segments.push({ text: inner, emphasized: true });
+    index = closing + MARKER.length;
   }
 
   flush();

@@ -49,13 +49,17 @@ export function DeleteProjectButton({
         <Button
           variant="ghost"
           size="sm"
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          disabled={pending}
+          className="text-muted-foreground max-sm:w-8 max-sm:px-0 hover:bg-destructive/10 hover:text-destructive"
         >
           <Trash2 aria-hidden="true" />
-          Delete
+          <span className="sr-only sm:not-sr-only">Delete</span>
+          <span className="sr-only sm:hidden">{title}</span>
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      {/* Portals to the body, outside the .admin-theme wrapper, so it carries
+          the class or it is painted in the public site's palette. */}
+      <AlertDialogContent className="admin-theme">
         <AlertDialogHeader>
           <AlertDialogTitle>Delete “{title}”?</AlertDialogTitle>
           <AlertDialogDescription>

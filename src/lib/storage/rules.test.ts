@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   createObjectKey,
   isPublicIconKey,
+  isPublicMediaKey,
+  isPublicPostImageKey,
   isPublicProfileKey,
   isManagedObjectKey,
   validateUpload,
@@ -22,6 +24,26 @@ describe("R2 asset safety", () => {
     );
     expect(key).toMatch(/^profiles\/2026\/[a-f0-9]{48}\.webp$/);
     expect(isPublicProfileKey(key)).toBe(true);
+  });
+
+  it("accepts a post image and serves it as public media", () => {
+    const key = createObjectKey("post", "image/gif", new Date("2026-05-01"));
+    expect(key).toMatch(/^posts\/2026\/[a-f0-9]{48}\.gif$/);
+    expect(isPublicPostImageKey(key)).toBe(true);
+    expect(isPublicMediaKey(key)).toBe(true);
+  });
+
+  it("rejects a post key that is not one we minted", () => {
+    expect(isPublicPostImageKey("posts/2026/../../secret.pdf")).toBe(false);
+    expect(isPublicPostImageKey("posts/2026/short.png")).toBe(false);
+    expect(isPublicPostImageKey("posts/26/" + "a".repeat(48) + ".png")).toBe(
+      false,
+    );
+    // SVG carries script, which is why it is not an accepted content type.
+    expect(validateUpload("post", "image/svg+xml", 100)).toBe(false);
+    expect(validateUpload("post", "image/png", 8 * 1024 * 1024 + 1)).toBe(
+      false,
+    );
   });
 
   it("rejects traversal and executable media", () => {

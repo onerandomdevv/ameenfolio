@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { WhatsAppIcon } from "@/components/icons/brand-icons";
 import { ChatBubbleGlyph, MailGlyph } from "@/components/icons/glyph-icons";
@@ -12,17 +12,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { OPEN_SEND_MESSAGE_DIALOG_EVENT } from "@/lib/send-message-dialog";
 
 type SendMessageDialogProps = {
   email: string;
   whatsappUrl?: string;
+  showTrigger?: boolean;
 };
 
 export function SendMessageDialog({
   email,
   whatsappUrl,
+  showTrigger = true,
 }: SendMessageDialogProps) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const openDialog = () => setOpen(true);
+    window.addEventListener(OPEN_SEND_MESSAGE_DIALOG_EVENT, openDialog);
+    return () =>
+      window.removeEventListener(OPEN_SEND_MESSAGE_DIALOG_EVENT, openDialog);
+  }, []);
 
   const channels = [
     {
@@ -47,17 +57,24 @@ export function SendMessageDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          data-bippy-reaction="curious"
-          data-bippy-safe-zone
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-foreground underline underline-offset-4 transition-colors hover:text-primary focus-visible:text-primary"
-        >
-          <ChatBubbleGlyph className="size-4" aria-hidden="true" />
-          Send a message
-        </button>
-      </DialogTrigger>
+      {showTrigger ? (
+        <DialogTrigger asChild>
+          {/* Sits inside a sentence, so it takes no minimum height: forcing a
+            44px tap target here would break the line it belongs to. WCAG
+            exempts targets that are inline in a block of text for exactly
+            this reason. */}
+          <button
+            type="button"
+            data-bippy-reaction="curious"
+            data-bippy-dialogue="contact"
+            data-bippy-safe-zone
+            className="inline-flex items-center gap-1.5 align-baseline text-foreground underline decoration-border underline-offset-[3px] transition-colors hover:decoration-foreground focus-visible:decoration-foreground"
+          >
+            <ChatBubbleGlyph className="size-3.5 shrink-0" aria-hidden="true" />
+            send a message
+          </button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>Send a message</DialogTitle>

@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { getAllPublishedProjects } from "@/db/queries";
+import {
+  getAllPublishedProjects,
+  getPublicCompanionSettings,
+} from "@/db/queries";
+import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
 import { WakaTimeActivityStrip } from "@/components/portfolio/wakatime-activity-strip";
+import { SendMessageDialog } from "@/components/portfolio/send-message-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +20,10 @@ export const metadata: Metadata = {
 };
 
 export default async function ProjectsPage() {
-  const projects = await getAllPublishedProjects();
+  const [projects, companionSettings] = await Promise.all([
+    getAllPublishedProjects(),
+    getPublicCompanionSettings(),
+  ]);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-xl px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
@@ -36,6 +44,15 @@ export default async function ProjectsPage() {
       ) : (
         <ProjectsEmptyState description="The complete project archive will appear here as work is published." />
       )}
+
+      {/* See the note on the homepage: mounted per page, because the root
+          layout also wraps the admin. */}
+      <SendMessageDialog
+        email={companionSettings.email}
+        whatsappUrl={companionSettings.whatsappUrl}
+        showTrigger={false}
+      />
+      <BippyCompanion enabled={companionSettings.enabled} />
     </main>
   );
 }

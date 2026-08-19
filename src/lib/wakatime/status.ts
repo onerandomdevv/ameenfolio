@@ -7,6 +7,23 @@ const publicWakaTimeDaySchema = z.object({
   totalSeconds: z.number().finite().nonnegative().max(86_400),
 });
 
+export const wakaTimeHistoryModeSchema = z.enum(["week", "month"]);
+
+const publicWakaTimeHistorySchema = z.object({
+  mode: wakaTimeHistoryModeSchema,
+  startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  totalSeconds: z.number().finite().nonnegative().max(2_678_400),
+  dailyAverageSeconds: z.number().finite().nonnegative().max(86_400),
+  topLanguage: z
+    .object({
+      name: z.string().min(1).max(48),
+      percent: z.number().finite().min(0).max(100),
+    })
+    .nullable(),
+  days: z.array(publicWakaTimeDaySchema).max(31),
+});
+
 const publicWakaTimeStatusSchema = z.object({
   isCoding: z.boolean(),
   statsStale: z.boolean(),
@@ -30,6 +47,8 @@ const publicWakaTimeStatusSchema = z.object({
 });
 
 export type PublicWakaTimeStatus = z.infer<typeof publicWakaTimeStatusSchema>;
+export type PublicWakaTimeHistory = z.infer<typeof publicWakaTimeHistorySchema>;
+export type WakaTimeHistoryMode = z.infer<typeof wakaTimeHistoryModeSchema>;
 
 type WeekSummary = Pick<
   PublicWakaTimeStatus,
@@ -110,6 +129,48 @@ export function getSundayWeekDates(value: string) {
     date.setUTCDate(anchor.getUTCDate() + index);
     return date.toISOString().slice(0, 10);
   });
+}
+
+export function getWakaTimeHistoryRange(
+  mode: WakaTimeHistoryMode,
+  anchorDate: string,
+  todayDate: string,
+) {
+  const anchor = new Date(`${anchorDate}T12:00:00.000Z`);
+  const today = new Date(`${todayDate}T12:00:00.000Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(anchorDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(todayDate) ||
+    !Number.isFinite(anchor.getTime()) ||
+    !Number.isFinite(today.getTime()) ||
+    anchor.toISOString().slice(0, 10) !== anchorDate ||
+    today.toISOString().slice(0, 10) !== todayDate ||
+    anchor > today
+  ) {
+    return null;
+  }
+
+  let start: Date;
+  let end: Date;
+  if (mode === "week") {
+    start = new Date(anchor);
+    start.setUTCDate(start.getUTCDate() - start.getUTCDay());
+    end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 6);
+  } else {
+    start = new Date(
+      Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1),
+    );
+    end = new Date(
+      Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() + 1, 0),
+    );
+  }
+
+  if (end > today) end = today;
+  return {
+    startDate: start.toISOString().slice(0, 10),
+    endDate: end.toISOString().slice(0, 10),
+  };
 }
 
 export function retainLastKnownWakaTimeStats(
@@ -217,6 +278,93 @@ function summarizeWeek(payload: unknown) {
   } satisfies WeekSummary;
 }
 
+function enumerateDates(startDate: string, endDate: string) {
+  const start = new Date(`${startDate}T12:00:00.000Z`);
+  const end = new Date(`${endDate}T12:00:00.000Z`);
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(startDate) ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(endDate) ||
+    !Number.isFinite(start.getTime()) ||
+    !Number.isFinite(end.getTime()) ||
+    start > end
+  ) {
+    return [];
+  }
+
+  // Ascending, which callers rely on: groupDaysByWeek in the strip takes the
+  // last day it sees for a week as that week's end date.
+  const dates: string[] = [];
+  const cursor = start;
+  while (cursor <= end && dates.length < 31) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return dates;
+}
+
+export function toPublicWakaTimeHistory(
+  payload: unknown,
+  mode: WakaTimeHistoryMode,
+  startDate: string,
+  endDate: string,
+): PublicWakaTimeHistory {
+  const summaries = summariesResponseSchema.parse(payload);
+  const dates = enumerateDates(startDate, endDate);
+  if (!dates.length) throw new Error("Invalid WakaTime history range");
+
+  const requestedDates = new Set(dates);
+  const totals = new Map<string, number>();
+  const languages = new Map<string, number>();
+
+  for (const summary of summaries.data) {
+    if (!requestedDates.has(summary.range.date)) continue;
+    totals.set(
+      summary.range.date,
+      Math.min(Math.max(summary.grand_total.total_seconds ?? 0, 0), 86_400),
+    );
+    for (const language of summary.languages ?? []) {
+      const name = language.name.trim().slice(0, 48);
+      if (!name || excludedTopLanguageNames.has(name.toLowerCase())) continue;
+      languages.set(
+        name,
+        (languages.get(name) ?? 0) + (language.total_seconds ?? 0),
+      );
+    }
+  }
+
+  const days = dates.map((date) => ({
+    date,
+    totalSeconds: totals.get(date) ?? 0,
+  }));
+  const totalSeconds = days.reduce((total, day) => total + day.totalSeconds, 0);
+  const activeDays = days.filter((day) => day.totalSeconds > 0);
+  const [topLanguageName, topLanguageSeconds] = [...languages.entries()].sort(
+    ([, left], [, right]) => right - left,
+  )[0] ?? [null, 0];
+  const languageSeconds = [...languages.values()].reduce(
+    (total, seconds) => total + seconds,
+    0,
+  );
+
+  return publicWakaTimeHistorySchema.parse({
+    mode,
+    startDate,
+    endDate,
+    totalSeconds,
+    dailyAverageSeconds: activeDays.length
+      ? totalSeconds / activeDays.length
+      : 0,
+    topLanguage:
+      topLanguageName && languageSeconds > 0
+        ? {
+            name: topLanguageName,
+            percent: Math.round((topLanguageSeconds / languageSeconds) * 100),
+          }
+        : null,
+    days,
+  });
+}
+
 export function isRecentWakaTimeHeartbeat(
   value: string | null | undefined,
   now = Date.now(),
@@ -322,4 +470,10 @@ export function isPublicWakaTimeStatus(
   value: unknown,
 ): value is PublicWakaTimeStatus {
   return publicWakaTimeStatusSchema.safeParse(value).success;
+}
+
+export function isPublicWakaTimeHistory(
+  value: unknown,
+): value is PublicWakaTimeHistory {
+  return publicWakaTimeHistorySchema.safeParse(value).success;
 }

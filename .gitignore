@@ -49,3 +49,8 @@ next-env.d.ts
 .claude
 CLAUDE.md
 .vscode
+# Playwright run artifacts (reports, traces, screenshots).
+output/
+test-results/
+playwright-report/
+.playwright-cli/

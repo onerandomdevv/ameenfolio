@@ -106,6 +106,195 @@
       "when": 1786308331202,
       "tag": "0014_acoustic_kabuki",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1786327680810,
+      "tag": "0015_massive_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1786328561866,
+      "tag": "0016_drop_project_github_url",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786467207834,
+      "tag": "0017_now_links_limit_four",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1786471050425,
+      "tag": "0018_homepage_projects_limit_twelve",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1786481966633,
+      "tag": "0019_writing",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1786487426930,
+      "tag": "0020_pinned_posts_advisory_lock",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1786500217223,
+      "tag": "0021_pin_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1786509810926,
+      "tag": "0022_now_link_icon_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1786516370822,
+      "tag": "0023_editable_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786518174017,
+      "tag": "0024_editable_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1786522462882,
+      "tag": "0025_pinned_recognitions_limit",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1786536000000,
+      "tag": "0026_portfolio_copilot",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1786540000000,
+      "tag": "0027_bippy_memory",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1786544000000,
+      "tag": "0028_bippy_conversation_compaction",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1786572754991,
+      "tag": "0029_bippy_private_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786575600000,
+      "tag": "0030_mcp_connection_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786582800000,
+      "tag": "0031_agent_tool_call_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786590000000,
+      "tag": "0032_pinned_agent_threads",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786593600000,
+      "tag": "0033_agent_thread_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786597200000,
+      "tag": "0034_bippy_outbound_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1786600800000,
+      "tag": "0035_bippy_mcp_oauth",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1786757433029,
+      "tag": "0036_right_iceman",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1786801792058,
+      "tag": "0037_uneven_supernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787173088356,
+      "tag": "0038_confused_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1787176292426,
+      "tag": "0039_closed_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787177234129,
+      "tag": "0040_conscious_stark_industries",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787177907777,
+      "tag": "0041_shiny_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

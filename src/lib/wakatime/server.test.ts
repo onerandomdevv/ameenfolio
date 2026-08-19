@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { fetchWakaTimeStatus } from "@/lib/wakatime/server";
+import {
+  fetchWakaTimeHistory,
+  fetchWakaTimeStatus,
+} from "@/lib/wakatime/server";
 
 const now = new Date("2026-08-09T12:00:00.000Z");
 const emptyWeek = { data: [] };
@@ -29,6 +32,40 @@ afterEach(() => {
 });
 
 describe("WakaTime server client", () => {
+  it("fetches a bounded historical range without exposing private entities", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValueOnce(
+      jsonResponse({
+        data: [
+          {
+            range: { date: "2026-08-02" },
+            grand_total: { total_seconds: 3_600 },
+            languages: [{ name: "TypeScript", total_seconds: 3_600 }],
+            projects: [{ name: "private-project" }],
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const history = await fetchWakaTimeHistory(
+      "waka_secret",
+      "week",
+      "2026-08-02",
+      "2026-08-08",
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("summaries?start=2026-08-02&end=2026-08-08"),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          authorization: `Basic ${Buffer.from("waka_secret").toString("base64")}`,
+        }),
+      }),
+    );
+    expect(history.totalSeconds).toBe(3_600);
+    expect(JSON.stringify(history)).not.toContain("private-project");
+  });
+
   it("authenticates server-side and returns only sanitized data", async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

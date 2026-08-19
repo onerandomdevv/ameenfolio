@@ -14,9 +14,30 @@ Set every value from `.env.example` as a server-side secret. Only `NEXT_PUBLIC_A
 
 Use the development Neon branch and `ameenfolio-media-dev` for previews. Production uses the production Neon branch and `ameenfolio-media-prod`.
 
+For private Bippy MCP, wait until the public and admin HTTPS origins resolve,
+apply the latest database migration, configure `MCP_RESOURCE_URL`,
+`MCP_AUTH_ISSUER`, and `MCP_AUTHORIZATION_URL`, then set `MCP_ENABLED=true`.
+Generate a 32-character-or-longer `MCP_MAINTENANCE_SECRET` and schedule a daily
+authenticated `POST /api/internal/mcp/cleanup`. The same cleanup remains
+available manually from **MCP** in the main admin sidebar.
+The scheduled endpoint also removes MCP article images that have remained
+unreferenced by any saved writing draft or published post for seven days. Apply
+migrations `0036` and `0037` before refreshing the connector or calling
+`store_article_image`.
+Keep MCP disabled on previews unless each preview has stable matching OAuth
+origins.
+
 `WAKATIME_API_KEY` is optional. When configured, keep it server-only; the public application receives only a cached, privacy-safe coding status, today and weekly totals, daily average, top language, seven-day breakdown, and timestamps. Project and branch names are excluded. Without the key, Bippy retains his normal idle behavior and the projects-page activity strip renders offline with empty totals.
 
 ## Admin host
+
+Portfolio Copilot is optional for the rest of the application. Set a
+project-scoped `OPENAI_API_KEY` as a server-only secret to enable messages. Set
+`OPENAI_DEFAULT_MODEL` and a comma-separated `OPENAI_ALLOWED_MODELS` containing
+only compatible models the OpenAI project can access. Set
+`OPENAI_COMPACTION_THRESHOLD_TOKENS` to the conversation budget at which older
+turns become a readable checkpoint; the default is 20,000. Without the key, the owner sees a configuration notice
+in Copilot while public routes and other admin features continue to work.
 
 The admin app has two mountings, both always live. A host whose first label is `admin.` serves it at the root — matched on the subdomain label, not a full domain, so it works under whatever domain you deploy. Every other host serves it under `/admin`. Point both the apex and `admin.<domain>` at the same deployment; no second project is needed.
 
@@ -53,7 +74,7 @@ Add both the preview and production origins.
 - After a destructive migration succeeds and its export is verified, delete only storage objects proven unreferenced, and retain a cleanup-failure log for retry.
 - Apply approved migrations and seed the settings and Now-section singletons.
 - Apply them **before** the build that needs them goes live. Drizzle selects every column its model declares, so a release that adds one starts asking for it on the very first request. When that column is on `site_settings`, the homepage cannot render without it and the whole public site returns an error page until the migration lands — not just the feature that added the column.
-- Sign in through GitHub as `onerandomdevv` and verify another account receives 403.
+- Sign in through GitHub as `onerandomd3v` and verify another account receives 403.
 - Populate required production content.
 - Verify icon upload and replacement, résumé download, CRUD, sign-out, `/`, and `/projects`.
 - Confirm security headers and canonical/robots/sitemap URLs.

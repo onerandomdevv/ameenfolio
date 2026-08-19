@@ -17,9 +17,27 @@ export const UPLOAD_RULES = {
     maxBytes: 10 * 1024 * 1024,
     prefix: "resumes",
   },
+  // Screenshots and exported diagrams, so the ceiling is higher than an icon's
+  // and gif is allowed: a short screen capture is often the clearest way to
+  // show what a thing does.
+  post: {
+    contentTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+    maxBytes: 8 * 1024 * 1024,
+    prefix: "posts",
+  },
+  // Always square and always 1080px by the time it reaches here — the admin
+  // crops before uploading, so every object is a webp well inside this
+  // ceiling. The other types stay allowed to match the rules above rather than
+  // making this the one entry that would reject a hand-made upload.
+  recognition: {
+    contentTypes: ["image/png", "image/jpeg", "image/webp"],
+    maxBytes: 4 * 1024 * 1024,
+    prefix: "recognitions",
+  },
 } as const;
 
 const extensions: Record<string, string> = {
+  "image/gif": ".gif",
   "image/png": ".png",
   "image/jpeg": ".jpg",
   "image/webp": ".webp",
@@ -72,8 +90,33 @@ export function isPublicProfileKey(key: string) {
   );
 }
 
+export function isPublicPostImageKey(key: string) {
+  const normalized = key.replaceAll("\\", "/");
+  return (
+    normalized === key &&
+    !normalized.includes("..") &&
+    /^posts\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp|gif)$/.test(normalized) &&
+    path.posix.normalize(normalized) === normalized
+  );
+}
+
+export function isPublicRecognitionImageKey(key: string) {
+  const normalized = key.replaceAll("\\", "/");
+  return (
+    normalized === key &&
+    !normalized.includes("..") &&
+    /^recognitions\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/.test(normalized) &&
+    path.posix.normalize(normalized) === normalized
+  );
+}
+
 export function isPublicMediaKey(key: string) {
-  return isPublicIconKey(key) || isPublicProfileKey(key);
+  return (
+    isPublicIconKey(key) ||
+    isPublicProfileKey(key) ||
+    isPublicPostImageKey(key) ||
+    isPublicRecognitionImageKey(key)
+  );
 }
 
 export function isManagedObjectKey(key: string) {

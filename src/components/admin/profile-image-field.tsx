@@ -1,33 +1,18 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { Area, Point } from "react-easy-crop";
-import { ImagePlus, LoaderCircle, Trash2, UserRound } from "lucide-react";
+import type { Area } from "react-easy-crop";
+import { ImagePlus, Trash2, UserRound } from "lucide-react";
+import { ImageCropDialog } from "@/components/admin/image-crop-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 import { cropProfileImage } from "@/lib/image/crop";
 import { cleanupUpload } from "@/lib/storage/cleanup-upload";
 import { uploadFile } from "@/lib/storage/client";
 import { cn } from "@/lib/utils";
 
-const Cropper = dynamic(() => import("react-easy-crop"), { ssr: false });
 const ALLOWED_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const MAX_SOURCE_BYTES = 10 * 1024 * 1024;
 
@@ -49,9 +34,6 @@ export function ProfileImageField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [sourceUrl, setSourceUrl] = useState<string>();
   const [previewUrl, setPreviewUrl] = useState<string>();
-  const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
-  const [zoom, setZoom] = useState(1);
-  const [croppedArea, setCroppedArea] = useState<Area>();
   const [pending, setPending] = useState(false);
   const [localError, setLocalError] = useState<string>();
   const invalid = Boolean(error || localError);
@@ -72,9 +54,6 @@ export function ProfileImageField({
 
   function closeCropper() {
     setSourceUrl(undefined);
-    setCrop({ x: 0, y: 0 });
-    setZoom(1);
-    setCroppedArea(undefined);
     if (inputRef.current) inputRef.current.value = "";
   }
 
@@ -87,13 +66,13 @@ export function ProfileImageField({
     setSourceUrl(URL.createObjectURL(file));
   }
 
-  async function saveCrop() {
-    if (!sourceUrl || !croppedArea) return;
+  async function saveCrop(area: Area) {
+    if (!sourceUrl) return;
     setPending(true);
     setLocalError(undefined);
 
     try {
-      const file = await cropProfileImage(sourceUrl, croppedArea);
+      const file = await cropProfileImage(sourceUrl, area);
       const uploaded = await uploadFile("profile", file);
       if (value && value !== initialValue) await cleanupUpload(value);
       setPreviewUrl(URL.createObjectURL(file));
@@ -126,20 +105,31 @@ export function ProfileImageField({
         data-disabled={pending}
       >
         <FieldLabel htmlFor="profile-image-upload">Profile image</FieldLabel>
-        <div className="flex flex-wrap items-center gap-4">
-          <Avatar className="size-20 rounded-lg border">
+        {/* Below sm the buttons sit beside the image and split its height, one
+            at the top edge and one at the bottom, so the pair reads as one
+            block. From sm up the field is inside a 150px column, which is too
+            narrow for that, so they stack under the image instead. */}
+        <div className="flex items-stretch gap-3 sm:flex-col sm:items-start">
+          <Avatar className="size-20 shrink-0 rounded-md border">
             {currentImage ? (
               <AvatarImage
                 src={currentImage}
                 alt="Current profile image"
-                className="rounded-lg object-cover"
+                className="rounded-md object-cover"
               />
             ) : null}
-            <AvatarFallback className="rounded-lg">
+            <AvatarFallback className="rounded-md">
               <UserRound aria-hidden="true" />
             </AvatarFallback>
           </Avatar>
-          <div className="flex flex-wrap gap-2">
+          <div
+            className={cn(
+              "flex min-w-0 flex-1 flex-col gap-2 sm:flex-none sm:flex-row sm:flex-wrap",
+              // With only one button there is no pair to space apart, so it
+              // centres on the image rather than clinging to its top edge.
+              value ? "justify-between" : "justify-center sm:justify-start",
+            )}
+          >
             <Button
               type="button"
               variant="outline"
@@ -166,6 +156,11 @@ export function ProfileImageField({
           ref={inputRef}
           id="profile-image-upload"
           className="sr-only"
+          // Inline, because the Input base sets w-full and tailwind-merge
+          // resolves that against sr-only unpredictably — leaving an invisible
+          // full-width element that still widened the page on a phone. A style
+          // attribute cannot be merged away.
+          style={{ width: 1, height: 1 }}
           type="file"
           accept="image/png,image/jpeg,image/webp"
           disabled={pending}
@@ -175,80 +170,16 @@ export function ProfileImageField({
             if (file) selectFile(file);
           }}
         />
-        <FieldDescription>
-          Crop ratio 1:1. Saved as a 512 × 512 WebP image.
-        </FieldDescription>
         <FieldError>{error ?? localError}</FieldError>
       </Field>
 
-      <Dialog
-        open={Boolean(sourceUrl)}
-        onOpenChange={(open) => !open && closeCropper()}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Crop profile image</DialogTitle>
-            <DialogDescription>
-              Move and zoom the image inside the square frame.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-muted">
-            {sourceUrl ? (
-              <Cropper
-                image={sourceUrl}
-                crop={crop}
-                zoom={zoom}
-                rotation={0}
-                aspect={1}
-                minZoom={1}
-                maxZoom={3}
-                zoomSpeed={1}
-                cropShape="rect"
-                showGrid={false}
-                style={{}}
-                classes={{}}
-                restrictPosition
-                mediaProps={{}}
-                cropperProps={{}}
-                keyboardStep={1}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={(_area, pixels) => setCroppedArea(pixels)}
-              />
-            ) : null}
-          </div>
-          <Field>
-            <FieldLabel htmlFor="profile-image-zoom">Zoom</FieldLabel>
-            <Slider
-              id="profile-image-zoom"
-              thumbLabel="Profile image zoom"
-              min={1}
-              max={3}
-              step={0.01}
-              value={[zoom]}
-              onValueChange={(values) => setZoom(values[0] ?? 1)}
-            />
-          </Field>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={closeCropper}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              disabled={pending || !croppedArea}
-              onClick={() => void saveCrop()}
-            >
-              {pending ? (
-                <LoaderCircle
-                  data-icon="inline-start"
-                  className="animate-spin"
-                />
-              ) : null}
-              Use image
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <ImageCropDialog
+        sourceUrl={sourceUrl}
+        title="Crop profile image"
+        pending={pending}
+        onCancel={closeCropper}
+        onConfirm={(area) => void saveCrop(area)}
+      />
     </>
   );
 }

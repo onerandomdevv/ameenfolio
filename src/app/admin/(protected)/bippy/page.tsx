@@ -1,21 +1,6 @@
-import type { Metadata } from "next";
-import { BippyVisibilitySetting } from "@/components/admin/bippy-visibility-setting";
-import { BippyPlayground } from "@/components/bippy/bippy-playground";
-import { getAdminSettings } from "@/db/queries";
+import { redirect } from "next/navigation";
+import { adminHref } from "@/lib/admin-path";
 
-export const metadata: Metadata = {
-  title: "Bippy Playground",
-  description: "Private controls for testing the Bippy companion.",
-  robots: { index: false, follow: false },
-};
-
-export default async function AdminBippyPage() {
-  const settings = await getAdminSettings();
-
-  return (
-    <>
-      <BippyVisibilitySetting enabled={settings.publicBippyEnabled} />
-      <BippyPlayground />
-    </>
-  );
+export default async function LegacyBippyPage() {
+  redirect(await adminHref("/assistant/analytics"));
 }

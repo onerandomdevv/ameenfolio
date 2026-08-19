@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Fragment } from "react";
 import { after } from "next/server";
-import { getPublicPortfolio } from "@/db/queries";
+import { getPinnedPosts, getPublicPortfolio } from "@/db/queries";
 import { NowSection } from "@/components/portfolio/now-section";
 import { StatsStrip } from "@/components/portfolio/stats-strip";
+import { BippyCompanion } from "@/components/bippy/bippy-companion";
 import { PortfolioNav } from "@/components/portfolio/portfolio-nav";
 import { ProjectCard } from "@/components/portfolio/project-card";
+import { ProjectRow } from "@/components/portfolio/project-row";
 import { ResumeDownloadButton } from "@/components/portfolio/resume-download-button";
 import { SendMessageDialog } from "@/components/portfolio/send-message-dialog";
 import { ProjectsEmptyState } from "@/components/portfolio/projects-empty-state";
@@ -13,8 +16,8 @@ import { RecognitionRow } from "@/components/portfolio/recognition-row";
 import { RecognitionsEmptyState } from "@/components/portfolio/recognitions-empty-state";
 import { SectionHeading } from "@/components/portfolio/section-heading";
 import { TechStackSection } from "@/components/portfolio/tech-stack-section";
+import { WritingSection } from "@/components/portfolio/writing-section";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
   GitHubIcon,
   GlobeIcon,
@@ -24,11 +27,16 @@ import {
   XIcon,
   YouTubeIcon,
 } from "@/components/icons/brand-icons";
-import { BriefcaseGlyph, MailGlyph } from "@/components/icons/glyph-icons";
+import {
+  BriefcaseGlyph,
+  MailGlyph,
+  UserGlyph,
+} from "@/components/icons/glyph-icons";
 import { availabilityLabel } from "@/config/availability";
-import { portfolioIdentity } from "@/config/portfolio";
 import { instrumentSerif } from "@/app/fonts";
+import { initialsOf, resolveIdentity } from "@/lib/identity";
 import { splitEmphasis } from "@/lib/text-emphasis";
+import { splitHomepageProjects } from "@/lib/ordering";
 import {
   canFetchGithubStats,
   isSnapshotStale,
@@ -64,6 +72,11 @@ export default async function HomePage() {
     statsSnapshot,
   } = await getPublicPortfolio();
 
+  const pinnedPosts = await getPinnedPosts();
+
+  const { cards: homepageCards, rows: homepageRows } =
+    splitHomepageProjects(projects);
+
   // Refreshed after the response is flushed rather than before it, so a slow
   // or unreachable GitHub delays nobody's page load. Whoever asks next gets
   // the newer numbers; this visitor still sees the strip immediately.
@@ -78,12 +91,8 @@ export default async function HomePage() {
       ? `${profileImageBase}/${settings.profileImageKey}`
       : `/media/${settings.profileImageKey}`
     : undefined;
-  const initials = portfolioIdentity.name
-    .split(/\s+/)
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const { name: displayName, role, introduction } = resolveIdentity(settings);
+  const initials = initialsOf(displayName);
   const contactItems = [
     {
       label: "GitHub",
@@ -151,7 +160,7 @@ export default async function HomePage() {
             {profileImageSrc ? (
               <AvatarImage
                 src={profileImageSrc}
-                alt={`${portfolioIdentity.name} profile photo`}
+                alt={`${displayName} profile photo`}
                 className="rounded-[22%] object-cover"
               />
             ) : null}
@@ -163,10 +172,11 @@ export default async function HomePage() {
             <h1
               className={`${instrumentSerif.className} text-[clamp(2.25rem,8vw,3.25rem)] leading-[0.95] tracking-[-0.02em] text-foreground`}
             >
-              {portfolioIdentity.name}
+              {displayName}
             </h1>
-            <p className="mt-2 text-sm font-bold text-muted-foreground">
-              {portfolioIdentity.role}
+            <p className="mt-2 inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
+              <UserGlyph className="size-3.5 shrink-0" aria-hidden="true" />
+              {role}
             </p>
             <p className="mt-1.5 inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
               <BriefcaseGlyph className="size-3.5" aria-hidden="true" />
@@ -175,10 +185,7 @@ export default async function HomePage() {
           </div>
         </div>
         <p className="mt-8 max-w-xl whitespace-pre-line text-pretty text-base leading-7 text-foreground/90">
-          {splitEmphasis(
-            portfolioIdentity.introduction,
-            portfolioIdentity.introductionEmphasis,
-          ).map((segment, index) =>
+          {splitEmphasis(introduction).map((segment, index) =>
             segment.emphasized ? (
               <strong
                 key={index}
@@ -191,7 +198,16 @@ export default async function HomePage() {
             ),
           )}
         </p>
-        <nav className="mt-3" aria-label="Contact links and location">
+        {/* Always rendered. The layout is part of the page rather than something
+            that appears once a fetch succeeds, so the strip holds its place and
+            the cells fill in as their data becomes available. */}
+        <StatsStrip
+          snapshot={statsSnapshot}
+          hackathonWins={settings.hackathonWins}
+          publishedProjectCount={publishedProjectCount}
+        />
+
+        <nav className="mt-6" aria-label="Contact links and location">
           <ul className="flex flex-wrap gap-x-5 gap-y-3">
             {contactItems.map((item) => {
               const Icon = item.icon;
@@ -234,15 +250,6 @@ export default async function HomePage() {
         </nav>
       </section>
 
-      {/* Always rendered. The layout is part of the page rather than something
-          that appears once a fetch succeeds, so the strip holds its place and
-          the cells fill in as their data becomes available. */}
-      <StatsStrip
-        snapshot={statsSnapshot}
-        hackathonWins={settings.hackathonWins}
-        publishedProjectCount={publishedProjectCount}
-      />
-
       <NowSection section={now} />
 
       <section
@@ -250,21 +257,45 @@ export default async function HomePage() {
         aria-labelledby="projects-heading"
         data-bippy-section="projects"
       >
-        <SectionHeading
-          id="projects-heading"
-          title="Recent Projects"
-          action={{ href: "/projects", label: "View all projects" }}
-        />
+        <SectionHeading id="projects-heading" title="Recent Projects" />
         {projects.length ? (
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {homepageCards.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+            {/* Everything past the eighth continues as a divided list rather
+                than more cards, so the section can hold twelve projects
+                without the grid dominating the page. */}
+            {homepageRows.length ? (
+              <div className="mt-6 divide-y divide-solid divide-border">
+                {homepageRows.map((project) => (
+                  <ProjectRow key={project.id} project={project} />
+                ))}
+              </div>
+            ) : null}
+          </>
         ) : (
           <ProjectsEmptyState description="Fresh projects will be published here soon." />
         )}
+        {/* Reads as the last line of the list rather than a control beside the
+            heading: the archive is where the section continues, so the
+            invitation belongs at the point the visitor runs out of projects.
+            Outside the branch above because the archive lists every published
+            project, not just the ones flagged for the homepage — it can have
+            plenty to show while this section has none. */}
+        <Link
+          href="/projects"
+          data-bippy-reaction="curious"
+          data-bippy-safe-zone
+          className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
+        >
+          View all projects →
+        </Link>
       </section>
+
+      <WritingSection posts={pinnedPosts} />
 
       <section
         className="mt-24"
@@ -280,6 +311,8 @@ export default async function HomePage() {
                   title={recognition.title}
                   iconName={recognition.iconName}
                   verificationUrl={recognition.verificationUrl}
+                  articleSlug={recognition.articleSlug}
+                  images={recognition.images}
                 />
               </li>
             ))}
@@ -289,81 +322,94 @@ export default async function HomePage() {
             Recognition entries will appear here once published.
           </RecognitionsEmptyState>
         )}
+        {/* Outside the conditional, so it survives an empty list: the archive
+            can hold plenty while nothing here is pinned. The fragment lands on
+            the recognitions section of the writing page rather than its top. */}
+        <Link
+          href="/writing#recognitions"
+          data-bippy-reaction="curious"
+          data-bippy-safe-zone
+          className="mt-4 inline-block text-[13px] text-muted-foreground underline decoration-border underline-offset-[3px] transition-colors hover:text-foreground hover:decoration-foreground focus-visible:text-foreground"
+        >
+          View more →
+        </Link>
       </section>
 
       <TechStackSection items={techStack} />
 
       {/* The page closes on an invitation rather than trailing off after the
-          tech stack. The résumé lives here now: it was tucked against the
-          footer rule as a lone right-aligned link, which read as fine print
-          rather than as one of two ways to start a conversation. */}
-      <section className="mt-20 text-center" aria-labelledby="contact-heading">
-        <h2
-          id="contact-heading"
-          className="text-base leading-7 text-foreground/90"
-        >
-          Open to a nice conversation.
-        </h2>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5">
+          tech stack, and it is one sentence rather than a heading over two
+          buttons: the invitation and the two ways to accept it are the same
+          thought. aria-label rather than aria-labelledby because there is no
+          longer a heading to point at.
+
+          Spaced closer than a section break on both sides. It is a closing
+          line rather than another section, so a full gap above left it
+          stranded between the stack and the footer instead of belonging to
+          the end of the page. */}
+      <section id="contact" className="mt-14" aria-label="Get in touch">
+        <p className="text-sm leading-7 text-muted-foreground">
+          Open to a nice conversation,{" "}
           <SendMessageDialog
             email={settings.email}
             whatsappUrl={contactLinks.whatsapp}
-          />
-          <span
-            aria-hidden="true"
-            className="h-4 w-px shrink-0 bg-border max-sm:hidden"
-          />
+          />{" "}
+          or{" "}
           <ResumeDownloadButton
             hasResume={Boolean(settings.resumeKey)}
             filename={settings.resumeFilename}
           />
-        </div>
+          .
+        </p>
       </section>
 
-      <footer className="mt-8 font-mono text-xs text-muted-foreground">
-        <Separator />
-        <div className="mt-8 flex items-center justify-between gap-4">
-          <p
-            className={`${instrumentSerif.className} text-lg font-bold text-foreground`}
-          >
-            © {new Date().getFullYear()} onerandomdevv
-          </p>
-          <nav aria-label="Footer social links">
-            <ul className="flex items-center">
-              {footerSocialItems.map((item) => {
-                const Icon = item.icon;
-                const className =
-                  "inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary";
+      {/* No rule above it. The closing line already ends the page, and a
+          divider between it and these icons read as the start of something
+          else rather than the end of what came before. */}
+      {/* Mounted by the pages that want him rather than the root layout. The
+          layout wraps the admin too, and on the admin host the proxy serves
+          the admin's projects page at /projects — the same pathname this
+          companion keys on, so he was appearing over the admin. */}
+      <BippyCompanion enabled={settings.publicBippyEnabled} />
 
-                return (
-                  <li key={item.label}>
-                    {item.href ? (
-                      <a
-                        href={item.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        aria-label={item.label}
-                        data-bippy-reaction="curious"
-                        data-bippy-safe-zone
-                        className={className}
-                      >
-                        <Icon className="size-[18px]" aria-hidden="true" />
-                      </a>
-                    ) : (
-                      <span
-                        role="img"
-                        aria-label={item.label}
-                        className="inline-flex size-9 items-center justify-center text-muted-foreground opacity-50"
-                      >
-                        <Icon className="size-[18px]" aria-hidden="true" />
-                      </span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-        </div>
+      <footer className="mt-5 font-mono text-xs text-muted-foreground">
+        <nav aria-label="Footer social links">
+          {/* Pulled left by the icon box's own padding, so the first glyph
+                lines up with the text above rather than sitting inset. */}
+          <ul className="-ml-2.5 flex items-center">
+            {footerSocialItems.map((item) => {
+              const Icon = item.icon;
+              const className =
+                "inline-flex size-9 items-center justify-center text-muted-foreground transition-colors hover:text-primary focus-visible:text-primary";
+
+              return (
+                <li key={item.label}>
+                  {item.href ? (
+                    <a
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={item.label}
+                      data-bippy-reaction="curious"
+                      data-bippy-safe-zone
+                      className={className}
+                    >
+                      <Icon className="size-[18px]" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span
+                      role="img"
+                      aria-label={item.label}
+                      className="inline-flex size-9 items-center justify-center text-muted-foreground opacity-50"
+                    >
+                      <Icon className="size-[18px]" aria-hidden="true" />
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </footer>
     </main>
   );

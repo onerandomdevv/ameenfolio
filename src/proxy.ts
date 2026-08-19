@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
-import { isAdminHostSharedPath } from "@/lib/routing/admin-host";
+import { shouldBypassAdminSessionMiddleware } from "@/lib/routing/admin-auth-path";
+import {
+  isAdminHostSharedPath,
+  restoreAdminHostRedirect,
+} from "@/lib/routing/admin-host";
 
 // Matched on the subdomain label rather than a full domain so the project stays
 // host-neutral: any host beginning with `admin.` serves the admin app at its
@@ -34,7 +38,13 @@ export default async function proxy(request: NextRequest) {
     // platform URL cannot have an `admin.` sibling, so refusing this would make
     // the admin unreachable exactly when DNS is the thing that is broken.
     if (pathname === "/admin" || pathname.startsWith("/admin/")) {
-      if (pathname === "/admin/login" || isServerAction(request)) {
+      if (
+        shouldBypassAdminSessionMiddleware(
+          pathname,
+          request.nextUrl.searchParams,
+        ) ||
+        isServerAction(request)
+      ) {
         return NextResponse.next();
       }
       return getAuth().middleware({ loginUrl: "/admin/login" })(request);
@@ -50,11 +60,14 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.rewrite(new URL("/_not-found", request.url));
   }
 
-  const target = pathname === "/" ? "/admin/projects" : `/admin${pathname}`;
+  const target = pathname === "/" ? "/admin/assistant" : `/admin${pathname}`;
   const rewriteUrl = request.nextUrl.clone();
   rewriteUrl.pathname = target;
 
-  if (target === "/admin/login" || isServerAction(request)) {
+  if (
+    shouldBypassAdminSessionMiddleware(target, request.nextUrl.searchParams) ||
+    isServerAction(request)
+  ) {
     return NextResponse.rewrite(rewriteUrl);
   }
 
@@ -72,8 +85,11 @@ export default async function proxy(request: NextRequest) {
     const location = authResponse.headers.get("location");
     const requestHost = request.headers.get("host");
     if (location && requestHost) {
-      const redirectUrl = new URL(location, request.url);
-      redirectUrl.host = requestHost;
+      const redirectUrl = restoreAdminHostRedirect(
+        location,
+        request.url,
+        requestHost,
+      );
       authResponse.headers.set("location", redirectUrl.toString());
     }
     return authResponse;

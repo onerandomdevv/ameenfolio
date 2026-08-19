@@ -7,24 +7,8 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import {
-  Activity,
-  Gauge,
-  Laptop,
-  Moon,
-  RotateCcw,
-  Sparkles,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Activity, Laptop, Moon, RotateCcw, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
   bippyStateTimeouts,
   transitionBippy,
@@ -372,26 +356,17 @@ export function BippyPlayground() {
       }[performanceCheck.result.rating]
     : "Not tested";
 
+  // aria-label rather than aria-labelledby: the workspace navigation already
+  // names this screen, while this component is the interactive playground.
   return (
-    <section aria-labelledby="playground-heading">
-      <Card className="gap-0 overflow-hidden rounded-md py-0 shadow-none">
-        <CardHeader className="border-b px-4 py-4 sm:px-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1.5">
-              <CardTitle id="playground-heading">Bippy playground</CardTitle>
-              <CardDescription>
-                Test his states, movement, and runtime health.
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" aria-label={`Current state: ${state}`}>
-              {state}
-            </Badge>
-          </div>
-        </CardHeader>
-
+    <section aria-label="Playground" className="max-w-[720px]">
+      <div>
+        {/* True black, not the admin grey: the arena stands in for the
+            portfolio's own background, so he is tested against what he will
+            actually sit on. */}
         <div
           ref={arenaRef}
-          className="relative h-[20rem] overflow-hidden bg-[#050505] sm:h-[24rem]"
+          className="relative h-[20rem] overflow-hidden rounded-xl border border-border bg-[#050505] sm:h-[24rem]"
           onPointerMove={moveDraggedBippy}
           onPointerUp={stopDragging}
           onPointerCancel={stopDragging}
@@ -400,9 +375,50 @@ export function BippyPlayground() {
         >
           <div
             data-bippy-safe-zone
-            className="pointer-events-none absolute top-4 left-4 max-w-48 border border-white/10 bg-black/70 px-3 py-2 text-xs leading-5 text-muted-foreground"
+            className="absolute inset-x-0 top-0 z-10 flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 border-b border-white/10 bg-black/80 px-3 py-2 font-mono text-[10px]"
           >
-            Hold and drag Bippy. He avoids this area while moving by himself.
+            <PerformanceMetric
+              label="Live FPS"
+              value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
+            />
+            <PerformanceMetric
+              label="Frame time"
+              value={
+                performanceCheck.frameTime
+                  ? `${performanceCheck.frameTime.toFixed(1)} ms`
+                  : "—"
+              }
+            />
+            <PerformanceMetric
+              label="Sprites"
+              value={
+                spriteStatus === "ready"
+                  ? "Ready"
+                  : spriteStatus === "error"
+                    ? "Load error"
+                    : "Loading"
+              }
+            />
+            <PerformanceMetric label="Result" value={ratingCopy} />
+            <span
+              className="text-white/55 capitalize"
+              aria-label={`Current state: ${state}`}
+            >
+              State: <span className="text-white/90">{state}</span>
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              disabled={performanceCheck.isRunning || !pageVisible}
+              onClick={performanceCheck.runTest}
+              className="ml-auto h-7 text-white/70 hover:bg-white/10 hover:text-white"
+            >
+              <Activity aria-hidden="true" />
+              {performanceCheck.isRunning
+                ? `${performanceCheck.remainingSeconds}s`
+                : "Run check"}
+            </Button>
           </div>
 
           <div ref={actorRef} className={styles.actor}>
@@ -418,7 +434,7 @@ export function BippyPlayground() {
         </div>
 
         <div
-          className="grid grid-cols-2 gap-2 border-t p-3 sm:grid-cols-4 sm:p-4"
+          className="mt-2.5 grid grid-cols-2 gap-2 sm:grid-cols-4"
           aria-label="Bippy states"
         >
           <Button
@@ -470,93 +486,19 @@ export function BippyPlayground() {
             Reset
           </Button>
         </div>
+      </div>
 
-        <Separator />
-
-        <CardContent className="space-y-4 px-4 py-4 sm:px-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Gauge className="size-4 text-muted-foreground" aria-hidden />
-              <div>
-                <h3 className="text-sm font-medium">Performance</h3>
-                <p className="text-xs text-muted-foreground">
-                  A local check. No metrics are stored.
-                </p>
-              </div>
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={performanceCheck.isRunning || !pageVisible}
-              onClick={performanceCheck.runTest}
-            >
-              <Activity aria-hidden="true" />
-              {performanceCheck.isRunning
-                ? `Testing · ${performanceCheck.remainingSeconds}s`
-                : "Run 10s check"}
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border sm:grid-cols-4">
-            <PerformanceMetric
-              label="Live FPS"
-              value={performanceCheck.fps ? String(performanceCheck.fps) : "—"}
-            />
-            <PerformanceMetric
-              label="Frame time"
-              value={
-                performanceCheck.frameTime
-                  ? `${performanceCheck.frameTime.toFixed(1)} ms`
-                  : "—"
-              }
-            />
-            <PerformanceMetric
-              label="Sprites"
-              value={
-                spriteStatus === "ready"
-                  ? "Ready"
-                  : spriteStatus === "error"
-                    ? "Load error"
-                    : "Loading"
-              }
-            />
-            <PerformanceMetric label="Result" value={ratingCopy} />
-          </div>
-
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
-            <span>Loop: {state === "moving" ? "active" : "resting"}</span>
-            <span>Tab: {pageVisible ? "visible" : "paused"}</span>
-            <span>Motion: {reducedMotion ? "reduced" : "full"}</span>
-            {performanceCheck.result ? (
-              <>
-                <span>
-                  Average: {performanceCheck.result.averageFps.toFixed(0)} FPS
-                </span>
-                <span>
-                  Slow frames:{" "}
-                  {performanceCheck.result.slowFramePercentage.toFixed(1)}%
-                </span>
-              </>
-            ) : null}
-          </div>
-        </CardContent>
-
-        <p className="sr-only" aria-live="polite">
-          Bippy is now {state}.
-        </p>
-      </Card>
+      <p className="sr-only" aria-live="polite">
+        Bippy is now {state}.
+      </p>
     </section>
   );
 }
 
 function PerformanceMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-card px-3 py-3">
-      <p className="text-[11px] tracking-wide text-muted-foreground uppercase">
-        {label}
-      </p>
-      <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
-    </div>
+    <span className="text-white/55">
+      {label}: <span className="tabular-nums text-white/90">{value}</span>
+    </span>
   );
 }

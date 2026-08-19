@@ -1,30 +1,20 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Controller, useForm } from "react-hook-form";
-import { Plus, Trash2 } from "lucide-react";
+import { useRef, useState, useTransition } from "react";
+import { GripVertical, LoaderCircle, Plus, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   deleteTechStackItem,
+  reorderTechStack,
   saveTechStackItem,
 } from "@/app/admin/actions/tech-stack";
-import { AdminEmptyState } from "@/components/admin/admin-empty-state";
-import { AdminSection } from "@/components/admin/admin-section";
-import { FormTextField } from "@/components/admin/form-text-field";
-import { AdminPageHeader } from "@/components/admin/page-header";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
+  AdminPage,
+  FieldNote,
+  SectionHeading,
+} from "@/components/admin/admin-primitives";
+import { LineInput } from "@/components/admin/line-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,317 +24,283 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Field,
-  FieldError,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { techStackGroups } from "@/config/tech-stack";
+import type { TechStackGroupValue } from "@/config/tech-stack";
 import type { TechStackItem } from "@/db/schema";
-import { techStackItemSchema, type TechStackItemInput } from "@/lib/validation";
+import { cn } from "@/lib/utils";
 
-const emptyItem: TechStackItemInput = {
-  name: "",
-  groupKey: "core",
-  displayOrder: 0,
-  visible: true,
-};
-
+// Order is the list itself, so it is changed by moving things rather than by
+// typing a number. Dragging across groups is also how a technology changes
+// group — one gesture, not two fields.
 export function TechStackManager({ items }: { items: TechStackItem[] }) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<TechStackItem>();
+  const router = useRouter();
+  const [rows, setRows] = useState(items);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [over, setOver] = useState<TechStackGroupValue | null>(null);
+  const [adding, setAdding] = useState<TechStackGroupValue | null>(null);
+  const [name, setName] = useState("");
+  const [busy, startTransition] = useTransition();
+  const nameRef = useRef<HTMLInputElement | null>(null);
 
-  function launch(item?: TechStackItem) {
-    setEditing(item);
-    setOpen(true);
+  // Server state wins whenever it changes underneath us — a save elsewhere, or
+  // the refresh after our own write. Adjusted during render rather than in an
+  // effect: an effect would paint the stale order first and then correct it.
+  const [seen, setSeen] = useState(items);
+  if (seen !== items) {
+    setSeen(items);
+    setRows(items);
   }
 
-  return (
-    <>
-      <AdminPageHeader
-        title="Tech Stack"
-        description="Technologies listed on the homepage, grouped into Core Stack and Tools & Infrastructure."
-        action={
-          <Button size="sm" onClick={() => launch()}>
-            <Plus data-icon="inline-start" />
-            Add technology
-          </Button>
-        }
-      />
+  function grouped(group: TechStackGroupValue) {
+    return rows.filter((row) => row.groupKey === group);
+  }
 
-      {items.length ? (
-        // Grouped in the admin the same way it renders publicly, so the effect
-        // of the group field is visible without leaving the page.
-        <div className="grid gap-6">
-          {techStackGroups.map((group) => {
-            const groupItems = items.filter(
-              (item) => item.groupKey === group.value,
-            );
+  function commit(next: TechStackItem[]) {
+    setRows(next);
+    startTransition(async () => {
+      const result = await reorderTechStack(
+        next.map((row, index) => ({
+          id: row.id,
+          groupKey: row.groupKey,
+          displayOrder: index,
+        })),
+      );
+      if (!result.ok) {
+        toast.error(result.message);
+        setRows(items);
+        return;
+      }
+      router.refresh();
+    });
+  }
 
-            return (
-              <AdminSection
-                key={group.value}
-                title={group.label}
-                description={`${groupItems.length} ${groupItems.length === 1 ? "technology" : "technologies"}`}
-              >
-                {groupItems.length ? (
-                  <ul className="flex flex-wrap gap-2">
-                    {groupItems.map((item) => (
-                      <li key={item.id}>
-                        <div className="flex items-center gap-1 rounded-md border border-border bg-background py-1 pl-3 pr-1">
-                          <button
-                            type="button"
-                            onClick={() => launch(item)}
-                            className="text-sm text-foreground underline-offset-4 hover:underline"
-                          >
-                            {item.name}
-                          </button>
-                          {!item.visible ? (
-                            <Badge variant="outline" className="ml-1">
-                              Hidden
-                            </Badge>
-                          ) : null}
-                          <DeleteTechStackItem item={item} />
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Nothing here yet. The group is hidden on the homepage until
-                    it has an entry.
-                  </p>
-                )}
-              </AdminSection>
-            );
-          })}
-        </div>
-      ) : (
-        <AdminEmptyState
-          title="No technologies yet"
-          description="Add the tools and languages you want listed on the homepage."
-        />
-      )}
+  function drop(group: TechStackGroupValue, beforeId: string | null) {
+    if (!dragging) return;
+    // Dropped on itself: `without` has already removed it, so looking for it
+    // finds nothing and the fallback would send it to the end of the last
+    // group. Releasing where you started should change nothing.
+    if (beforeId === dragging) {
+      setDragging(null);
+      setOver(null);
+      return;
+    }
+    const moving = rows.find((row) => row.id === dragging);
+    if (!moving) return;
 
-      <TechStackDialog
-        key={editing?.id ?? "new"}
-        open={open}
-        onOpenChange={setOpen}
-        item={editing}
-      />
-    </>
-  );
-}
+    const without = rows.filter((row) => row.id !== dragging);
+    const moved = { ...moving, groupKey: group };
+    const at = beforeId
+      ? without.findIndex((row) => row.id === beforeId)
+      : without.length;
+    const next = [...without];
+    next.splice(at === -1 ? without.length : at, 0, moved);
 
-function DeleteTechStackItem({ item }: { item: TechStackItem }) {
-  const [pending, startTransition] = useTransition();
+    setDragging(null);
+    setOver(null);
+    commit(next);
+  }
 
-  function remove() {
+  // Dragging is mouse-only, so the same move is reachable from the keyboard.
+  function nudge(item: TechStackItem, direction: -1 | 1) {
+    const siblings = grouped(item.groupKey);
+    const at = siblings.indexOf(item);
+    const to = at + direction;
+    if (to < 0 || to >= siblings.length) return;
+    const target = siblings[to];
+    const without = rows.filter((row) => row.id !== item.id);
+    const insertAt = without.indexOf(target) + (direction === 1 ? 1 : 0);
+    const next = [...without];
+    next.splice(insertAt, 0, item);
+    commit(next);
+  }
+
+  function add() {
+    if (!adding || !name.trim()) return;
+    startTransition(async () => {
+      const result = await saveTechStackItem({
+        name: name.trim(),
+        groupKey: adding,
+        // One past the highest order in use, not the group's size. `commit`
+        // numbers by position in the flat list across both groups, so a group's
+        // items can hold 5, 6, 7 — and a count of 3 would sort the new item
+        // before them, contradicting "It joins the end of the group".
+        displayOrder:
+          rows.reduce(
+            (highest, row) => Math.max(highest, row.displayOrder),
+            -1,
+          ) + 1,
+        visible: true,
+      });
+      if (!result.ok) {
+        toast.error(result.message);
+        return;
+      }
+      toast.success("Added.");
+      setAdding(null);
+      setName("");
+      router.refresh();
+    });
+  }
+
+  function remove(item: TechStackItem) {
     startTransition(async () => {
       const result = await deleteTechStackItem(item.id);
-      if (result.ok) {
-        toast.success("Technology removed.");
-        window.location.reload();
-      } else {
-        toast.error(result.message);
-      }
+      toast[result.ok ? "success" : "error"](
+        result.ok ? "Removed." : result.message,
+      );
+      if (result.ok) router.refresh();
     });
   }
 
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button
-          size="icon-xs"
-          variant="ghost"
-          aria-label={`Delete ${item.name}`}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-        >
-          <Trash2 />
-        </Button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove “{item.name}”?</AlertDialogTitle>
-          <AlertDialogDescription>
-            It disappears from the homepage tech stack immediately.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            disabled={pending}
-            variant="destructive"
-            onClick={remove}
-          >
-            Remove
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-}
-
-function TechStackDialog({
-  open,
-  onOpenChange,
-  item,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  item?: TechStackItem;
-}) {
-  const form = useForm<TechStackItemInput>({
-    resolver: zodResolver(techStackItemSchema),
-    defaultValues: item
-      ? {
-          name: item.name,
-          groupKey: item.groupKey,
-          displayOrder: item.displayOrder,
-          visible: item.visible,
-        }
-      : emptyItem,
-  });
-  const {
-    register,
-    control,
-    reset,
-    setError,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = form;
-
-  // defaultValues only initialise the form once, and the "new" dialog keeps the
-  // same key every time it opens, so it is never remounted. Without this reset
-  // a cancelled entry is still in the fields the next time it is opened, and
-  // saving would persist text the owner had already abandoned.
-  useEffect(() => {
-    if (!open) return;
-    reset(
-      item
-        ? {
-            name: item.name,
-            groupKey: item.groupKey,
-            displayOrder: item.displayOrder,
-            visible: item.visible,
-          }
-        : emptyItem,
-    );
-  }, [open, item, reset]);
-
-  async function submit(values: TechStackItemInput) {
-    const result = await saveTechStackItem(values, item?.id);
-    if (!result.ok) {
-      Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
-        setError(name as keyof TechStackItemInput, { message: messages[0] }),
-      );
-      toast.error(result.message);
-      return;
-    }
-
-    toast.success(item ? "Technology updated." : "Technology added.");
-    onOpenChange(false);
-    window.location.reload();
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>
-            {item ? "Edit technology" : "Add technology"}
-          </DialogTitle>
-          <DialogDescription>
-            Choose the group it belongs to and where it sits in the list.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit(submit)}>
-          <FieldGroup className="grid gap-5 sm:grid-cols-2">
-            <FormTextField
-              className="sm:col-span-2"
-              label="Name"
-              error={errors.name?.message}
-              inputProps={register("name")}
-            />
-            <Controller
-              control={control}
-              name="groupKey"
-              render={({ field }) => (
-                <Field data-invalid={Boolean(errors.groupKey)}>
-                  <FieldLabel htmlFor="tech-group">Group</FieldLabel>
-                  <Select value={field.value} onValueChange={field.onChange}>
-                    <SelectTrigger
-                      id="tech-group"
-                      className="w-full"
-                      aria-invalid={Boolean(errors.groupKey)}
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {techStackGroups.map((group) => (
-                          <SelectItem key={group.value} value={group.value}>
-                            {group.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                  <FieldError>{errors.groupKey?.message}</FieldError>
-                </Field>
-              )}
-            />
-            <FormTextField
-              label="Order"
-              type="number"
-              error={errors.displayOrder?.message}
-              inputProps={register("displayOrder", { valueAsNumber: true })}
-            />
-            <Controller
-              control={control}
-              name="visible"
-              render={({ field }) => (
-                <Field
-                  orientation="horizontal"
-                  className="sm:col-span-2"
-                  data-invalid={Boolean(errors.visible)}
+    <AdminPage title="Tech Stack">
+      <div className="max-w-[720px]">
+        {techStackGroups.map((group, index) => (
+          <div key={group.value} className={cn(index > 0 && "mt-8")}>
+            <SectionHeading
+              meta={
+                <span className="font-mono tabular-nums">
+                  {grouped(group.value).length}
+                </span>
+              }
+              action={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAdding(group.value)}
                 >
-                  <FieldLabel htmlFor="tech-visible">
-                    Show on the homepage
-                  </FieldLabel>
-                  <Switch
-                    id="tech-visible"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </Field>
-              )}
-            />
-          </FieldGroup>
-          <DialogFooter className="mt-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+                  <Plus data-icon="inline-start" />
+                  Add
+                </Button>
+              }
             >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving…" : "Save"}
+              {group.label}
+            </SectionHeading>
+
+            <div
+              onDragOver={(event) => {
+                event.preventDefault();
+                setOver(group.value);
+              }}
+              onDragLeave={() => setOver(null)}
+              onDrop={() => drop(group.value, null)}
+              className={cn(
+                "flex min-h-[46px] flex-wrap gap-2 rounded-lg py-1 transition-colors",
+                over === group.value &&
+                  "outline outline-1 outline-dashed outline-border",
+              )}
+            >
+              {grouped(group.value).map((item) => (
+                <span
+                  key={item.id}
+                  draggable
+                  tabIndex={0}
+                  onDragStart={() => setDragging(item.id)}
+                  onDragEnd={() => {
+                    setDragging(null);
+                    setOver(null);
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.stopPropagation();
+                    drop(group.value, item.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!event.altKey) return;
+                    if (event.key === "ArrowLeft") {
+                      event.preventDefault();
+                      nudge(item, -1);
+                    } else if (event.key === "ArrowRight") {
+                      event.preventDefault();
+                      nudge(item, 1);
+                    }
+                  }}
+                  className={cn(
+                    "inline-flex cursor-grab items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5 text-[12.5px] select-none active:cursor-grabbing",
+                    dragging === item.id && "opacity-40",
+                  )}
+                >
+                  <GripVertical
+                    className="size-3 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  {item.name}
+                  <button
+                    type="button"
+                    onClick={() => remove(item)}
+                    aria-label={`Remove ${item.name}`}
+                    className="text-muted-foreground transition-colors hover:text-destructive"
+                  >
+                    <X className="size-3" aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+              {!grouped(group.value).length ? (
+                <span className="py-1 text-[12.5px] text-muted-foreground">
+                  Nothing here yet.
+                </span>
+              ) : null}
+            </div>
+          </div>
+        ))}
+
+        <FieldNote>
+          Keyboard: focus a chip and hold Alt with the arrow keys to move it.
+          {busy ? " Saving…" : ""}
+        </FieldNote>
+      </div>
+
+      <Dialog
+        open={adding !== null}
+        onOpenChange={(next) => {
+          if (!next) {
+            setAdding(null);
+            setName("");
+          }
+        }}
+      >
+        <DialogContent className="admin-theme sm:max-w-sm">
+          <DialogHeader>
+            {/* Which group is not a question — it is the button that was
+                pressed. The heading says where it is going. */}
+            <DialogTitle>
+              Add to{" "}
+              {techStackGroups.find((group) => group.value === adding)?.label}
+            </DialogTitle>
+            <DialogDescription>
+              It joins the end of the group. Drag it wherever you want
+              afterwards.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-1.5 border-b border-border/60 py-3 sm:grid-cols-[6rem_minmax(0,1fr)] sm:items-center sm:gap-4">
+            <span className="text-[13px] text-muted-foreground">Name</span>
+            <LineInput
+              ref={nameRef}
+              autoFocus
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  add();
+                }
+              }}
+              placeholder="e.g. Bun"
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={add} disabled={busy || !name.trim()}>
+              {busy ? (
+                <LoaderCircle
+                  data-icon="inline-start"
+                  className="animate-spin"
+                />
+              ) : null}
+              Add
             </Button>
           </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogContent>
+      </Dialog>
+    </AdminPage>
   );
 }
