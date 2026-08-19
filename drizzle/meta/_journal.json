@@ -267,6 +267,34 @@
       "when": 1786801792058,
       "tag": "0037_uneven_supernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787173088356,
+      "tag": "0038_confused_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1787176292426,
+      "tag": "0039_closed_ravenous",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787177234129,
+      "tag": "0040_conscious_stark_industries",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787177907777,
+      "tag": "0041_shiny_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

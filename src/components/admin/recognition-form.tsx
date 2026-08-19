@@ -1,6 +1,6 @@
 "use client";
 
-import { createElement, useState } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { LoaderCircle } from "lucide-react";
@@ -17,40 +17,57 @@ import {
   SectionHeading,
 } from "@/components/admin/admin-primitives";
 import { LeaveGuard } from "@/components/admin/leave-guard";
-import { LineInput, LineSelect } from "@/components/admin/line-input";
-import { Button } from "@/components/ui/button";
+import { LineInput } from "@/components/admin/line-input";
+import { OptionPicker } from "@/components/admin/option-picker";
 import {
-  getRecognitionIcon,
-  recognitionIconOptions,
-} from "@/config/recognition-icons";
+  RecognitionImagesField,
+  type RecognitionImageValue,
+} from "@/components/admin/recognition-images-field";
+import { Button } from "@/components/ui/button";
+import { recognitionIconOptions } from "@/config/recognition-icons";
 import type { Recognition } from "@/db/schema";
 import { useAdminBase } from "@/lib/use-admin-base";
-import { recognitionSchema, type RecognitionInput } from "@/lib/validation";
+import {
+  recognitionFormSchema,
+  type RecognitionFormInput,
+} from "@/lib/validation";
 import { MAX_CARD_WORDS, countWords } from "@/lib/word-count";
 
-const emptyRecognition: RecognitionInput = {
+const emptyRecognition: RecognitionFormInput = {
   title: "",
   iconName: "trophy",
+  images: [],
 };
 
 export function RecognitionForm({
   recognition,
+  images = [],
+  postOptions = [],
 }: {
   recognition?: Recognition;
+  images?: RecognitionImageValue[];
+  postOptions?: { id: string; title: string }[];
 }) {
+  // Captured once. These are the keys already live on the site, so removing one
+  // must not delete the object from storage until the form is actually saved.
+  const [initialImageKeys] = useState(() =>
+    images.map((image) => image.objectKey),
+  );
   const router = useRouter();
   const base = useAdminBase();
   const [leaving, setLeaving] = useState(false);
   const [leavingBusy, setLeavingBusy] = useState(false);
   const live = Boolean(recognition?.published);
 
-  const form = useForm<RecognitionInput>({
-    resolver: zodResolver(recognitionSchema),
+  const form = useForm<RecognitionFormInput>({
+    resolver: zodResolver(recognitionFormSchema),
     defaultValues: recognition
       ? {
           title: recognition.title,
           iconName: recognition.iconName,
           verificationUrl: recognition.verificationUrl ?? undefined,
+          articlePostId: recognition.articlePostId ?? undefined,
+          images,
         }
       : emptyRecognition,
   });
@@ -64,20 +81,28 @@ export function RecognitionForm({
   } = form;
 
   const title = useWatch({ control, name: "title" }) ?? "";
-  const iconName = useWatch({ control, name: "iconName" });
   const verificationUrl = useWatch({ control, name: "verificationUrl" }) ?? "";
-  const preview = getRecognitionIcon(iconName);
+  const articlePostId = useWatch({ control, name: "articlePostId" });
+  const imageCount = (useWatch({ control, name: "images" }) ?? []).length;
 
   // "https://" is the field's starting value, so it does not count as typing.
+  //
+  // Images count as written work too, and more so than the rest: they are
+  // already uploaded by this point, so leaving without asking would discard
+  // them and strand the objects in storage. Same reasoning that added the
+  // verification URL here after checking the title alone threw one away.
   const hasContent = Boolean(
-    title.trim() || verificationUrl.replace(/^https:\/\/$/, "").trim(),
+    title.trim() ||
+    verificationUrl.replace(/^https:\/\/$/, "").trim() ||
+    articlePostId ||
+    imageCount,
   );
 
-  async function persist(values: RecognitionInput, publish: boolean) {
+  async function persist(values: RecognitionFormInput, publish: boolean) {
     const result = await saveRecognition(values, recognition?.id, publish);
     if (!result.ok) {
       Object.entries(result.fields ?? {}).forEach(([name, messages]) =>
-        setError(name as keyof RecognitionInput, { message: messages[0] }),
+        setError(name as keyof RecognitionFormInput, { message: messages[0] }),
       );
       toast.error(result.message);
       return false;
@@ -85,7 +110,7 @@ export function RecognitionForm({
     return true;
   }
 
-  async function add(values: RecognitionInput) {
+  async function add(values: RecognitionFormInput) {
     if (!(await persist(values, true))) return;
     toast.success(live ? "Recognition updated." : "Recognition added.");
     router.push(`${base}/recognitions`);
@@ -172,31 +197,21 @@ export function RecognitionForm({
             />
           </FieldRow>
           <FieldRow label="Icon" note="shown before the text">
-            <span className="flex items-center gap-2.5">
-              {/* A preview beside the picker: the option list can only say the
-                  name, and the name is not the thing being chosen. */}
-              <span className="grid size-6 shrink-0 place-items-center rounded-md bg-accent">
-                {preview
-                  ? createElement(preview, {
-                      className: "size-3.5",
-                      "aria-hidden": true,
-                    })
-                  : null}
-              </span>
-              <Controller
-                control={control}
-                name="iconName"
-                render={({ field }) => (
-                  <LineSelect value={field.value} onChange={field.onChange}>
-                    {recognitionIconOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </LineSelect>
-                )}
-              />
-            </span>
+            {/* The separate preview this used to need is gone: the picker now
+                shows the mark on its own trigger and beside every option, so
+                the icon is chosen by looking at icons rather than at names. */}
+            <Controller
+              control={control}
+              name="iconName"
+              render={({ field }) => (
+                <OptionPicker
+                  title="Choose an icon"
+                  value={field.value}
+                  onChange={field.onChange}
+                  options={recognitionIconOptions}
+                />
+              )}
+            />
           </FieldRow>
           <FieldRow label="Link" note="optional — proof or write-up">
             <LineInput
@@ -206,6 +221,42 @@ export function RecognitionForm({
               {...register("verificationUrl")}
             />
           </FieldRow>
+          <FieldRow label="Article" note="optional — opens Read Post">
+            <Controller
+              control={control}
+              name="articlePostId"
+              render={({ field }) => (
+                <OptionPicker
+                  title="Choose an article"
+                  value={field.value ?? ""}
+                  // "" is the picker's way of saying none; the column is
+                  // nullable, so it has to go back as undefined rather than an
+                  // empty string that would fail the uuid check.
+                  onChange={(next) => field.onChange(next || undefined)}
+                  options={postOptions.map((option) => ({
+                    value: option.id,
+                    label: option.title,
+                  }))}
+                  placeholder="None"
+                  clearable
+                />
+              )}
+            />
+          </FieldRow>
+
+          <Controller
+            control={control}
+            name="images"
+            render={({ field }) => (
+              <RecognitionImagesField
+                value={field.value ?? []}
+                initialKeys={initialImageKeys}
+                onChange={field.onChange}
+                error={errors.images?.message}
+                className="mt-6"
+              />
+            )}
+          />
 
           <FieldNote>
             {live

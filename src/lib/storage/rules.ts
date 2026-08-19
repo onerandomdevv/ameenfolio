@@ -25,6 +25,15 @@ export const UPLOAD_RULES = {
     maxBytes: 8 * 1024 * 1024,
     prefix: "posts",
   },
+  // Always square and always 1080px by the time it reaches here — the admin
+  // crops before uploading, so every object is a webp well inside this
+  // ceiling. The other types stay allowed to match the rules above rather than
+  // making this the one entry that would reject a hand-made upload.
+  recognition: {
+    contentTypes: ["image/png", "image/jpeg", "image/webp"],
+    maxBytes: 4 * 1024 * 1024,
+    prefix: "recognitions",
+  },
 } as const;
 
 const extensions: Record<string, string> = {
@@ -91,9 +100,22 @@ export function isPublicPostImageKey(key: string) {
   );
 }
 
+export function isPublicRecognitionImageKey(key: string) {
+  const normalized = key.replaceAll("\\", "/");
+  return (
+    normalized === key &&
+    !normalized.includes("..") &&
+    /^recognitions\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/.test(normalized) &&
+    path.posix.normalize(normalized) === normalized
+  );
+}
+
 export function isPublicMediaKey(key: string) {
   return (
-    isPublicIconKey(key) || isPublicProfileKey(key) || isPublicPostImageKey(key)
+    isPublicIconKey(key) ||
+    isPublicProfileKey(key) ||
+    isPublicPostImageKey(key) ||
+    isPublicRecognitionImageKey(key)
   );
 }
 

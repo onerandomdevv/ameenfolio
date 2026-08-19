@@ -85,6 +85,14 @@ export const recognitions = pgTable(
       .notNull()
       .default("trophy"),
     verificationUrl: text("verification_url"),
+    // The article on this site that covers the recognition. Optional, and
+    // independent of verificationUrl above, which is the post or proof link.
+    //
+    // set null rather than cascade — deleting an article must not take the
+    // recognition it happened to mention with it.
+    articlePostId: uuid("article_post_id").references(() => posts.id, {
+      onDelete: "set null",
+    }),
     // Same as projects: pinned ones show on the homepage, newest pin first,
     // capped at twelve by the recognitions_pinned_limit trigger. The full list
     // lives on the writing page.
@@ -97,6 +105,38 @@ export const recognitions = pgTable(
     check(
       "recognitions_icon_name_valid",
       sql`${table.iconName} in ('trophy', 'award', 'medal', 'star', 'badge-check', 'crown', 'sparkles', 'github', 'x', 'instagram', 'tiktok', 'linkedin', 'whatsapp', 'youtube', 'globe')`,
+    ),
+  ],
+);
+
+// The certificate, award photo, or screenshot behind a recognition. Same shape
+// as post_links: a child table with an explicit order, rewritten wholesale
+// when the parent is saved.
+//
+// Every image is square and stored at a fixed 1080px, so the carousel can size
+// its frame without measuring and nothing shifts as images load.
+export const recognitionImages = pgTable(
+  "recognition_images",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recognitionId: uuid("recognition_id")
+      .notNull()
+      .references(() => recognitions.id, { onDelete: "cascade" }),
+    objectKey: text("object_key").notNull(),
+    // Nullable, because the form does not ask for one. What a screen reader
+    // announces is derived from the recognition's title and the image's
+    // position — see recognitionImageAlt in src/lib/recognition.ts.
+    //
+    // The column stays so a description can still be written per image, and
+    // so any written before the form stopped asking are not thrown away.
+    alt: text("alt"),
+    displayOrder: integer("display_order").notNull().default(0),
+    ...timestamps,
+  },
+  (table) => [
+    index("recognition_images_order_idx").on(
+      table.recognitionId,
+      table.displayOrder,
     ),
   ],
 );
@@ -647,6 +687,7 @@ export const mcpOAuthTokens = pgTable(
 
 export type Project = typeof projects.$inferSelect;
 export type Recognition = typeof recognitions.$inferSelect;
+export type RecognitionImage = typeof recognitionImages.$inferSelect;
 export type NowSection = typeof nowSection.$inferSelect;
 export type NowLink = typeof nowLinks.$inferSelect;
 export type SiteSettings = typeof siteSettings.$inferSelect;
