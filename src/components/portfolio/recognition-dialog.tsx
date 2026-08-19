@@ -34,7 +34,21 @@ export function RecognitionDialog({
 }: RecognitionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      {/* The close button is positioned by DialogContent at the dialog's top
+          right, which is now over the first image rather than over background.
+          A dark glyph on a pale certificate would be almost invisible, so it
+          gets a scrim of its own here — scoped to this dialog rather than
+          changed in the shared component, where every other dialog still opens
+          onto a plain background and needs nothing. */}
+      <DialogContent
+        className={cn(
+          "sm:max-w-md",
+          "[&_[data-slot=dialog-close]]:z-10 [&_[data-slot=dialog-close]]:rounded-full",
+          "[&_[data-slot=dialog-close]]:bg-background/70 [&_[data-slot=dialog-close]]:p-1",
+          "[&_[data-slot=dialog-close]]:opacity-90 [&_[data-slot=dialog-close]]:backdrop-blur-sm",
+          "[&_[data-slot=dialog-close]]:hover:opacity-100",
+        )}
+      >
         {images.length ? <Carousel images={images} title={title} /> : null}
 
         {/* Under the carousel rather than above it: the image is what the
