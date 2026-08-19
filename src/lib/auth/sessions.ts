@@ -2,11 +2,17 @@ import "server-only";
 
 import { getAuth, requireAdmin } from "@/lib/auth/server";
 import {
+  describeApiError,
+  describeThrownError,
+  logAuthFailure,
+  missingDataFailure,
+  type AuthFailure,
+} from "@/lib/auth/failure";
+import {
   describeSessionDevice,
   maskSessionIp,
   type SessionDeviceKind,
 } from "@/lib/auth/session-display";
-import { logServer } from "@/lib/logger";
 
 export type AdminSessionView = {
   id: string;
@@ -24,6 +30,15 @@ export type AdminSessionsResult = {
   error: string | null;
 };
 
+// Says which of the two it was, because the difference decides what the reader
+// should do: wait and retry, or go looking. The cause itself stays in the log —
+// a status code in front of an admin is noise.
+function bannerFor(failure: AuthFailure) {
+  return failure.kind === "transient"
+    ? "Active sessions could not be loaded — the auth service did not respond. Refreshing usually clears it."
+    : "Active sessions could not be loaded. Try refreshing the page.";
+}
+
 function iso(value: Date | string) {
   return new Date(
     value instanceof Date ? value.getTime() : value,
@@ -40,20 +55,21 @@ export async function getAdminSessions(): Promise<AdminSessionsResult> {
       auth.listSessions(),
     ]);
 
-    if (
-      currentResult.error ||
-      !currentResult.data ||
-      sessionsResult.error ||
-      !sessionsResult.data
-    ) {
-      logServer("error", "auth.sessions_list_failed", {
-        currentSessionError: currentResult.error?.message,
-        sessionsError: sessionsResult.error?.message,
+    // Whichever call actually carries a reason wins; a result that merely came
+    // back empty falls through to the placeholder so the log never records two
+    // undefined messages and calls that a diagnosis.
+    const apiFailure =
+      describeApiError(currentResult.error) ??
+      describeApiError(sessionsResult.error);
+
+    if (apiFailure || !currentResult.data || !sessionsResult.data) {
+      const failure = apiFailure ?? missingDataFailure;
+      logAuthFailure("auth.sessions_list_failed", failure, {
+        failedCall: describeApiError(currentResult.error)
+          ? "getSession"
+          : "listSessions",
       });
-      return {
-        sessions: [],
-        error: "Active sessions could not be loaded. Try refreshing the page.",
-      };
+      return { sessions: [], error: bannerFor(failure) };
     }
 
     const currentSessionId = currentResult.data.session.id;
@@ -78,10 +94,8 @@ export async function getAdminSessions(): Promise<AdminSessionsResult> {
 
     return { sessions, error: null };
   } catch (error) {
-    logServer("error", "auth.sessions_list_failed", { error: String(error) });
-    return {
-      sessions: [],
-      error: "Active sessions could not be loaded. Try refreshing the page.",
-    };
+    const failure = describeThrownError(error);
+    logAuthFailure("auth.sessions_list_failed", failure);
+    return { sessions: [], error: bannerFor(failure) };
   }
 }

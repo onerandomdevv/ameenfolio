@@ -3,6 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { getAuth, requireAdmin } from "@/lib/auth/server";
+import {
+  describeApiError,
+  describeThrownError,
+  logAuthFailure,
+  missingDataFailure,
+} from "@/lib/auth/failure";
 import { logServer } from "@/lib/logger";
 
 const sessionIdSchema = z.string().min(1).max(128);
@@ -26,17 +32,16 @@ export async function revokeAdminSession(sessionId: string) {
       auth.listSessions(),
     ]);
 
-    if (
-      currentResult.error ||
-      !currentResult.data ||
-      sessionsResult.error ||
-      !sessionsResult.data
-    ) {
-      logServer("error", "auth.session_revoke_lookup_failed", {
-        sessionId: parsed.data,
-        currentSessionError: currentResult.error?.message,
-        sessionsError: sessionsResult.error?.message,
-      });
+    const lookupFailure =
+      describeApiError(currentResult.error) ??
+      describeApiError(sessionsResult.error);
+
+    if (lookupFailure || !currentResult.data || !sessionsResult.data) {
+      logAuthFailure(
+        "auth.session_revoke_lookup_failed",
+        lookupFailure ?? missingDataFailure,
+        { sessionId: parsed.data },
+      );
       return {
         ok: false as const,
         message: "The session could not be verified.",
@@ -61,10 +66,11 @@ export async function revokeAdminSession(sessionId: string) {
 
     const result = await auth.revokeSession({ token: session.token });
     if (result.error || !result.data?.status) {
-      logServer("error", "auth.session_revoke_failed", {
-        sessionId: parsed.data,
-        error: result.error?.message,
-      });
+      logAuthFailure(
+        "auth.session_revoke_failed",
+        describeApiError(result.error) ?? missingDataFailure,
+        { sessionId: parsed.data },
+      );
       return {
         ok: false as const,
         message: "The session could not be signed out.",
@@ -75,9 +81,8 @@ export async function revokeAdminSession(sessionId: string) {
     refreshSessionSettings();
     return { ok: true as const, message: "Device signed out." };
   } catch (error) {
-    logServer("error", "auth.session_revoke_failed", {
+    logAuthFailure("auth.session_revoke_failed", describeThrownError(error), {
       sessionId: parsed.data,
-      error: String(error),
     });
     return {
       ok: false as const,
@@ -95,16 +100,15 @@ export async function revokeOtherAdminSessions() {
       auth.getSession(),
       auth.listSessions(),
     ]);
-    if (
-      currentResult.error ||
-      !currentResult.data ||
-      sessionsResult.error ||
-      !sessionsResult.data
-    ) {
-      logServer("error", "auth.other_sessions_revoke_lookup_failed", {
-        currentSessionError: currentResult.error?.message,
-        sessionsError: sessionsResult.error?.message,
-      });
+    const lookupFailure =
+      describeApiError(currentResult.error) ??
+      describeApiError(sessionsResult.error);
+
+    if (lookupFailure || !currentResult.data || !sessionsResult.data) {
+      logAuthFailure(
+        "auth.other_sessions_revoke_lookup_failed",
+        lookupFailure ?? missingDataFailure,
+      );
       return {
         ok: false as const,
         message: "Other devices could not be verified.",
@@ -124,10 +128,11 @@ export async function revokeOtherAdminSessions() {
       (result) => result.error || !result.data?.status,
     );
     if (failed) {
-      logServer("error", "auth.other_sessions_revoke_failed", {
-        error: failed.error?.message,
-        attempted: otherSessions.length,
-      });
+      logAuthFailure(
+        "auth.other_sessions_revoke_failed",
+        describeApiError(failed.error) ?? missingDataFailure,
+        { attempted: otherSessions.length },
+      );
       return {
         ok: false as const,
         message: "One or more devices could not be signed out.",
@@ -145,9 +150,10 @@ export async function revokeOtherAdminSessions() {
         : "No other devices are signed in.",
     };
   } catch (error) {
-    logServer("error", "auth.other_sessions_revoke_failed", {
-      error: String(error),
-    });
+    logAuthFailure(
+      "auth.other_sessions_revoke_failed",
+      describeThrownError(error),
+    );
     return {
       ok: false as const,
       message: "Other devices could not be signed out.",
