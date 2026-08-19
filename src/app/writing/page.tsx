@@ -86,6 +86,8 @@ export default async function WritingPage() {
                   title={recognition.title}
                   iconName={recognition.iconName}
                   verificationUrl={recognition.verificationUrl}
+                  articleSlug={recognition.articleSlug}
+                  images={recognition.images}
                 />
               </li>
             ))}

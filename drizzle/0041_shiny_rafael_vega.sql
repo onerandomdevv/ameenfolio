@@ -1,0 +1,1 @@
+ALTER TABLE "recognitions" DROP COLUMN "images_caption";

@@ -1,6 +1,16 @@
 import "server-only";
 
-import { and, asc, count, desc, eq, isNotNull, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  inArray,
+  isNotNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import { getDb } from "@/db/client";
 import {
   nowLinks,
@@ -8,10 +18,12 @@ import {
   postLinks,
   posts,
   projects,
+  recognitionImages,
   recognitions,
   siteSettings,
   statsSnapshot,
   techStackItems,
+  type Recognition,
   type SiteSettings,
   type TechStackItem,
 } from "@/db/schema";
@@ -141,7 +153,7 @@ export async function getPublicPortfolio() {
     settings: settingsRows[0] ?? defaultSiteSettings,
     now: toPublicNow(nowSectionRows[0], nowLinkRows),
     projects: projectRows,
-    recognitions: recognitionRows,
+    recognitions: await withRecognitionDetails(recognitionRows),
     techStack: techStackRows,
     publishedProjectCount: publishedProjectRows[0]?.value ?? 0,
     statsSnapshot: snapshotRows[0] ?? null,
@@ -173,25 +185,130 @@ export async function getAdminProject(id: string) {
   return rows[0] ?? null;
 }
 
+export type PublicRecognition = Recognition & {
+  /** `alt` is null unless this image was described individually. */
+  images: { objectKey: string; alt: string | null }[];
+  /** Null when nothing is attached, or when the attached article is a draft. */
+  articleSlug: string | null;
+};
+
+/**
+ * Adds each recognition's images and the slug of the article it links to.
+ *
+ * Two queries for the whole list rather than two per row: the homepage shows up
+ * to twelve of these and the archive shows every published one, so a per-row
+ * lookup would be a dozen round trips on the neon-http driver, which sends each
+ * statement as its own request.
+ *
+ * Failures degrade to the plain recognition rather than taking the section
+ * down: a missing image list costs a carousel, an unreachable one costs the
+ * whole list of achievements.
+ */
+async function withRecognitionDetails(
+  rows: Recognition[],
+): Promise<PublicRecognition[]> {
+  if (!rows.length) return [];
+
+  const articleIds = [
+    ...new Set(
+      rows.map((row) => row.articlePostId).filter((id) => id !== null),
+    ),
+  ];
+
+  try {
+    const db = getDb();
+    const [imageRows, articleRows] = await Promise.all([
+      db
+        .select({
+          recognitionId: recognitionImages.recognitionId,
+          objectKey: recognitionImages.objectKey,
+          alt: recognitionImages.alt,
+        })
+        .from(recognitionImages)
+        .where(
+          inArray(
+            recognitionImages.recognitionId,
+            rows.map((row) => row.id),
+          ),
+        )
+        .orderBy(asc(recognitionImages.displayOrder)),
+      articleIds.length
+        ? db
+            .select({ id: posts.id, slug: posts.slug })
+            .from(posts)
+            // Published only. An unpublished article would render a Read Post
+            // button leading to a 404.
+            .where(
+              and(inArray(posts.id, articleIds), eq(posts.published, true)),
+            )
+        : [],
+    ]);
+
+    const imagesByRecognition = new Map<string, PublicRecognition["images"]>();
+    for (const image of imageRows) {
+      const list = imagesByRecognition.get(image.recognitionId) ?? [];
+      list.push({ objectKey: image.objectKey, alt: image.alt });
+      imagesByRecognition.set(image.recognitionId, list);
+    }
+    const slugById = new Map(articleRows.map((row) => [row.id, row.slug]));
+
+    return rows.map((row) => ({
+      ...row,
+      images: imagesByRecognition.get(row.id) ?? [],
+      articleSlug:
+        (row.articlePostId && slugById.get(row.articlePostId)) || null,
+    }));
+  } catch (error) {
+    logServer("error", "query.recognition_details_failed", {
+      error: String(error),
+    });
+    return rows.map((row) => ({ ...row, images: [], articleSlug: null }));
+  }
+}
+
 // Everything on the site, for the archive on the writing page. Pinning decides
 // the homepage; publishing decides this.
 export async function getPublishedRecognitions() {
   if (!canQueryDatabase()) return [];
 
   try {
-    return await getDb()
+    const rows = await getDb()
       .select()
       .from(recognitions)
       .where(eq(recognitions.published, true))
       // Newest first, nothing else. Pinning decides the homepage; here the
       // archive just reads in the order things happened.
       .orderBy(desc(recognitions.createdAt));
+    return await withRecognitionDetails(rows);
   } catch (error) {
     logServer("error", "query.published_recognitions_failed", {
       error: String(error),
     });
     return [];
   }
+}
+
+// The images already attached to one recognition, for the edit form.
+export async function getAdminRecognitionImages(recognitionId: string) {
+  return getDb()
+    .select({
+      objectKey: recognitionImages.objectKey,
+      alt: recognitionImages.alt,
+      displayOrder: recognitionImages.displayOrder,
+    })
+    .from(recognitionImages)
+    .where(eq(recognitionImages.recognitionId, recognitionId))
+    .orderBy(asc(recognitionImages.displayOrder));
+}
+
+// Published posts only, for the article picker on the recognition form. A draft
+// would render a Read Post button that leads nowhere, so it is not offered.
+export async function getPostOptions() {
+  return getDb()
+    .select({ id: posts.id, title: posts.title })
+    .from(posts)
+    .where(eq(posts.published, true))
+    .orderBy(desc(posts.publishedAt));
 }
 
 export async function getAdminRecognitions() {
@@ -296,45 +413,67 @@ export async function getPublicCompanionSettings() {
 export async function isReferencedPublicMedia(key: string) {
   if (!canQueryDatabase()) return false;
   const db = getDb();
-  const [project, nowLink, publishedNow, settings, post] = await Promise.all([
-    db
-      .select({ id: projects.id })
-      .from(projects)
-      .where(and(eq(projects.iconKey, key), eq(projects.published, true)))
-      .limit(1),
-    db
-      .select({ id: nowLinks.id })
-      .from(nowLinks)
-      .where(and(eq(nowLinks.iconKey, key), eq(nowLinks.visible, true)))
-      .limit(1),
-    db
-      .select({ id: nowSection.id })
-      .from(nowSection)
-      .where(and(eq(nowSection.id, 1), eq(nowSection.published, true)))
-      .limit(1),
-    db
-      .select({ id: siteSettings.id })
-      .from(siteSettings)
-      .where(eq(siteSettings.profileImageKey, key))
-      .limit(1),
-    // A post image is referenced from inside the body rather than by a column
-    // of its own, so the body is what has to be searched. The key is a 48-char
-    // hex name from createObjectKey, not anything a reader supplies, and it is
-    // shape-checked by isPublicMediaKey before this runs — but it still goes
-    // in as a bound parameter rather than interpolated text.
-    db
-      .select({ id: posts.id })
-      .from(posts)
-      .where(
-        and(
-          eq(posts.published, true),
-          sql`position(${key} in ${posts.bodyMarkdown}) > 0`,
-        ),
-      )
-      .limit(1),
-  ]);
+  const [project, nowLink, publishedNow, settings, post, recognitionImage] =
+    await Promise.all([
+      db
+        .select({ id: projects.id })
+        .from(projects)
+        .where(and(eq(projects.iconKey, key), eq(projects.published, true)))
+        .limit(1),
+      db
+        .select({ id: nowLinks.id })
+        .from(nowLinks)
+        .where(and(eq(nowLinks.iconKey, key), eq(nowLinks.visible, true)))
+        .limit(1),
+      db
+        .select({ id: nowSection.id })
+        .from(nowSection)
+        .where(and(eq(nowSection.id, 1), eq(nowSection.published, true)))
+        .limit(1),
+      db
+        .select({ id: siteSettings.id })
+        .from(siteSettings)
+        .where(eq(siteSettings.profileImageKey, key))
+        .limit(1),
+      // A post image is referenced from inside the body rather than by a column
+      // of its own, so the body is what has to be searched. The key is a 48-char
+      // hex name from createObjectKey, not anything a reader supplies, and it is
+      // shape-checked by isPublicMediaKey before this runs — but it still goes
+      // in as a bound parameter rather than interpolated text.
+      db
+        .select({ id: posts.id })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.published, true),
+            sql`position(${key} in ${posts.bodyMarkdown}) > 0`,
+          ),
+        )
+        .limit(1),
+      // Joined to the parent rather than checked alone: an image row exists as
+      // soon as the recognition is saved, including as a draft, and a draft's
+      // images must not be reachable by anyone who guesses the URL.
+      db
+        .select({ id: recognitionImages.id })
+        .from(recognitionImages)
+        .innerJoin(
+          recognitions,
+          eq(recognitions.id, recognitionImages.recognitionId),
+        )
+        .where(
+          and(
+            eq(recognitionImages.objectKey, key),
+            eq(recognitions.published, true),
+          ),
+        )
+        .limit(1),
+    ]);
   return Boolean(
-    project[0] || (nowLink[0] && publishedNow[0]) || settings[0] || post[0],
+    project[0] ||
+    (nowLink[0] && publishedNow[0]) ||
+    settings[0] ||
+    post[0] ||
+    recognitionImage[0],
   );
 }
 

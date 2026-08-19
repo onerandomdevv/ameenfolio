@@ -79,7 +79,11 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      {/* Extensions inject attributes on body before React hydrates (ColorZilla
+          adds cz-shortcut-listen, password managers add their own), which
+          React reports as a mismatch the page cannot fix. Suppression applies
+          to this element only, so a real mismatch inside still surfaces. */}
+      <body className={inter.className} suppressHydrationWarning>
         <div className="min-h-screen">{children}</div>
         <Toaster richColors position="bottom-center" />
       </body>
