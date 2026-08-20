@@ -4,12 +4,7 @@ import { useRef, useState } from "react";
 import { ArrowUpRight, Newspaper } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { RECOGNITION_IMAGE_SIZE } from "@/lib/image/crop";
 import { recognitionImageAlt } from "@/lib/recognition";
 import { cn } from "@/lib/utils";
@@ -39,14 +34,30 @@ export function RecognitionDialog({
 }: RecognitionDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-left text-base leading-6">
-            {title}
-          </DialogTitle>
-        </DialogHeader>
-
+      {/* The close button is positioned by DialogContent at the dialog's top
+          right, which is now over the first image rather than over background.
+          A dark glyph on a pale certificate would be almost invisible, so it
+          gets a scrim of its own here — scoped to this dialog rather than
+          changed in the shared component, where every other dialog still opens
+          onto a plain background and needs nothing. */}
+      <DialogContent
+        className={cn(
+          "sm:max-w-md",
+          "[&_[data-slot=dialog-close]]:z-10 [&_[data-slot=dialog-close]]:rounded-full",
+          "[&_[data-slot=dialog-close]]:bg-background/70 [&_[data-slot=dialog-close]]:p-1",
+          "[&_[data-slot=dialog-close]]:opacity-90 [&_[data-slot=dialog-close]]:backdrop-blur-sm",
+          "[&_[data-slot=dialog-close]]:hover:opacity-100",
+        )}
+      >
         {images.length ? <Carousel images={images} title={title} /> : null}
+
+        {/* Under the carousel rather than above it: the image is what the
+            reader opened this for, and the title reads as its caption.
+            DialogHeader is not used — its sm:text-left would undo the
+            centring, and it exists only to stack a title and description. */}
+        <DialogTitle className="text-center text-base leading-6 text-balance">
+          {title}
+        </DialogTitle>
 
         <RecognitionActions
           articleSlug={articleSlug}
