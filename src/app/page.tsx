@@ -311,6 +311,8 @@ export default async function HomePage() {
                   title={recognition.title}
                   iconName={recognition.iconName}
                   verificationUrl={recognition.verificationUrl}
+                  articleSlug={recognition.articleSlug}
+                  images={recognition.images}
                 />
               </li>
             ))}

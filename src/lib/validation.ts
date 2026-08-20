@@ -61,6 +61,21 @@ export const projectSchema = z
     message: "Alt text is required when an icon is uploaded.",
   });
 
+export const recognitionImageKeySchema = z
+  .string()
+  .regex(/^recognitions\/\d{4}\/[a-f0-9]{48}\.(png|jpg|webp)$/);
+
+export const recognitionImageSchema = z.object({
+  objectKey: recognitionImageKeySchema,
+  // Optional: the form does not ask for one. What a screen reader hears is
+  // derived from the recognition's title and the image's position by
+  // recognitionImageAlt, and a description written here still wins over that.
+  alt: optionalText(160),
+  displayOrder: z.number().int().min(0).max(999),
+});
+
+export const MAX_RECOGNITION_IMAGES = 6;
+
 export const recognitionSchema = z.object({
   title: z
     .string()
@@ -70,6 +85,38 @@ export const recognitionSchema = z.object({
     .refine(withinCardWordLimit, cardWordLimitMessage),
   iconName: z.enum(recognitionIconNames),
   verificationUrl: optionalHttpsUrl,
+  // The article on this site covering the recognition. Reachable by the
+  // copilot: it can read posts, so it can legitimately attach one.
+  articlePostId: z.uuid().optional(),
+});
+
+/**
+ * The admin form's version, which additionally carries the images.
+ *
+ * Split from `recognitionSchema` because that one is handed to the MCP and
+ * chatbot tools as their input contract, and recognitions are deliberately
+ * text-only there: neither copilot can produce an R2 object key, so exposing
+ * the field would only invite a tool call that cannot succeed.
+ *
+ * `images` is optional and never `.default([])`. saveRecognition rewrites the
+ * image rows wholesale, the same way savePost rewrites post links — so a
+ * default of `[]` would make every caller that says nothing about images
+ * silently delete all of them. Left undefined, "no images field" means "leave
+ * the images alone", and only this form, which always sends the full list,
+ * can change them.
+ */
+export const recognitionFormSchema = recognitionSchema.extend({
+  // The picker says "none" with an empty string, and the form holds exactly
+  // that rather than writing `undefined` back into form state. saveRecognition
+  // already stores a falsy value as null, so "" needs no conversion on the way
+  // out; it only has to be a legal value on the way in.
+  //
+  // The AI-facing schema keeps its plain uuid, since no picker is involved.
+  articlePostId: z.union([z.uuid(), z.literal("")]).optional(),
+  images: z
+    .array(recognitionImageSchema)
+    .max(MAX_RECOGNITION_IMAGES)
+    .optional(),
 });
 
 export const techStackItemSchema = z.object({
@@ -200,7 +247,7 @@ export const bippyVisibilitySchema = z.object({
 });
 
 export const uploadRequestSchema = z.object({
-  resourceType: z.enum(["icon", "profile", "resume", "post"]),
+  resourceType: z.enum(["icon", "profile", "resume", "post", "recognition"]),
   filename: z.string().trim().min(1).max(180),
   contentType: z.string().trim(),
   size: z.number().int().positive(),
@@ -208,6 +255,8 @@ export const uploadRequestSchema = z.object({
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 export type RecognitionInput = z.infer<typeof recognitionSchema>;
+export type RecognitionFormInput = z.infer<typeof recognitionFormSchema>;
+export type RecognitionImageInput = z.infer<typeof recognitionImageSchema>;
 export type TechStackItemInput = z.infer<typeof techStackItemSchema>;
 export type NowSectionInput = z.infer<typeof nowSectionSchema>;
 export type NowLinkInput = z.infer<typeof nowLinkSchema>;
