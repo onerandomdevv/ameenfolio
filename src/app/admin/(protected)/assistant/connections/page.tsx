@@ -6,7 +6,6 @@ import { listAssistantThreads } from "@/lib/ai/repository";
 export const metadata: Metadata = {
   title: "Bippy Connections",
   description: "Control the external MCP tools available to Bippy.",
-  robots: { index: false, follow: false },
 };
 
 export default async function BippyConnectionsPage() {

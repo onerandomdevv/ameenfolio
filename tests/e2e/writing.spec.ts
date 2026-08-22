@@ -39,7 +39,9 @@ test("a post renders its body, date and contents", async ({ page }) => {
   const postCount = await page.locator('a[href^="/writing/"]').count();
   test.skip(postCount === 0, "No posts published in this environment.");
 
-  await firstPost.click();
+  const firstPostHref = await firstPost.getAttribute("href");
+  expect(firstPostHref).toMatch(/^\/writing\//);
+  await page.goto(firstPostHref!);
   await expect(page.locator("article.post-body")).toBeVisible();
   // A real <time>, so the date is machine-readable rather than just printed.
   await expect(page.locator("time").first()).toHaveAttribute(
@@ -89,6 +91,9 @@ test("published writing is readable over plain HTTP without JavaScript", async (
     title: string;
     bodyMarkdown: string;
     bodyHtml: string;
+    publishedAt: string;
+    modifiedAt: string;
+    url: string;
   };
   const bodyWords =
     detail.bodyMarkdown.match(/[A-Za-z]{8,}/g)?.slice(0, 3) ?? [];
@@ -112,6 +117,19 @@ test("published writing is readable over plain HTTP without JavaScript", async (
     expect(html).toContain("text/markdown");
     expect(html).toContain(`/writing/${selected.slug}.md`);
     for (const word of bodyWords) expect(html).toContain(word);
+
+    const jsonLdSource = html.match(
+      /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+    )?.[1];
+    expect(jsonLdSource).toBeTruthy();
+    const jsonLd = JSON.parse(jsonLdSource ?? "{}") as Record<string, unknown>;
+    expect(jsonLd).toMatchObject({
+      "@type": "Article",
+      headline: detail.title,
+      mainEntityOfPage: detail.url,
+      datePublished: detail.publishedAt,
+      dateModified: detail.modifiedAt,
+    });
   }
 
   const markdownResponse = await request.get(`/writing/${selected.slug}.md`);
@@ -190,4 +208,25 @@ test("robots separates retrieval crawlers from training crawlers", async ({
   );
   expect(robots).toContain("Allow: /api/public/");
   expect(robots).toContain("Disallow: /admin");
+});
+
+test("the admin hostname exposes no discovery surfaces", async ({
+  request,
+}) => {
+  const headers = { Host: "admin.localhost:3000" };
+
+  const robots = await request.get("/robots.txt", { headers });
+  expect(robots.status()).toBe(200);
+  expect(robots.headers()["content-type"]).toContain("text/plain");
+  expect(await robots.text()).toBe("User-agent: *\nDisallow: /\n");
+
+  for (const path of ["/sitemap.xml", "/llms.txt"]) {
+    const response = await request.get(path, { headers });
+    expect(response.status()).toBe(404);
+    expect(response.headers()["x-robots-tag"]).toBe("noindex, nofollow");
+  }
+
+  const publicRobots = await request.get("/robots.txt");
+  expect(publicRobots.status()).toBe(200);
+  expect(await publicRobots.text()).toContain("User-Agent: OAI-SearchBot");
 });

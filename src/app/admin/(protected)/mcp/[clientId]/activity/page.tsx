@@ -12,7 +12,6 @@ import { McpApprovalQueue } from "@/components/admin/mcp-connections-workspace";
 export const metadata: Metadata = {
   title: "MCP activity",
   description: "Review activity from a private portfolio MCP client.",
-  robots: { index: false, follow: false },
 };
 
 type Props = {

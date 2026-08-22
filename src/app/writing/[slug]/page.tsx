@@ -27,7 +27,6 @@ export async function generateMetadata({
   const article = toPublicArticle(found.post, found.links, baseUrl);
   const identity = resolveIdentity(await getIdentitySettings());
   const shareVersion = getSocialPreviewVersion(found.post.updatedAt);
-  const shareUrl = `/writing/${found.post.slug}?share=${shareVersion}`;
   const socialImageUrl = `/writing/${found.post.slug}/social-card/${shareVersion}.jpg`;
 
   return {
@@ -44,7 +43,7 @@ export async function generateMetadata({
     openGraph: {
       title: found.post.title,
       description: article.description,
-      url: shareUrl,
+      url: article.url,
       type: "article",
       publishedTime: found.post.publishedAt.toISOString(),
       modifiedTime: found.post.updatedAt.toISOString(),
