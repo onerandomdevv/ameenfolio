@@ -23,4 +23,7 @@ export function refreshPublicContent() {
   revalidatePath("/");
   revalidatePath("/projects");
   revalidatePath("/writing");
+  revalidatePath("/sitemap.xml");
+  revalidatePath("/llms.txt");
+  revalidatePath("/api/public/writing");
 }

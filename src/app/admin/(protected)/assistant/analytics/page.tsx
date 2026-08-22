@@ -5,7 +5,6 @@ import { listAssistantThreads } from "@/lib/ai/repository";
 export const metadata: Metadata = {
   title: "Bippy Analytics",
   description: "Private controls and performance analytics for Bippy.",
-  robots: { index: false, follow: false },
 };
 
 export default async function BippyAnalyticsPage() {

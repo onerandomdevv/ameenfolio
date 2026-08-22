@@ -535,6 +535,10 @@ export type PublishedPostSummary = {
   updatedAt: Date;
 };
 
+export type PublishedPostDiscoverySummary = PublishedPostSummary & {
+  bodyMarkdown: string;
+};
+
 // The index page needs headlines, not bodies. Selecting the columns keeps a
 // page of twenty posts from carrying twenty rendered articles with it.
 export async function getPublishedPostSummaries(): Promise<
@@ -546,6 +550,26 @@ export async function getPublishedPostSummaries(): Promise<
       id: posts.id,
       title: posts.title,
       slug: posts.slug,
+      publishedAt: posts.publishedAt,
+      updatedAt: posts.updatedAt,
+    })
+    .from(posts)
+    .where(eq(posts.published, true))
+    .orderBy(desc(posts.publishedAt), desc(posts.createdAt));
+}
+
+// Discovery surfaces need enough body text to describe a post, but never the
+// rendered body, internal links, draft state, or any admin-owned fields.
+export async function getPublishedPostDiscoverySummaries(): Promise<
+  PublishedPostDiscoverySummary[]
+> {
+  if (!canQueryDatabase()) return [];
+  return getDb()
+    .select({
+      id: posts.id,
+      title: posts.title,
+      slug: posts.slug,
+      bodyMarkdown: posts.bodyMarkdown,
       publishedAt: posts.publishedAt,
       updatedAt: posts.updatedAt,
     })

@@ -21,7 +21,12 @@ import { postSchema, type PostInput } from "@/lib/validation";
 function refreshWriting(slug?: string) {
   refreshPublicContent();
   revalidatePath("/writing");
-  if (slug) revalidatePath(`/writing/${slug}`);
+  if (slug) {
+    revalidatePath(`/writing/${slug}`);
+    revalidatePath(`/writing/${slug}.md`);
+    revalidatePath(`/api/public/writing/${slug}`);
+    revalidatePath(`/api/public/writing/${slug}/markdown`);
+  }
 }
 
 export async function savePost(
