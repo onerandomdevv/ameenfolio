@@ -54,7 +54,13 @@ test("the admin login page renders on the admin host", async ({ request }) => {
   });
 
   expect(response.status()).toBe(200);
-  expect(await response.text()).toContain("Continue with GitHub");
+  const html = await response.text();
+  expect(html).toContain("Continue with GitHub");
+  const robotsMeta = html.match(/<meta[^>]+name="robots"[^>]*>/i)?.[0];
+  expect(robotsMeta).toContain("noindex");
+  expect(robotsMeta).toContain("nofollow");
+  expect(robotsMeta).toContain("noarchive");
+  expect(robotsMeta).toContain("nosnippet");
 });
 
 test("upload signing is unavailable without an admin session", async ({

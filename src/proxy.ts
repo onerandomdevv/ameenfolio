@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth/server";
 import { shouldBypassAdminSessionMiddleware } from "@/lib/routing/admin-auth-path";
 import {
+  adminRobotsText,
   isAdminHostSharedPath,
   restoreAdminHostRedirect,
 } from "@/lib/routing/admin-host";
@@ -50,6 +51,26 @@ export default async function proxy(request: NextRequest) {
       return getAuth().middleware({ loginUrl: "/admin/login" })(request);
     }
     return NextResponse.next();
+  }
+
+  if (pathname === "/robots.txt") {
+    return new NextResponse(adminRobotsText, {
+      headers: {
+        "Cache-Control": "public, max-age=3600",
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Content-Type-Options": "nosniff",
+      },
+    });
+  }
+
+  if (pathname === "/sitemap.xml" || pathname === "/llms.txt") {
+    return new NextResponse("Not found\n", {
+      status: 404,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "X-Robots-Tag": "noindex, nofollow",
+      },
+    });
   }
 
   if (isAdminHostSharedPath(pathname)) return NextResponse.next();

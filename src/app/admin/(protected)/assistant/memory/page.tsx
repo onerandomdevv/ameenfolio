@@ -6,7 +6,6 @@ import { listAssistantThreads } from "@/lib/ai/repository";
 export const metadata: Metadata = {
   title: "Bippy Memory",
   description: "Review the information Bippy remembers across conversations.",
-  robots: { index: false, follow: false },
 };
 
 export default async function BippyMemoryPage() {

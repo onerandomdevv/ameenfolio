@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isAdminHostSharedPath, restoreAdminHostRedirect } from "./admin-host";
+import {
+  adminRobotsText,
+  isAdminHostSharedPath,
+  restoreAdminHostRedirect,
+} from "./admin-host";
 
 describe("isAdminHostSharedPath", () => {
   it("keeps the Bippy playground on the protected admin route", () => {
@@ -33,5 +37,11 @@ describe("isAdminHostSharedPath", () => {
         "admin.onerandomdev.cv",
       ).toString(),
     ).toBe("https://admin.onerandomdev.cv/assistant");
+  });
+});
+
+describe("adminRobotsText", () => {
+  it("blocks crawling on the private admin hostname", () => {
+    expect(adminRobotsText).toBe("User-agent: *\nDisallow: /\n");
   });
 });
