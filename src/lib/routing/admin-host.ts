@@ -17,6 +17,8 @@ export function isAdminHostSharedPath(pathname: string) {
   );
 }
 
+export const adminRobotsText = "User-agent: *\nDisallow: /\n";
+
 /**
  * Convert an auth-middleware redirect from the hidden `/admin` route tree back
  * to the URL a browser uses on an `admin.` host.

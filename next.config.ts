@@ -3,6 +3,21 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
   experimental: { authInterrupts: true },
+  async rewrites() {
+    return {
+      // A clean public Markdown URL without competing with the existing
+      // `/writing/[slug]` page segment. The destination stays an internal
+      // implementation detail.
+      beforeFiles: [
+        {
+          source: "/writing/:slug\\.md",
+          destination: "/api/public/writing/:slug/markdown",
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
+  },
   async headers() {
     return [
       {

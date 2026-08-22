@@ -5,10 +5,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { ThemeToggle } from "@/components/portfolio/theme-toggle";
 import { ArticleShareButton } from "@/components/writing/article-share-button";
-import { getPublishedPost } from "@/db/queries";
+import { getIdentitySettings, getPublishedPost } from "@/db/queries";
 import { getPostLinkIcon } from "@/config/post-link-icons";
 import { formatPostDate, toDateAttribute } from "@/lib/writing/format";
 import { getSocialPreviewVersion } from "@/lib/writing/social-preview";
+import { getServerEnv } from "@/lib/env";
+import { resolveIdentity } from "@/lib/identity";
+import { articleJsonLd, toPublicArticle } from "@/lib/writing/public-content";
 
 export const dynamic = "force-dynamic";
 
@@ -20,20 +23,32 @@ export async function generateMetadata({
   const { slug } = await params;
   const found = await getPublishedPost(slug);
   if (!found) return { title: "Writing" };
+  const baseUrl = getServerEnv().CANONICAL_SITE_URL;
+  const article = toPublicArticle(found.post, found.links, baseUrl);
+  const identity = resolveIdentity(await getIdentitySettings());
   const shareVersion = getSocialPreviewVersion(found.post.updatedAt);
   const shareUrl = `/writing/${found.post.slug}?share=${shareVersion}`;
   const socialImageUrl = `/writing/${found.post.slug}/social-card/${shareVersion}.jpg`;
 
   return {
     title: found.post.title,
-    description: found.post.title,
-    alternates: { canonical: `/writing/${found.post.slug}` },
+    description: article.description,
+    authors: [{ name: identity.name, url: baseUrl }],
+    alternates: {
+      canonical: `/writing/${found.post.slug}`,
+      types: {
+        "text/markdown": `/writing/${found.post.slug}.md`,
+      },
+    },
+    robots: { index: true, follow: true },
     openGraph: {
       title: found.post.title,
-      description: found.post.title,
+      description: article.description,
       url: shareUrl,
       type: "article",
       publishedTime: found.post.publishedAt.toISOString(),
+      modifiedTime: found.post.updatedAt.toISOString(),
+      authors: [identity.name],
       images: [
         {
           url: socialImageUrl,
@@ -46,7 +61,7 @@ export async function generateMetadata({
     twitter: {
       card: "summary",
       title: found.post.title,
-      description: found.post.title,
+      description: article.description,
       images: [
         {
           url: socialImageUrl,
@@ -65,6 +80,13 @@ export default async function PostPage({ params }: PageProps) {
   if (!found) notFound();
 
   const { post, links } = found;
+  const baseUrl = getServerEnv().CANONICAL_SITE_URL;
+  const identity = resolveIdentity(await getIdentitySettings());
+  const publicArticle = toPublicArticle(post, links, baseUrl);
+  const jsonLd = articleJsonLd(publicArticle, {
+    name: identity.name,
+    url: baseUrl,
+  });
   const shareVersion = getSocialPreviewVersion(post.updatedAt);
   // Only the top level: a contents list that mirrors every subheading stops
   // being a summary of the piece.
@@ -72,6 +94,12 @@ export default async function PostPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto flex w-full max-w-6xl gap-10 px-5 pb-20 pt-8 sm:px-6 sm:pt-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
+      />
       {/* Sticky rather than scrolling away, and hidden below lg where there is
           no room for a second column. Absent entirely when the post has no
           sections to list. */}
