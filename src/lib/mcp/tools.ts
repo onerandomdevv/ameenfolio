@@ -42,6 +42,7 @@ import {
   redactArticleImageAuditArgs,
 } from "@/lib/mcp/article-image-contract";
 import { storeArticleImageForMcp } from "@/lib/mcp/article-image-service.server";
+import { createMcpToolResult } from "@/lib/mcp/result";
 import {
   ARTICLE_IMAGE_WIDGET_MIME_TYPE,
   ARTICLE_IMAGE_WIDGET_URI,
@@ -141,10 +142,6 @@ function security(
 ) {
   // The current MCP SDK serializes extension metadata through `_meta`.
   return { _meta: { securitySchemes: oauth(scope) } };
-}
-
-function jsonValue(value: unknown) {
-  return JSON.parse(JSON.stringify(value)) as Record<string, unknown>;
 }
 
 async function describeContent(kind: z.infer<typeof contentKind>, id: string) {
@@ -296,10 +293,7 @@ function result(
   summary: string,
   images: Array<{ type: "image"; data: string; mimeType: string }> = [],
 ) {
-  return {
-    structuredContent: jsonValue(data),
-    content: [{ type: "text" as const, text: summary }, ...images],
-  };
+  return createMcpToolResult(data, summary, images);
 }
 
 function requireScope(actor: McpActor, scope: string) {
