@@ -1,8 +1,6 @@
-export type McpImageContent = {
-  type: "image";
-  data: string;
-  mimeType: string;
-};
+import type { ImageContent } from "@modelcontextprotocol/sdk/types.js";
+
+export type McpImageContent = ImageContent;
 
 type JsonObject = Record<string, unknown>;
 
